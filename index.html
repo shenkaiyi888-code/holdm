@@ -950,6 +950,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <label class="toggle" for="optSound"><input type="checkbox" id="optSound" checked> 音效</label>
       <label class="toggle" for="optRit" title="全下时可以商量把剩下的牌发两次"><input type="checkbox" id="optRit" checked> 发两次协商</label>
       <label class="toggle" for="optEq"><input type="checkbox" id="optEq" checked> 显示胜率</label>
+      <label class="toggle" for="optStraddle" title="坐在大盲下家（枪口位）时，发牌前自动多下 2 个大盲，翻牌前最后说话"><input type="checkbox" id="optStraddle"> 枪口位抓盲</label>
       <label class="toggle" for="optMute"><input type="checkbox" id="optMute"> 荷官静音</label>
       <label class="toggle" for="optDealer"><input type="checkbox" id="optDealer" checked> 显示荷官</label>
       <label class="toggle" for="optAuto" title="一手结束 10 秒后自动发下一手；联机有朋友在桌上时总是自动"><input type="checkbox" id="optAuto" checked> 自动下一手</label>
@@ -1418,6 +1419,13 @@ function setDealerHidden(on){
 }
 setTimeout(() => setDealerHidden(dealerHidden));
 $('#optMute').addEventListener('change', e => setMute(e.target.checked));
+let straddlePref = store.get('holdem.straddle', '0') === '1';
+$('#optStraddle').checked = straddlePref;
+$('#optStraddle').addEventListener('change', e => {
+  straddlePref = e.target.checked; store.set('holdem.straddle', straddlePref ? '1' : '0');
+  if (NET.role === 'guest') netSend({t:'hello', name:myName || '玩家', ava:myAva, straddle:straddlePref});
+  log(straddlePref ? '已打开枪口位抓盲：轮到你坐枪口位时，发牌前自动下 2 个大盲' : '已关闭枪口位抓盲', 'sys');
+});
 $('#optDealer').addEventListener('change', e => setDealerHidden(!e.target.checked));
 document.addEventListener('click', e => { if (e.target.closest('#dMute')){ e.stopPropagation(); setMute(!dealerMuted); if (!dealerMuted) dealerSay('hello'); } });
 let customAva = store.get('holdem.cAva', '');
@@ -1810,15 +1818,29 @@ function startHand(){
   };
   blind(G.sbIdx, G.sbAmt, '小盲');
   blind(G.bbIdx, G.bbAmt, '大盲');
+  /* straddle: the player after the big blind may put in two big blinds blind and then acts last before the flop */
+  G.straddleIdx = -1;
+  const utg = nextIdx(G.bbIdx, p => !p.out), up = G.players[utg];
+  if (alive >= 3 && utg !== G.sbIdx && wantsStraddle(up) && up.chips > G.bbAmt * 4){
+    blind(utg, G.bbAmt * 2, '抓盲');
+    G.straddleIdx = utg;
+    log(`${up.name}在枪口位抓盲 ${G.bbAmt * 2}，翻牌前最后说话`, 'sys');
+  }
   if (G.sayNext){ dealerSay(...G.sayNext); G.sayNext = null; }
   else dealerSay(G.handNo === 1 && !G.resumed ? 'hello' : 'newHand');
   G.resumed = false;
   saveGame();
-  G.currentBet = G.bbAmt; G.minRaise = G.bbAmt;
-  G.toAct = nextIdx(G.bbIdx, canAct);
+  G.currentBet = G.straddleIdx >= 0 ? G.bbAmt * 2 : G.bbAmt; G.minRaise = G.currentBet;
+  G.toAct = nextIdx(G.straddleIdx >= 0 ? G.straddleIdx : G.bbIdx, canAct);
   G.potCleared = false; G.holdStacks = null; G.lastAgg = -1; G.streetAgg = -1;
   render();
   wait(proceed, animateDeal() + 150);
+}
+function wantsStraddle(p){
+  if (p === G.players[0]) return straddlePref;
+  if (p.remote){ const x = NET.peers.get(p.remote); return !!(x && x.straddle); }
+  /* loose, aggressive computer players straddle now and then */
+  return !p.human && p.aggr >= .75 && p.tight < 0 && Math.random() < .2;
 }
 function roundComplete(){
   const actors = G.players.filter(canAct);
@@ -2392,16 +2414,17 @@ function botAct(i){
     return doAction(i, 'check');
   }
   if (G.street === 0){
-    if (canRaise && G.streetRaises < 2 && toCall <= G.bbAmt && eq > medT && r < .2 + p.aggr * .65){
+    const blindTop = G.straddleIdx >= 0 ? G.bbAmt * 2 : G.bbAmt;
+    if (canRaise && G.streetRaises < 2 && toCall <= blindTop && eq > medT && r < .2 + p.aggr * .65){
       const minTo = G.currentBet + G.minRaise;
-      return doAction(i, 'raise', Math.min(Math.max(G.bbAmt * (pro ? 2 + Math.round(Math.random()) : 2 + Math.floor(Math.random() * 3)), minTo), p.bet + p.chips));
+      return doAction(i, 'raise', Math.min(Math.max(blindTop * (pro ? 2 + Math.round(Math.random()) : 2 + Math.floor(Math.random() * 3)), minTo), p.bet + p.chips));
     }
-    const unopened = G.players.every((q, j) => j === G.sbIdx || j === G.bbIdx || q.bet === 0);
-    if (canRaise && unopened && (late || i === G.sbIdx) && toCall <= G.bbAmt){
+    const unopened = G.players.every((q, j) => j === G.sbIdx || j === G.bbIdx || j === G.straddleIdx || q.bet === 0);
+    if (canRaise && unopened && (late || i === G.sbIdx) && toCall <= blindTop){
       const K = Math.max(.2, Math.min(2.4, p.bluff * 10));
       if (Math.random() < Math.min(.8, (.15 + p.aggr * .3) * K)){
         G.bluffFlag = eq <= medT ? 'steal' : null;
-        return doAction(i, 'raise', Math.min(Math.max(Math.round(G.bbAmt * 2.5), G.currentBet + G.minRaise), p.bet + p.chips));
+        return doAction(i, 'raise', Math.min(Math.max(Math.round(blindTop * 2.5), G.currentBet + G.minRaise), p.bet + p.chips));
       }
     }
     const bl = plan();
@@ -3813,7 +3836,7 @@ function netOnMessage(m){
     if (NET.role === 'guest'){
       const h = NET.roster.find(x => x.host);
       const back = !!(h && h.online);
-      if (back && NET.hostGone){ NET.hostGone = false; netSend({t:'hello', name:myName || '玩家', ava:myAva}); }
+      if (back && NET.hostGone){ NET.hostGone = false; netSend({t:'hello', name:myName || '玩家', ava:myAva, straddle:straddlePref}); }
       NET.hostGone = !back;
       render();
     } else if (NET.role === 'host'){
@@ -3896,6 +3919,7 @@ function netHostMessage(m){
   if (m.t === 'hello'){
     const nm = uniqueName(String(m.name || '').trim() || x.name, x.id);
     if (nm !== x.name) log(`${x.name} 改名为 ${nm}`, 'sys');
+    x.straddle = !!m.straddle;
     x.name = nm; x.ava = typeof m.ava === 'string' && m.ava.startsWith('data:image/') && m.ava.length < 60000 ? m.ava : '';
     if (mine){ p.name = x.name; p.ava = x.ava; }
     render(); netRenderDlg(); return;
@@ -4061,7 +4085,7 @@ function netFlush(){
 
 /* ----- guest side ----- */
 function netGuestMessage(m){
-  if (m.t === 'welcome' || m.t === 'who'){ netSend({t:'hello', name:myName || '玩家', ava:myAva}); return; }
+  if (m.t === 'welcome' || m.t === 'who'){ netSend({t:'hello', name:myName || '玩家', ava:myAva, straddle:straddlePref}); return; }
   if (m.t === 'hostgone'){ NET.hostGone = true; G.deadline = 0; netBadge(); render(); return; }
   if (m.t === 'sync'){
     if (m.seq <= NET.lastSeq) return;
