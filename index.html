@@ -28,6 +28,7 @@
   --gold:#D5B678; --gold-ink:#1d1406;
   --teal:#25a57e; --teal-2:#1d8c6a;
   --danger:#C65353; --win:#7fe0ad;
+  --ease:cubic-bezier(.22,1,.36,1);
   --f-display:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
   --f-body:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -69,8 +70,9 @@ button{cursor:pointer}
 .chip-info b{font-family:var(--f-num); color:var(--text); font-weight:600}
 .ghost{
   background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:5px 13px; font-size:12.5px; color:var(--text);
-  transition:border-color .15s, background .15s;
+  transition:border-color .2s, background .2s, transform .2s var(--ease);
 }
+.ghost:active:not(:disabled){transform:scale(.96)}
 .ghost:hover:not(:disabled){border-color:var(--line-2); background:var(--panel-2)}
 .ghost:disabled{opacity:.4; cursor:not-allowed}
 .ghost.armed{border-color:var(--danger); color:var(--danger)}
@@ -139,7 +141,7 @@ body.sin .sins{display:block}
   position:relative; font-family:var(--f-display);
   border:1px solid rgba(0,0,0,.08);
   box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 6px 14px rgba(0,0,0,.35);
-  animation:deal .32s ease-out;
+  animation:deal .32s var(--ease);
 }
 .card .r{position:absolute; top:6%; left:10%; font-size:calc(var(--cw)*.36); font-weight:900; line-height:1; letter-spacing:-.07em}
 .card .ss{position:absolute; top:34%; left:12%; font-size:calc(var(--cw)*.22); line-height:1}
@@ -217,7 +219,7 @@ body.sin .sins{display:block}
   display:grid; place-items:center; font:800 12px/1 var(--f-display); color:#1d1406; letter-spacing:0;
   background:radial-gradient(circle at 50% 50%, #fffaf0 0 54%, #c9a463 55% 59%, #fffaf0 60% 74%, #d8b56d 75% 100%);
   box-shadow:0 3px 8px rgba(0,0,0,.55), inset 0 -2px 0 rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.8);
-  transition:left .7s cubic-bezier(.3,.7,.3,1), top .7s cubic-bezier(.3,.7,.3,1);
+  left:0; top:0; transition:transform .7s var(--ease);
 }
 .ava{position:relative}
 .seat.turn .ava::after{
@@ -348,7 +350,7 @@ body.sin .sins{display:block}
 }
 .avatar svg,.avatar img{width:100%; height:100%; display:block; object-fit:cover}
 .avatar svg{padding:4px}
-.avatar.hop{animation:hop .55s ease-out}
+.avatar.hop{animation:hop .55s var(--ease)}
 @keyframes hop{30%{transform:translateY(-8px) rotate(-6deg)}60%{transform:translateY(0) rotate(4deg)}}
 .dtext{min-width:0; flex:1; display:flex; flex-direction:column; gap:5px}
 .dname{display:flex; align-items:baseline; gap:8px; font-size:11.5px; color:var(--muted); letter-spacing:.06em}
@@ -357,7 +359,7 @@ body.sin .sins{display:block}
   position:relative; background:var(--ivory); color:var(--ink); border-radius:4px 14px 14px 14px; padding:7px 12px;
   font-size:13px; line-height:1.45; width:fit-content; max-width:100%;
 }
-.bubble.pop{animation:pop .3s ease-out}
+.bubble.pop{animation:pop .3s var(--ease)}
 @keyframes pop{from{transform:scale(.94); opacity:.4}}
 .d-card{display:none}
 .dtag{display:none}
@@ -393,11 +395,12 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .d-pick button{
   width:34px; height:34px; padding:0; border-radius:50%; overflow:hidden; border:2px solid transparent;
   background:#202a44; display:grid; place-items:center; color:var(--muted); font-size:16px;
-  transition:border-color .15s, transform .15s;
+  transition:border-color .2s, transform .2s var(--ease);
 }
 .d-pick button svg,.d-pick button img{width:100%; height:100%; object-fit:cover; display:block}
 .d-pick button svg{padding:2px}
 .d-pick button:hover{transform:translateY(-1px)}
+.d-pick button:active{transform:scale(.94)}
 .d-pick button[aria-checked="true"]{border-color:var(--gold)}
 .custom{display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:12px; color:var(--muted)}
 .custom input[type=text]{width:110px; background:var(--well); border:1px solid var(--line); border-radius:8px; padding:4px 8px; color:var(--text)}
@@ -410,14 +413,16 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   color:var(--gold); border-radius:999px; padding:3px 11px 3px 4px; font:600 12px var(--f-num);
 }
 .tip button::before{content:""; width:15px; height:15px; border-radius:50%; background:radial-gradient(circle, var(--gold) 0 38%, #fff6 39% 46%, var(--gold) 47%); box-shadow:inset 0 0 0 2px rgba(0,0,0,.18)}
+.tip button{transition:background .2s, transform .2s var(--ease)}
 .tip button:hover:not(:disabled){background:rgba(227,179,82,.1)}
+.tip button:active:not(:disabled){transform:scale(.96)}
 .tip button:disabled{opacity:.35; cursor:not-allowed}
 .tipsum{margin-left:auto; font-size:11px; color:var(--muted)}
 .tipsum b{font-family:var(--f-num); color:var(--gold)}
 .flychip{
   position:fixed; z-index:50; width:15px; height:15px; border-radius:50%; pointer-events:none;
   background:radial-gradient(circle, var(--gold) 0 38%, #fff6 39% 46%, var(--gold) 47%);
-  transition:transform .6s cubic-bezier(.3,.7,.4,1), opacity .6s;
+  transition:transform .6s var(--ease), opacity .6s var(--ease);
 }
 
 /* console */
@@ -441,11 +446,14 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   overflow-x:auto; overscroll-behavior:contain; padding:8px; background:var(--panel); border:1px solid var(--line-2); border-radius:14px; box-shadow:0 16px 40px rgba(0,0,0,.6)}
 .chat-pop[hidden]{display:none}
 .chat-pop button{white-space:nowrap; background:var(--well); border:1px solid var(--line); border-radius:999px; padding:6px 11px; font-size:13.5px; color:var(--text); cursor:pointer}
-.chat-pop button:active{border-color:var(--gold)}
+.chat-pop button{transition:border-color .2s, transform .2s var(--ease)}
+.chat-pop button:active{border-color:var(--gold); transform:scale(.96)}
 .raise-row{display:flex; flex-direction:column; gap:8px}
 .presets{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
 .presets button{background:var(--well); border:1px solid var(--line); border-radius:9px; padding:6px 4px; font-size:12.5px}
+.presets button{transition:border-color .2s, color .2s, transform .2s var(--ease)}
 .presets button:hover:not(:disabled){border-color:rgba(227,179,82,.45); color:var(--gold)}
+.presets button:active:not(:disabled){transform:scale(.95); border-color:var(--gold); color:var(--gold)}
 .slider{display:flex; align-items:center; gap:10px}
 .slider input[type=range]{flex:1; min-width:0; accent-color:var(--gold)}
 .slider input[type=number]{
@@ -455,16 +463,16 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .btns{display:grid; grid-template-columns:1fr 1.25fr 1.45fr; gap:8px}
 .btn{
   min-height:48px; border-radius:12px; border:1px solid transparent; font-weight:700; font-size:15px; padding:6px 8px;
-  transition:transform .08s, filter .15s, box-shadow .15s;
+  transition:transform .2s var(--ease), filter .2s, box-shadow .2s;
 }
-.btn:active:not(:disabled){transform:translateY(1px)}
-.btn:hover:not(:disabled){filter:brightness(1.08)}
+.btn:active:not(:disabled){transform:scale(.97); filter:brightness(.92); transition-duration:.06s}
+@media (hover:hover){.btn:hover:not(:disabled){filter:brightness(1.08)}}
 .btn:disabled,.presets button:disabled{opacity:.35; cursor:not-allowed}
 .btn.allin{background:linear-gradient(180deg, #d46a6a, var(--danger))!important; color:#fff!important; box-shadow:0 6px 16px rgba(198,83,83,.3)!important; border-color:transparent!important}
 .slider .step{display:none; flex:none; width:44px; height:44px; border-radius:12px; background:var(--well); border:1px solid var(--line); font:600 20px var(--f-num)}
 .hud{display:none}
 @keyframes react{0%{transform:scale(1)} 20%{transform:scale(1.18) rotate(-6deg)} 45%{transform:scale(1.12) rotate(5deg)} 70%{transform:scale(1.05)} 100%{transform:scale(1)}}
-.avatar.react{animation:react .9s ease-out}
+.avatar.react{animation:react .9s var(--ease)}
 .b-fold{background:#232c28; color:#dcd8cf}
 .b-back{background:transparent; border-color:var(--line-2); color:var(--muted)}
 .b-call{background:linear-gradient(180deg, var(--teal), var(--teal-2)); color:#fff; box-shadow:0 6px 16px rgba(37,165,126,.25)}
@@ -585,7 +593,9 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .welcome .w-brand span{font:500 12px var(--f-num); letter-spacing:.1em; color:var(--faint)}
 .welcome .w-pick{display:flex; flex-direction:column; gap:8px; text-align:left}
 .welcome .w-pick button{display:flex; align-items:center; gap:12px; background:var(--well); border:1px solid var(--line); border-radius:14px; padding:12px 14px; color:var(--text); text-align:left}
+.welcome .w-pick button{transition:border-color .2s, transform .2s var(--ease)}
 .welcome .w-pick button:hover, .welcome .w-pick button:focus-visible{border-color:var(--gold)}
+.welcome .w-pick button:active{transform:scale(.98)}
 .welcome .w-pick button i{font-style:normal; font-size:22px; width:30px; text-align:center; flex:none}
 .welcome .w-pick button div{display:flex; flex-direction:column; gap:2px; min-width:0}
 .welcome .w-pick b{font-family:var(--f-display); font-size:16px; font-weight:900}
@@ -643,7 +653,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .chat-row input:focus{outline:none; border-color:var(--gold)}
 .say{position:absolute; left:50%; bottom:calc(100% - 4px); transform:translateX(-50%); z-index:5; max-width:170px; width:max-content;
   background:var(--ivory); color:var(--ink); font-size:12.5px; line-height:1.35; padding:5px 10px; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.45);
-  pointer-events:none; animation:sayin .25s ease-out; overflow-wrap:anywhere; text-align:center}
+  pointer-events:none; animation:sayin .3s var(--ease); overflow-wrap:anywhere; text-align:center}
 .say.big{font-size:22px; padding:2px 8px; background:transparent; box-shadow:none}
 .say::after{content:""; position:absolute; left:50%; top:100%; margin-left:-5px; border:5px solid transparent; border-top-color:var(--ivory)}
 .say.big::after{display:none}
@@ -839,7 +849,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   .dealer .avatar{width:44px; height:44px; cursor:pointer}
   .dealer .d-more{display:none}
   .dealer .bubble{flex:0 1 auto; max-width:min(72vw, 330px); white-space:normal; opacity:0; transform:translateY(-4px) scale(.97);
-    transition:opacity .25s, transform .25s; pointer-events:none; box-shadow:0 8px 20px rgba(0,0,0,.45)}
+    transition:opacity .3s var(--ease), transform .3s var(--ease); pointer-events:none; box-shadow:0 8px 20px rgba(0,0,0,.45)}
   .dealer.talk .bubble{opacity:1; transform:none}
   .dealer.open{position:fixed; z-index:39; left:10px; right:10px; top:calc(10px + env(safe-area-inset-top, 0px)); margin:0;
     background:var(--panel); border:1px solid var(--line-2); border-radius:16px; padding:12px; box-shadow:0 20px 50px rgba(0,0,0,.65); pointer-events:auto}
@@ -936,7 +946,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   .tag{font-size:10px; padding:1px 6px; min-height:13px}
 }
 @media (prefers-reduced-motion:reduce){
-  .card,.avatar.hop,.bubble.pop,.cig::after,.seat.win .pod,.status.you,.seat.turn .ava::after{animation:none}
+  .card,.avatar.hop,.avatar.react,.bubble.pop,.cig::after,.seat.win .pod,.seat.arrive .pod,.status.you,.seat.turn .ava::after,.say{animation:none}
   .flipper.go{animation:none; transform:rotateY(180deg)}
   .wisp{animation:none; opacity:.4; transform:translateY(-20px) scale(1.6)}
   .tag.think::after{animation:none}
@@ -3086,8 +3096,7 @@ function placeDealerButton(){
     if (!best || h < best.h) best = {x, y, h};
     if (!h) break;
   }
-  btn.style.left = (best.x - ar.left) + 'px';
-  btn.style.top = (best.y - ar.top) + 'px';
+  btn.style.transform = `translate(${best.x - ar.left}px, ${best.y - ar.top}px)`;
 }
 let rzT = 0;
 addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { placeDealerButton(); }, 120); });
