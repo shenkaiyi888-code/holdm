@@ -99,6 +99,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-cache'});
       return res.end(html);
     }
+    const art = /^\/img\/(sally|nemo|nuo|frog|yi)\.webp$/.exec(p);
+    if ((req.method === 'GET' || req.method === 'HEAD') && art){
+      res.writeHead(200, {'Content-Type':'image/webp', 'Cache-Control':'public, max-age=604800'});
+      return res.end(fs.readFileSync(path.join(__dirname, 'img', art[1] + '.webp')));
+    }
     if (p === '/api/ping') return json(res, 200, {ok:true});
     if (p === '/api/events' && req.method === 'GET') return openStream(req, res, u.searchParams);
     if (req.method === 'POST' && p === '/api/create'){
