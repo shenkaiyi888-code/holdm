@@ -2786,10 +2786,19 @@ function sfx(kind){
     const g = a.createGain(); g.gain.value = v;
     s.connect(f).connect(g).connect(a.destination); s.start(t + at);
   };
+  /* a knuckle on a padded wooden table: low thump that drops in pitch, a woody knock, a short click */
+  const knock = (at, v) => {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(150, t + at); o.frequency.exponentialRampToValueAtTime(62, t + at + .09);
+    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(.42 * v, t + at + .003); g.gain.exponentialRampToValueAtTime(.0001, t + at + .14);
+    o.connect(g).connect(a.destination); o.start(t + at); o.stop(t + at + .16);
+    tone(410, .045, 'triangle', .07 * v, at);
+    noise(.025, .22 * v, 1500, at);
+  };
   if (kind === 'deal') noise(.05, .16, 2800);
   else if (kind === 'flip') noise(.07, .13, 1900);
   else if (kind === 'chips'){ tone(2500, .05, 'triangle', .045); tone(3200, .05, 'triangle', .035, .04); tone(2800, .06, 'triangle', .03, .085); }
-  else if (kind === 'check'){ tone(170, .07, 'sine', .14); tone(150, .07, 'sine', .11, .09); }
+  else if (kind === 'check') [0, .14].forEach((at, k) => knock(at, k ? .8 : 1));
   else if (kind === 'fold') noise(.12, .05, 900);
   else if (kind === 'turn'){ tone(880, .12, 'sine', .045); tone(1320, .16, 'sine', .035, .08); }
   else if (kind === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, .28, 'triangle', .055, i * .09));
