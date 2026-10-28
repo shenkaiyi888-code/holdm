@@ -243,6 +243,20 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .pos3 .bet{top:calc(100% + 6px); left:50%; transform:translateX(-50%)}
 .pos1 .bet,.pos2 .bet{left:calc(100% + 10px); top:58%}
 .pos4 .bet,.pos5 .bet{right:calc(100% + 10px); top:58%}
+/* 8-seat table: bottom row 1-0-7, left 2, top row 3-4-5, right 6 */
+.s8-0{left:50%; bottom:0; transform:translateX(-50%)}
+.s8-1{left:23%; bottom:1%; transform:translateX(-50%)}
+.s8-2{left:0; top:50%; transform:translateY(-50%)}
+.s8-3{left:23%; top:0; transform:translateX(-50%)}
+.s8-4{left:50%; top:0; transform:translateX(-50%)}
+.s8-5{left:77%; top:0; transform:translateX(-50%)}
+.s8-6{right:0; top:50%; transform:translateY(-50%)}
+.s8-7{left:77%; bottom:1%; transform:translateX(-50%)}
+.s8-0 .bet,.s8-1 .bet,.s8-7 .bet{bottom:calc(100% + 8px); left:50%; transform:translateX(-50%)}
+.s8-3 .bet,.s8-4 .bet,.s8-5 .bet{top:calc(100% + 6px); left:50%; transform:translateX(-50%)}
+.s8-2 .bet{left:calc(100% + 10px); top:58%}
+.s8-6 .bet{right:calc(100% + 10px); top:58%}
+.t8 .pod{min-width:clamp(104px,12.5cqw,140px)}
 .seat.turn .pod{border-color:var(--gold); box-shadow:0 0 0 3px rgba(227,179,82,.2), 0 0 26px rgba(227,179,82,.3)}
 .seat.win .pod{border-color:var(--win); box-shadow:0 0 0 3px rgba(127,224,173,.18), 0 0 24px rgba(127,224,173,.3)}
 .seat.folded{opacity:.45}
@@ -631,6 +645,16 @@ select.ghost option{background:var(--panel); color:var(--text)}
   .board{gap:3px}
   .pos1 .bet,.pos2 .bet{left:auto; right:auto; top:calc(100% + 2px); left:50%; transform:translateX(-50%)}
   .pos4 .bet,.pos5 .bet{right:auto; top:calc(100% + 2px); left:50%; transform:translateX(-50%)}
+  /* portrait 8 seats: three down each side, one on top */
+  .s8-1{left:0; bottom:auto; top:77%; transform:translateY(-50%)}
+  .s8-2{left:0; top:50%}
+  .s8-3{left:0; top:23%; transform:translateY(-50%)}
+  .s8-5{left:auto; right:0; top:23%; transform:translateY(-50%)}
+  .s8-6{right:0; top:50%}
+  .s8-7{left:auto; right:0; bottom:auto; top:77%; transform:translateY(-50%)}
+  .s8-1 .bet,.s8-2 .bet,.s8-3 .bet,.s8-5 .bet,.s8-6 .bet,.s8-7 .bet{left:50%; right:auto; bottom:auto; top:calc(100% + 2px); transform:translateX(-50%)}
+  .t8 .seat:not(.you){--cw:clamp(18px,6cqw,30px)}
+  .t8 .pod{min-width:0}
 }
 @media (orientation:portrait) and (max-width:1099px) and (min-width:600px){
   .app{max-width:860px; gap:12px; padding-block:12px}
@@ -801,13 +825,9 @@ select.ghost option{background:var(--panel); color:var(--text)}
     <summary>牌局记录</summary>
     <button class="ghost m-only log-close" id="bLogClose" type="button">关闭</button>
     <ol id="log"></ol>
-    <form class="chat" id="chat" hidden autocomplete="off">
+    <div class="chat" id="chat" hidden>
       <div class="quick" id="chatQuick"></div>
-      <div class="chat-row">
-        <input type="text" id="chatIn" maxlength="40" placeholder="说点什么…" aria-label="聊天内容">
-        <button class="ghost" type="submit">发送</button>
-      </div>
-    </form>
+    </div>
   </details>
 
   <div class="modal" id="netDlg" hidden role="dialog" aria-modal="true" aria-labelledby="ntTitle">
@@ -833,6 +853,13 @@ select.ghost option{background:var(--panel); color:var(--text)}
         <div class="modes" id="modes" role="radiogroup" aria-label="玩法">
           <button type="button" role="radio" data-m="tourney"><b>淘汰赛</b><small>输光就离场，不会来新人。盲注逐步上涨，赢光所有人获胜。</small></button>
           <button type="button" role="radio" data-m="cash"><b>现金局</b><small>像赌场的常驻牌桌：有人走就有新人坐下，筹码有深有浅，盲注固定。</small></button>
+        </div>
+      </div>
+      <div>
+        <h3 class="rv-h">牌桌</h3>
+        <div class="modes" id="seatsPick" role="radiogroup" aria-label="牌桌人数">
+          <button type="button" role="radio" data-n="6"><b>6 人桌</b><small>你和 5 位对手，节奏快，最常见的桌型。</small></button>
+          <button type="button" role="radio" data-n="8"><b>8 人桌</b><small>你和 7 位对手，底池更热闹；联机最多可以 8 个真人。</small></button>
         </div>
       </div>
       <div>
@@ -1000,6 +1027,7 @@ const G = {
 let H = null; const HISTORY = [];
 G.handTips = 0;
 /* online play: role is null (offline), 'host' (runs the game) or 'guest' (mirrors the host) */
+let SEATS = (() => { try { return localStorage.getItem('holdem.seats') === '8' ? 8 : 6; } catch (e) { return 6; } })();
 const NET = {role:null, room:'', id:'', peers:new Map(), out:{logs:[], says:[]}, seq:0};
 const PERSONAL_SAY = new Set(['youWin', 'youWinBig', 'youLoseBig', 'otherWin', 'champion', 'bust', 'imgBluffy', 'imgHonest',
   'showBluff', 'showValue', 'showOther', 'smoke', 'tipS', 'tipM', 'tipL', 'ritAsk', 'ritBotAsk', 'botShowFold']);
@@ -1264,7 +1292,7 @@ function setSmokeUI(){
 }
 function lightUp(){
   smoking = true; cigCount++; store.set('holdem.cigs', cigCount);
-  const seat = document.querySelector('.seat.pos0'), tray = seat.querySelector('.ashtray');
+  const seat = seats[0], tray = seat.querySelector('.ashtray');
   seat.classList.add('smoking');
   const t0 = Date.now();
   tray.style.setProperty('--len', 1);
@@ -1279,7 +1307,7 @@ function lightUp(){
 }
 function putOut(){
   smoking = false; clearInterval(smokeTimer);
-  document.querySelector('.seat.pos0').classList.remove('smoking');
+  seats[0].classList.remove('smoking');
   setSmokeUI();
 }
 $('#bSmoke').addEventListener('click', () => smoking ? putOut() : lightUp());
@@ -1323,8 +1351,9 @@ const STYLE_DESC = {
 };
 let myName = String(store.get('holdem.myName', '') || '').slice(0, 8);
 let myAva = store.get('holdem.myAva', '') || '';
-let botAvas = ['', '', '', '', ''];
-try { const v = JSON.parse(store.get('holdem.botAvas', 'null')); if (Array.isArray(v) && v.length === 5) botAvas = v.map(x => typeof x === 'string' ? x : ''); } catch (e) {}
+const pad7 = (v, fill) => { const a = v.slice(0, 7); while (a.length < 7) a.push(fill); return a; };
+let botAvas = pad7([], '');
+try { const v = JSON.parse(store.get('holdem.botAvas', 'null')); if (Array.isArray(v) && (v.length === 5 || v.length === 7)) botAvas = pad7(v.map(x => typeof x === 'string' ? x : ''), ''); } catch (e) {}
 /* crop an uploaded picture to a small square avatar */
 function readAvatar(file, cb){
   const rd = new FileReader();
@@ -1340,14 +1369,14 @@ function readAvatar(file, cb){
   };
   rd.readAsDataURL(file);
 }
-let botNames = ['', '', '', '', ''];
-try { const v = JSON.parse(store.get('holdem.botNames', 'null')); if (Array.isArray(v) && v.length === 5) botNames = v.map(x => String(x || '').slice(0, 8)); } catch (e) {}
+let botNames = pad7([], '');
+try { const v = JSON.parse(store.get('holdem.botNames', 'null')); if (Array.isArray(v) && (v.length === 5 || v.length === 7)) botNames = pad7(v.map(x => String(x || '').slice(0, 8)), ''); } catch (e) {}
 function freshName(exclude){
   const pool = NAMES.filter(n => !exclude.includes(n));
   return pool[Math.floor(Math.random() * pool.length)] || '玩家';
 }
-let botPrefs = ['random','random','random','random','random'];
-try { const v = JSON.parse(store.get('holdem.botPrefs', 'null')); if (Array.isArray(v) && v.length === 5) botPrefs = v; } catch (e) {}
+let botPrefs = pad7([], 'random');
+try { const v = JSON.parse(store.get('holdem.botPrefs', 'null')); if (Array.isArray(v) && (v.length === 5 || v.length === 7)) botPrefs = pad7(v, 'random'); } catch (e) {}
 function applyPref(p, pref){
   const st = pref === 'random' ? STYLES[Math.floor(Math.random() * STYLES.length)] : (STYLES.find(x => x.style === pref) || STYLES[5]);
   Object.assign(p, {style:st.style, tight:st.tight, aggr:st.aggr, bluff:st.bluff, pro:st.pro || null, hidden:pref === 'random'});
@@ -1355,11 +1384,12 @@ function applyPref(p, pref){
 const styleLabel = p => p.hidden ? '？' : p.style;
 function initPlayers(){
   const names = [];
-  botNames.forEach(n => names.push(n.trim()));
+  rebuildSeats(SEATS);
+  botNames.slice(0, SEATS - 1).forEach(n => names.push(n.trim()));
   names.forEach((n, k) => { if (!n || n === myName) names[k] = freshName(names.concat(botNames, [myName])); });
   G.players = [{name:myName || '你', human:true, chips:buyIn, ava:myAva}].concat(names.map((n, k) => ({name:n, chips:mode === 'cash' ? randStack() : buyIn, ava:botAvas[k] || ''})));
   G.players.slice(1).forEach((p, k) => applyPref(p, botPrefs[k]));
-  if (NET.role === 'host') NET.peers.forEach(x => { if (x.seat > 0 && !x.gone) G.players[x.seat] = remotePlayer(x, buyIn); });
+  if (NET.role === 'host'){ netReseat(); NET.peers.forEach(x => { if (x.seat > 0 && !x.gone) G.players[x.seat] = remotePlayer(x, buyIn); }); }
   G.players.forEach(p => { p.st ={hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0}; });
   G.players.forEach(p => { p.out = false; p.hand = []; p.startChips = p.chips; resetPlayer(p); });
 }
@@ -1400,7 +1430,7 @@ function newGame(){
   runId++;
   initPlayers();
   G.handNo = 0; G.over = false; G.img = {bluff:0, value:0};
-  G.dealer = Math.floor(Math.random() * 6);
+  G.dealer = Math.floor(Math.random() * G.players.length);
   logEl.innerHTML = '';
   HISTORY.length = 0;
   log(`本局对手：${G.players.slice(1).map(p => p.human ? `${p.name}（真人）` : `${p.name}（${p.hidden ? '风格未知' : p.style}）`).join('、')}`, 'sys');
@@ -1442,7 +1472,8 @@ function startHand(){
 
   for (let round = 0; round < 2; round++){
     let i = G.dealer;
-    for (let k = 0; k < 6; k++){ i = (i + 1) % 6; if (!G.players[i].out) G.players[i].hand.push(G.deck.pop()); }
+    const N = G.players.length;
+    for (let k = 0; k < N; k++){ i = (i + 1) % N; if (!G.players[i].out) G.players[i].hand.push(G.deck.pop()); }
   }
   const alive = G.players.filter(p => !p.out).length;
   G.sbIdx = alive === 2 ? G.dealer : nextIdx(G.dealer, p => !p.out);
@@ -1558,7 +1589,7 @@ function nextStreet(){
   render();
   wait(proceed, (G.boardAnim || 0) + 120);
 }
-function seatOrder(i){ return (i - G.dealer - 1 + 6) % 6; }
+function seatOrder(i){ const N = G.players.length; return (i - G.dealer - 1 + N) % N; }
 function showdown(){
   G.street = 4; G.showdown = true;
   const lv = live();
@@ -2198,7 +2229,8 @@ function animateDeal(){
   let t = 0;
   const order = [];
   let i = G.dealer;
-  for (let k = 0; k < 6; k++){ i = (i + 1) % 6; if (!G.players[i].out && G.players[i].hand.length) order.push(i); }
+  const N = G.players.length;
+  for (let k = 0; k < N; k++){ i = (i + 1) % N; if (!G.players[i].out && G.players[i].hand.length) order.push(i); }
   const mine = [...$('#myCards').children];
   mine.forEach(c => c.style.visibility = 'hidden');
   for (let r = 0; r < 2; r++) order.forEach(i => {
@@ -2348,15 +2380,24 @@ addEventListener('orientationchange', () => setTimeout(placeDealerButton, 300));
 
 /* ---------- rendering ---------- */
 const arena = $('#arena');
-const seats = G.players.length ? [] : [];
-for (let i = 0; i < 6; i++){
-  const el = document.createElement('div');
-  el.className = `seat pos${i}` + (i === 0 ? ' you' : '');
-  el.innerHTML = '<div class="hole"></div><div class="pod"><div class="ava"></div><div class="info"><div class="nm"></div><div class="stk"></div></div><div class="badges"></div>'
-    + (i === 0 ? '<div class="ashtray"><div class="cig"></div><span class="wisp"></span><span class="wisp"></span><span class="wisp"></span></div>' : '')
-    + '</div><div class="tag"></div><div class="bet"></div>';
-  arena.appendChild(el); seats.push(el);
+const seats = [];
+/* 6 seats use the original pos0-pos5 layout; 8 seats use s8-0 to s8-7 */
+function rebuildSeats(n){
+  if (seats.length === n) return;
+  const smoke = seats[0] && seats[0].classList.contains('smoking');
+  seats.forEach(el => el.remove()); seats.length = 0;
+  arena.classList.toggle('t8', n === 8);
+  for (let i = 0; i < n; i++){
+    const el = document.createElement('div');
+    el.className = `seat ${n === 8 ? 's8-' : 'pos'}${i}` + (i === 0 ? ' you' : '');
+    el.innerHTML = '<div class="hole"></div><div class="pod"><div class="ava"></div><div class="info"><div class="nm"></div><div class="stk"></div></div><div class="badges"></div>'
+      + (i === 0 ? '<div class="ashtray"><div class="cig"></div><span class="wisp"></span><span class="wisp"></span><span class="wisp"></span></div>' : '')
+      + '</div><div class="tag"></div><div class="bet"></div>';
+    arena.appendChild(el); seats.push(el);
+  }
+  if (smoke) seats[0].classList.add('smoking');
 }
+rebuildSeats(SEATS);
 function cardHTML(c, cls = ''){
   const s = cs(c), red = s === 1 || s === 2 ? ' red' : '';
   return `<div class="card${red} ${cls}" aria-label="${cardText(c)}"><span class="r">${rname(cr(c))}</span><span class="ss">${SUIT[s]}</span><span class="s">${SUIT[s]}</span></div>`;
@@ -2716,10 +2757,12 @@ let pendingBuy = buyIn;
 function nice(x){ return x < 5 ? Math.max(1, Math.round(x)) : Math.round(x / 5) * 5; }
 function levelsFor(b){ const f = b / 1000; return LEVELS.map(([sb, bb]) => { const B = nice(bb * f); return [Math.max(1, nice(sb * f) >= B ? Math.floor(B / 2) : nice(sb * f)), B]; }); }
 let mode = store.get('holdem.mode', 'tourney') === 'cash' ? 'cash' : 'tourney';
-let pendingMode = mode;
+let pendingMode = mode, pendingSeats = SEATS;
+document.querySelectorAll('#seatsPick button').forEach(b => b.addEventListener('click', () => { pendingSeats = +b.dataset.n; renderNew(); }));
 document.querySelectorAll('#modes button').forEach(b => b.addEventListener('click', () => { pendingMode = b.dataset.m; renderNew(); }));
 function renderNew(){
   document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.m === pendingMode)));
+  document.querySelectorAll('#seatsPick button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.n === pendingSeats)));
   $('#buyTitle').textContent = pendingMode === 'cash' ? '你带多少筹码进场（也决定盲注大小）' : '每人带多少筹码进场';
   $('#buyins').innerHTML = BUYINS.map(v => `<button type="button" role="radio" aria-checked="${v === pendingBuy}" data-v="${v}">${fmt(v)}<small>盲注 ${levelsFor(v)[0].join('/')}</small></button>`).join('');
   $('#buyins').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { pendingBuy = +b.dataset.v; $('#buyCustom').value = pendingBuy; renderNew(); }));
@@ -2730,7 +2773,7 @@ function renderNew(){
     `有人输光或者赢够了起身离开，空位过一两手就会<b>坐进新人</b>，新人带的筹码也是随机的。`,
     `你自己<b>输完不补</b>，筹码归零这一场就结束；顶部会显示本场盈亏，随时可以重开。`
   ].map(x => `<li>${x}</li>`).join('') : [
-    `你和 5 位对手都带 ${a} 进场，起始盲注 ${bl}，每 10 手升一级。`,
+    `你和 ${pendingSeats - 1} 位对手都带 ${a} 进场，起始盲注 ${bl}，每 10 手升一级。`,
     `<b>输完不补</b>：谁的筹码归零就直接出局离桌，不会有新人。`,
     `你出局时本局结束，赢光所有人就是冠军；也可以随时重开，当前这局直接作废。`
   ].map(x => `<li>${x}</li>`).join('');
@@ -2743,12 +2786,13 @@ $('#buyCustom').addEventListener('change', e => {
   pendingBuy = Math.min(100000, Math.max(200, Math.round(+e.target.value / 10) * 10 || 1000));
   e.target.value = pendingBuy; renderNew();
 });
-function openNew(){ pendingMode = mode; pendingBuy = buyIn; $('#buyCustom').value = buyIn; renderNew(); $('#newDlg').hidden = false; $('#nwStart').focus(); }
+function openNew(){ pendingMode = mode; pendingSeats = SEATS; pendingBuy = buyIn; $('#buyCustom').value = buyIn; renderNew(); $('#newDlg').hidden = false; $('#nwStart').focus(); }
 function closeNew(){ $('#newDlg').hidden = true; }
 $('#nwClose').addEventListener('click', closeNew);
 $('#newDlg').addEventListener('click', e => { if (e.target.id === 'newDlg') closeNew(); });
 $('#nwStart').addEventListener('click', () => {
   buyIn = pendingBuy; store.set('holdem.buyIn', buyIn);
+  SEATS = pendingSeats; store.set('holdem.seats', String(SEATS));
   mode = pendingMode; store.set('holdem.mode', mode);
   closeNew(); newGame();
   log(mode === 'cash' ? `新开一场现金局：你买入 ${fmt(buyIn)}，盲注固定，会有新人入座` : `新开一局淘汰赛：每人买入 ${fmt(buyIn)}，输完不补`, 'sys');
@@ -2853,7 +2897,7 @@ if (navType !== 'reload'){ sset('holdem.netId', null); sset('holdem.netRoom', nu
 NET.id = sget('holdem.netId') || randHex(8); sset('holdem.netId', NET.id);
 NET.available = false; NET.lastSeq = 0; NET.roster = [];
 const TURN_MS = 30000, AWAY_MS = 2500, GONE_MS = 120000, NEXT_MS = 7000;
-const SEAT_ORDER = [3, 1, 5, 2, 4];
+const SEAT_ORDER = {6:[3, 1, 5, 2, 4], 8:[4, 2, 6, 1, 7, 3, 5]};
 const newStats = () => ({hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0});
 
 function netPost(path, body){
@@ -2916,7 +2960,7 @@ function netBadge(){
 function netOnMessage(m){
   if (m.t === 'error'){ if (NET.es) NET.es.close(); netLeave(m.msg); openNet(); return; }
   if (m.t === 'closed'){ netLeave('房主关闭了房间'); return; }
-  if (m.t === 'chat') return netShowChat(m.from, m.name, m.text);
+  if (m.t === 'chat') return netShowChat(m.from, m.name, m.q);
   if (m.t === 'roster'){
     NET.roster = m.list || [];
     if (NET.role === 'guest'){
@@ -2944,7 +2988,13 @@ function uniqueName(name, id){
 }
 function freeSeat(){
   const used = new Set([...NET.peers.values()].map(x => x.seat));
-  return SEAT_ORDER.find(s => !used.has(s)) || 0;
+  return SEAT_ORDER[SEATS].find(s => !used.has(s)) || 0;
+}
+/* the table size changed: friends who no longer fit get a seat that exists */
+function netReseat(){
+  const keep = new Set();
+  NET.peers.forEach(x => { if (x.seat >= SEATS || keep.has(x.seat)) x.seat = 0; else if (x.seat) keep.add(x.seat); });
+  NET.peers.forEach(x => { if (!x.seat){ x.seat = SEAT_ORDER[SEATS].find(s => !keep.has(s)) || 0; if (x.seat) keep.add(x.seat); } });
 }
 function netPeerJoin(id, name){
   let x = NET.peers.get(id);
@@ -3092,10 +3142,10 @@ function netHandDone(){
 /* what one friend is allowed to see, turned so their seat is seat 0 */
 function snapFor(x){
   const s = x.seat || 0, seated = !!x.seat && !!G.players[s] && G.players[s].remote === x.id;
-  const rot = i => i < 0 ? i : (i - s + 6) % 6;
+  const N = G.players.length, rot = i => i < 0 ? i : (i - s + N) % N;
   const players = [];
-  for (let k = 0; k < 6; k++){
-    const abs = (k + s) % 6, p = G.players[abs];
+  for (let k = 0; k < N; k++){
+    const abs = (k + s) % N, p = G.players[abs];
     const open = (seated && abs === s) || p.showCards;
     const o = {name:p.name, human:!!p.human, style:p.human ? '' : styleLabel(p), chips:p.chips, bet:p.bet, total:p.total,
       folded:!!p.folded, allIn:!!p.allIn, out:!!p.out, vacant:!!p.vacant, lastAction:p.lastAction || '', showCards:!!p.showCards,
@@ -3162,13 +3212,14 @@ function netGuestAct(type, to){
 function netApply(m){
   const s = m.s;
   const newHand = s.key !== (G.salt || '');
-  const fresh = !G.players.length || G.players.length !== 6 || NET.blank;
+  if (s.players.length !== seats.length || s.players.length !== G.players.length){ SEATS = s.players.length; rebuildSeats(SEATS); G.players.length = 0; NET.blank = true; }
+  const fresh = !G.players.length || NET.blank;
   NET.blank = false;
   if (!newHand && !fresh){
     if (s.board.length > G.board.length || (s.handOver && !G.handOver)) sweepBets();
     s.players.forEach((o, k) => { if (k > 0 && o.folded && !G.players[k].folded) muck(k); });
   }
-  const prevBets = fresh || newHand ? [0, 0, 0, 0, 0, 0] : G.players.map(p => p.bet);
+  const prevBets = fresh || newHand ? s.players.map(() => 0) : G.players.map(p => p.bet);
   const wasWaiting = G.waiting, wasOver = G.handOver;
   mode = s.mode === 'cash' ? 'cash' : 'tourney'; buyIn = s.buyIn;
   NET.seated = s.seated;
@@ -3185,6 +3236,7 @@ function netApply(m){
   G.nextAt = s.nx ? Date.now() + s.nx : 0;
   if (newHand){ runId++; G.potCleared = false; G.holdStacks = null; G.ritEq = null; G.ritBot = null; }
   const me = G.players[0];
+  if (!NET.seated) me.hand = [];
   if (!me.out) NET.rebuyAsked = false;
   G.players.forEach((p, k) => { if (!newHand && !fresh && p.bet > prevBets[k]) queueChips(k); });
   if (G.waiting && !wasWaiting) setRaiseDefaults();
@@ -3219,19 +3271,22 @@ function netBecomeGuest(room){
 }
 
 /* ----- chat ----- */
-const QUICK = ['👍', '😂', '😮', '😭', '🔥', '🙏', '🤔', '😎', '快点吧～', '好牌！', '别诈我', '运气真好', '再来！'];
-$('#chatQuick').innerHTML = QUICK.map(q => `<button type="button">${q}</button>`).join('');
-$('#chatQuick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => netChat(b.textContent)));
-$('#chat').addEventListener('submit', e => { e.preventDefault(); netChat($('#chatIn').value); $('#chatIn').value = ''; });
+/* only preset lines, sent by number: nobody can type their cards or anything else into the chat */
+const QUICK = ['👍', '😂', '😮', '😭', '🔥', '🙏', '🤔', '😎', '🤡', '💀',
+  '早知道就 fold 了', '又偷鸡？', '这都能中？', '河牌杀我', '你是不是有坚果', '我信你了', '别诈我', '这把我先撤',
+  '坐等摊牌', '牌神保佑', '下次一定', '稳住，能赢', '快点吧～', '好牌！', '运气真好', '再来！'];
+$('#chatQuick').innerHTML = QUICK.map((q, k) => `<button type="button" data-q="${k}">${q}</button>`).join('');
+$('#chatQuick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => netChat(+b.dataset.q)));
 let chatAt = 0;
-function netChat(text){
-  text = String(text || '').trim().slice(0, 40);
-  if (!text || !NET.role || Date.now() - chatAt < 700) return;
+function netChat(q){
+  if (!QUICK[q] || !NET.role || Date.now() - chatAt < 700) return;
   chatAt = Date.now();
-  netSendBatch([{to:'*', msg:{t:'chat', name:myName || '玩家', text}}]);
+  netSendBatch([{to:'*', msg:{t:'chat', name:myName || '玩家', q}}]);
 }
-function netShowChat(from, name, text){
-  text = String(text || '').slice(0, 40); name = String(name || '玩家').slice(0, 8);
+function netShowChat(from, name, q){
+  const text = QUICK[q];
+  if (typeof q !== 'number' || !text) return;
+  name = String(name || '玩家').slice(0, 8);
   const k = G.players.findIndex((p, i) => NET.role === 'host' ? (p.remote === from || (from === NET.id && i === 0)) : p.pid === from);
   const li = document.createElement('li'); li.className = 'chat';
   const b = document.createElement('b'); b.textContent = (k >= 0 ? G.players[k].name : name) + '：';
@@ -3316,7 +3371,7 @@ function netRenderDlg(){
     <div class="row" style="justify-content:space-between"><div><h3 class="rv-h" style="margin-bottom:4px">房间号</h3><div class="net-code">${NET.room}</div></div>
       <button class="ghost" id="ntCopy" type="button">复制邀请链接</button></div>
     <p class="rv-note" style="margin:0">${NET.role === 'host'
-      ? '朋友打开邀请链接（或在「联机」里输入房间号）就能加入，最多 5 位朋友。每人有 30 秒思考时间，超时自动过牌或弃牌；一手结束后几秒自动发下一手。你关掉或刷新这个页面，牌局就会结束。'
+      ? `朋友打开邀请链接（或在「联机」里输入房间号）就能加入，最多 ${SEATS - 1} 位朋友（「新开一局」里可以换成 8 人桌）。每人有 30 秒思考时间，超时自动过牌或弃牌；一手结束后几秒自动发下一手。你关掉或刷新这个页面，牌局就会结束。`
       : '牌局在房主那边运行，你的底牌只有你自己看得到。断线后重新打开链接，2 分钟内还能回到原来的座位。'}</p>
     <div><h3 class="rv-h">房间里的人</h3><ul class="net-list">${list}</ul></div>
     <div class="dlg-actions"><button class="btn b-fold" id="ntLeave" type="button">${NET.role === 'host' ? '关闭房间' : '离开房间'}</button></div></div>`;
@@ -3360,7 +3415,7 @@ function snapshot(){
 function start(data){
   buildPicker(); setDealer(dealerKey, false); setSmokeUI();
   initPlayers();
-  if (data && Array.isArray(data.players) && data.players.length === 6){
+  if (data && Array.isArray(data.players) && data.players.length === SEATS){
     data.players.forEach((s, i) => {
       const p = G.players[i]; p.chips = s.chips; p.out = s.out; p.vacant = !!s.vacant; p.vacantFor = s.vacantFor || 0;
       if (i > 0 && s.name){ p.name = s.name; p.style = s.style; p.pro = (STYLES.find(x => x.style === s.style) || {}).pro || null; p.hidden = !!s.hidden; p.tight = s.tight; p.aggr = s.aggr; p.bluff = s.bluff; }

@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = +process.env.PORT || 3000;
-const MAX_PLAYERS = 6;
+const MAX_PLAYERS = 8;
 const ROOM_IDLE_MS = 10 * 60 * 1000;
 const DROP_KEEP_MS = 2 * 60 * 1000;
 const PAGE = path.join(__dirname, 'index.html');
@@ -59,7 +59,7 @@ function openStream(req, res, q){
   if (!c){
     /* people who dropped and never came back stop holding a place */
     room.clients.forEach((o, k) => { if (!o.res && k !== room.host && Date.now() - (o.dropped || 0) > DROP_KEEP_MS) room.clients.delete(k); });
-    if (room.clients.size >= MAX_PLAYERS) return fail('房间已满（最多 6 人）');
+    if (room.clients.size >= MAX_PLAYERS) return fail('房间已满（最多 8 人）');
     c = {id, name, res:null};
     room.clients.set(id, c);
   }
