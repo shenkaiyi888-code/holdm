@@ -183,7 +183,8 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .rit-msg b{color:var(--gold)}
 .rit-btns{display:grid; grid-template-columns:1.4fr 1fr; gap:8px}
 .flipper.hl > .card:not(.back){box-shadow:0 0 0 2px var(--gold), 0 0 18px rgba(227,179,82,.6)}
-.flipper.lo{opacity:.4; filter:saturate(.5); transition:opacity .4s}
+/* dim the face, not the flipper: opacity on a 3D parent flattens it and the card back shows through */
+.flipper.lo > .card{opacity:.4; filter:saturate(.5); transition:opacity .4s}
 .hole .card.hl{box-shadow:0 0 0 2px var(--gold), 0 0 14px rgba(227,179,82,.6)}
 .dbtn{
   position:absolute; z-index:4; width:24px; height:24px; margin:-12px 0 0 -12px; border-radius:50%;
@@ -513,8 +514,12 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .welcome .w-pick button div{display:flex; flex-direction:column; gap:2px; min-width:0}
 .welcome .w-pick b{font-family:var(--f-display); font-size:16px; font-weight:900}
 .welcome .w-pick small{font-size:12px; color:var(--muted); line-height:1.45}
-.welcome .w-pick .mem{border-color:rgba(227,179,82,.55); background:rgba(227,179,82,.08)}
-.welcome .w-pick .mem b{color:var(--gold)}
+.welcome .w-pick .play{background:linear-gradient(180deg,#f0c76a,#d9a441); border-color:transparent; color:#1d1406; padding:16px 16px}
+.welcome .w-pick .play b{font-size:20px}
+.welcome .w-pick .play small{color:rgba(29,20,6,.75)}
+.welcome .w-pick .play:hover, .welcome .w-pick .play:focus-visible{filter:brightness(1.06); border-color:transparent}
+.conf{font-size:11.5px; color:var(--muted)}
+.welcome .w-tip{margin:-6px 0 0; font-size:12px; color:var(--muted); line-height:1.5}
 .welcome .w-dealer{display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--muted)}
 .welcome .w-dealer span.ava{width:34px; height:34px; border-radius:50%; overflow:hidden; background:var(--well); border:1px solid var(--line); flex:none}
 .welcome .w-dealer span.ava svg, .welcome .w-dealer span.ava img{display:block; width:100%; height:100%; object-fit:cover}
@@ -978,11 +983,11 @@ select.ghost option{background:var(--panel); color:var(--text)}
         <span>by Yiiiii</span>
       </div>
       <div class="w-pick">
-        <button type="button" class="mem" id="stMem" hidden><i>↻</i><div><b>记忆模式 · 继续上一局的规则</b><small id="stMemTxt"></small></div></button>
-        <button type="button" id="stTourney"><i>🏆</i><div><b>淘汰赛</b><small>输光就离场，盲注逐步上涨，赢光所有人获胜。</small></div></button>
-        <button type="button" id="stCash"><i>🪙</i><div><b>现金局</b><small>常驻牌桌，有人走就有新人坐下，盲注固定。</small></div></button>
-        <button type="button" id="stOnline"><i>👥</i><div><b>和朋友联机</b><small>开房间发链接给朋友，或者输入房间号加入。</small></div></button>
+        <button type="button" class="play" id="stPlay"><i>▶</i><div><b>开始游戏</b><small id="stPlayTxt"></small></div></button>
+        <button type="button" id="stOnline"><i>👥</i><div><b>好友联机</b><small>开房间发链接给朋友，或者输入房间号加入。</small></div></button>
+        <button type="button" id="stSet"><i>⚙️</i><div><b>游戏设置</b><small>换玩法（淘汰赛 / 现金局）、几人桌、带多少筹码。</small></div></button>
       </div>
+      <p class="w-tip" id="stTip">第一次玩？直接点「开始游戏」。轮到你时，下方会亮起弃牌、跟注、加注按钮。</p>
       <div class="w-dealer"><span class="ava" id="stAva"></span><span id="stDealer"></span></div>
     </div>
   </div>
@@ -998,7 +1003,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
         <button type="button" role="tab" id="tabGuide" aria-selected="false" aria-controls="paneGuide">风格解析</button>
       </div>
       <div id="paneSet" role="tabpanel" aria-labelledby="tabSet" style="display:flex; flex-direction:column; gap:12px">
-        <p class="rv-note" style="margin:0">第一行是你自己：可以改名字、上传头像。点任意头像都能上传图片，点名字可以改名，对手名字留空就每局随机起名。打法可选普通玩家或职业模板，也可以选「随机」。随机的对手会被暗中分配一种打法，牌局中你看不到，整局结束时才揭晓。每位对手下方是本局观察到的数据和据此推测的风格，打满 8 手后开始推测。</p>
+        <p class="rv-note" style="margin:0">第一行是你自己：可以改名字、上传头像。点任意头像都能上传图片，点名字可以改名，对手名字留空就每局随机起名。打法可选普通玩家或职业模板，也可以选「随机」。随机的对手会被暗中分配一种打法，牌局中你看不到，整局结束时才揭晓。每位对手下方是本局观察到的数据和据此推测的风格，打满 8 手后开始推测；推测旁会标出可信度，看的手数越多越准，20 手以内只能当参考。</p>
         <div class="image-line" id="bxImage"></div>
         <div class="bots" id="bxRows"></div>
         <div class="bots-foot">
@@ -1383,6 +1388,13 @@ function guessStyle(st){
   const loose = v >= .3, aggr = ratio >= .45;
   return loose ? (aggr ? '松凶' : '跟注站') : (aggr ? '紧凶' : '紧弱');
 }
+/* how much to trust a style guess: it rests on few hands early on.
+   The ± is a 95% range for the observed 入池率 (normal approximation). */
+function guessConf(st){
+  const n = st.hands, v = st.vpip / n, moe = Math.round(196 * Math.sqrt(Math.max(v * (1 - v), .04) / n));
+  const level = n < 20 ? '低' : n < 50 ? '中' : '高';
+  return {level, moe, text:`可信度${level}：只看了 ${n} 手，入池率的误差约 ±${moe}%${n < 50 ? `，打满 ${n < 20 ? 20 : 50} 手会更准` : ''}`};
+}
 const STYLE_DESC = {
   '紧凶':'只玩好牌，一出手就下重注', '松凶':'什么牌都玩，经常加注施压', '跟注站':'很少弃牌，也很少加注',
   '岩石':'极少入池，只等大牌', '疯子':'疯狂加注，频繁诈唬', '均衡':'攻守平衡，偶尔诈唬', '紧弱':'只玩好牌，但不敢加注',
@@ -1663,6 +1675,16 @@ function potLayers(players, lv){
   });
   return out;
 }
+/* when the loser has the same named hand, say which card decided it, e.g. 一对 7（K 踢脚） */
+function kickerNote(best, elig, key){
+  const name = handName(best);
+  const near = elig.map(p => p[key]).filter(v => v < best && handName(v) === name);
+  if (!near.length) return '';
+  const ks = v => { const out = []; for (let i = 0; i < 5; i++){ out.unshift(v % 16); v = Math.floor(v / 16); } return out; };
+  const a = ks(best), b = ks(Math.max(...near));
+  const i = a.findIndex((r, k) => r !== b[k]);
+  return i < 0 ? '' : `（${rname(a[i])} 踢脚）`;
+}
 /* split one pot among the best hands; the odd chip goes to the first winner left of the button */
 function splitPot(amount, elig, key){
   const best = Math.max(...elig.map(p => p[key]));
@@ -1683,7 +1705,7 @@ function showdown(){
     const label = layers.length > 1 ? (k === 0 ? '主池' : `边池 ${k}`) : '底池';
     const names = winners.map(w => w.name).join('、');
     if (elig.length === 1 && layers.length > 1) lines.push(`${names}收回未被跟注的 ${fmt(amount)}`);
-    else lines.push(`${names}以${handName(best)}${winners.length > 1 ? '平分' : '赢得'}${label} ${fmt(amount)}`);
+    else lines.push(`${names}以${handName(best)}${winners.length > 1 ? '' : kickerNote(best, elig, 'score')}${winners.length > 1 ? '平分' : '赢得'}${label} ${fmt(amount)}`);
   });
   lv.forEach(p => p.chips += p.won);
   /* who has to show: winners, hands already tabled, the last bettor; you always show at showdown.
@@ -1803,8 +1825,8 @@ function madeInfo(hole, board){
   return {cat, rel:cat >= 2 ? 'strong' : 'air', text:name};
 }
 function styleOf(q){
-  if (q.human){ const g = guessStyle(q.st); return g ? `真人，打法像${g}` : '真人'; }
-  if (q.hidden){ const g = guessStyle(q.st); return g ? `风格未知，数据看像${g}` : '风格未知'; }
+  if (q.human){ const g = guessStyle(q.st); return g ? `真人，打法像${g}（可信度${guessConf(q.st).level}）` : '真人'; }
+  if (q.hidden){ const g = guessStyle(q.st); return g ? `风格未知，数据看像${g}（可信度${guessConf(q.st).level}）` : '风格未知'; }
   return q.style;
 }
 function decisionContext(i, p, raiseTo){
@@ -2698,7 +2720,7 @@ function renderControls(){
   $('.actions').classList.toggle('raising', raising && canR);
   const rl = v >= b.maxTo ? `全下 ${fmt(v)}` : (G.currentBet === 0 ? `下注 ${fmt(v)}` : `加注到 ${fmt(v)}`);
   $('#bRaise').firstChild.textContent = !canR ? (G.currentBet === 0 ? '下注' : '加注')
-    : (isPhone() && !raising) ? (G.currentBet === 0 ? '下注…' : '加注…') : (isPhone() ? `确认${rl}` : rl);
+    : (isPhone() && !raising) ? (G.currentBet === 0 ? '下注 / 全下' : '加注 / 全下') : (isPhone() ? `确认${rl}` : rl);
 }
 function render(){
   const P = G.players;
@@ -2888,7 +2910,7 @@ function statLine(p){
   const af = st.calls ? (st.raises / st.calls).toFixed(1) : (st.raises ? '∞' : '0');
   const g = guessStyle(st);
   const sh = (st.shownBluff || st.shownValue) ? ` · 秀牌：诈唬 ${st.shownBluff || 0} 次、好牌 ${st.shownValue || 0} 次` : '';
-  return `已观察 ${st.hands} 手 · 入池 ${pc(st.vpip)} · 翻前加注 ${pc(st.pfr)} · 加注/跟注 ${af}${sh}<br>${g ? `推测：<b>像${g}</b>` : `再观察 ${8 - st.hands} 手后给出推测`}`;
+  return `已观察 ${st.hands} 手 · 入池 ${pc(st.vpip)} · 翻前加注 ${pc(st.pfr)} · 加注/跟注 ${af}${sh}<br>${g ? `推测：<b>像${g}</b><br><span class="conf">${guessConf(st).text}</span>` : `再观察 ${8 - st.hands} 手后给出推测`}`;
 }
 function renderGuide(){
   $('#guide').innerHTML = STYLE_GUIDE.map(g => `<div class="g-card"><h4>${g.s}<span>${g.k}</span></h4>
@@ -3819,12 +3841,12 @@ function rulesText(r){
 function openStart(){
   welcoming = true;
   const r = lastRules();
-  $('#stMem').hidden = !r;
-  if (r) $('#stMemTxt').textContent = '上次：' + rulesText(r);
+  $('#stPlayTxt').textContent = (r ? `${rulesText(r)} · 沿用上次的规则` : rulesText(defaultRules())).replace(' 起', '');
+  $('#stTip').hidden = !!r;
   $('#stAva').innerHTML = dealerArt(dealerKey);
   $('#stDealer').textContent = `今晚的荷官是 ${dealerName(dealerKey)}，进桌后可以换`;
   $('#startDlg').hidden = false;
-  ($('#stMem').hidden ? $('#stTourney') : $('#stMem')).focus();
+  $('#stPlay').focus();
 }
 function closeStart(){ $('#startDlg').hidden = true; welcoming = false; }
 function startWith(r){
@@ -3833,19 +3855,16 @@ function startWith(r){
   SEATS = +r.seats === 8 ? 8 : 6; store.set('holdem.seats', String(SEATS));
   closeStart(); newGame();
 }
-$('#stMem').addEventListener('click', () => {
+const defaultRules = () => ({mode, seats:SEATS, buy:buyIn});
+/* one tap: same rules as last time (记忆模式), or the defaults on a first visit */
+$('#stPlay').addEventListener('click', () => {
   const r = lastRules();
-  startWith(r);
-  log(`记忆模式：沿用上一局的规则（${rulesText(r)}）`, 'sys');
+  startWith(r || defaultRules());
+  if (r) log(`沿用上一局的规则：${rulesText(r)}`, 'sys');
 });
-function startPick(m){
-  $('#startDlg').hidden = true;
-  openNew(); pendingMode = m; renderNew();
-}
-$('#stTourney').addEventListener('click', () => startPick('tourney'));
-$('#stCash').addEventListener('click', () => startPick('cash'));
+$('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; openNew(); });
 $('#stOnline').addEventListener('click', () => {
-  startWith(lastRules() || {mode, seats:SEATS, buy:buyIn});
+  startWith(lastRules() || defaultRules());
   openNet();
 });
 
