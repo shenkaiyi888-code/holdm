@@ -145,13 +145,23 @@ body.sin .sins{display:block}
 .card .ss{position:absolute; top:34%; left:12%; font-size:calc(var(--cw)*.22); line-height:1}
 .card .s{position:absolute; bottom:6%; right:9%; font-size:calc(var(--cw)*.52); line-height:1}
 .card.red{color:var(--card-red)}
+/* card back: deep navy with a fine gold guilloche, a thin gold frame and a gold spade medallion */
 .card.back{
   background:
-    repeating-linear-gradient(45deg, rgba(227,179,82,.38) 0 1px, transparent 1px 6px),
-    repeating-linear-gradient(-45deg, rgba(227,179,82,.38) 0 1px, transparent 1px 6px),
-    var(--back);
-  border:calc(var(--cw)*.07) solid var(--ivory);
+    radial-gradient(circle at 50% 50%, rgba(227,179,82,.22), transparent 46%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(227,179,82,.13) 0 1px, transparent 1px 4px),
+    linear-gradient(160deg, #24376f, #131d3f 70%);
+  border:calc(var(--cw)*.06) solid #f4efe4;
+  overflow:hidden;
 }
+.card.back::before{content:""; position:absolute; inset:7%; border-radius:calc(var(--cw)*.06); border:1px solid rgba(227,179,82,.65); box-shadow:inset 0 0 0 2px rgba(19,29,63,.9), inset 0 0 0 3px rgba(227,179,82,.25)}
+.card.back::after{
+  content:"♠"; position:absolute; left:50%; top:50%; width:calc(var(--cw)*.44); height:calc(var(--cw)*.44); transform:translate(-50%,-50%);
+  display:grid; place-items:center; border-radius:50%;
+  background:linear-gradient(135deg, #f1d08a, #b8893a); box-shadow:0 0 0 1.5px #131d3f, 0 0 0 2.5px rgba(227,179,82,.6), 0 2px 6px rgba(0,0,0,.5);
+  color:#131d3f; font-size:calc(var(--cw)*.3); line-height:1;
+}
+
 .card.dim{opacity:.4; filter:grayscale(.5)}
 .slot{
   width:var(--cw); height:calc(var(--cw)*1.4); border-radius:calc(var(--cw)*.11);
@@ -201,10 +211,12 @@ body.sin .sins{display:block}
 .flipper.rabbit{outline:1.5px dashed rgba(213,182,120,.6); outline-offset:2px; border-radius:6px}
 .flipper.lo > .card{opacity:.4; filter:saturate(.5); transition:opacity .4s}
 .hole .card.hl{box-shadow:0 0 0 2px var(--gold), 0 0 14px rgba(227,179,82,.6)}
+/* dealer puck: ivory disc with a gold rim and an inner ring, like a casino button */
 .dbtn{
-  position:absolute; z-index:4; width:24px; height:24px; margin:-12px 0 0 -12px; border-radius:50%;
-  display:grid; place-items:center; font:700 11px var(--f-num); color:var(--ink);
-  background:radial-gradient(circle at 35% 30%, #fff, #e6e1d6); box-shadow:0 3px 8px rgba(0,0,0,.5), inset 0 -2px 0 rgba(0,0,0,.12);
+  position:absolute; z-index:4; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%;
+  display:grid; place-items:center; font:800 12px/1 var(--f-display); color:#1d1406; letter-spacing:0;
+  background:radial-gradient(circle at 50% 50%, #fffaf0 0 54%, #c9a463 55% 59%, #fffaf0 60% 74%, #d8b56d 75% 100%);
+  box-shadow:0 3px 8px rgba(0,0,0,.55), inset 0 -2px 0 rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.8);
   transition:left .7s cubic-bezier(.3,.7,.3,1), top .7s cubic-bezier(.3,.7,.3,1);
 }
 .ava{position:relative}
@@ -263,7 +275,7 @@ body.sin .sins{display:block}
   position:absolute; display:flex; align-items:center; gap:5px; z-index:3;
   font:600 12px/1 var(--f-num); color:#fff; background:rgba(0,0,0,.5); padding:3px 9px 3px 3px; border-radius:999px;
 }
-.bet:empty{display:none}
+.bet:empty{visibility:hidden}
 .bet::before{content:""; width:15px; height:15px; border-radius:50%; background:radial-gradient(circle, var(--gold) 0 38%, #fff6 39% 46%, var(--gold) 47%); box-shadow:inset 0 0 0 2px rgba(0,0,0,.18)}
 .pos0 .bet{bottom:calc(100% + 8px); left:50%; transform:translateX(-50%)}
 .pos3 .bet{top:calc(100% + 6px); left:50%; transform:translateX(-50%)}
@@ -3055,10 +3067,27 @@ function placeDealerButton(){
   const ar = $('#arena').getBoundingClientRect(), pod = centerOf(seats[G.dealer].querySelector('.pod'));
   const cx = ar.left + ar.width / 2, cy = ar.top + ar.height / 2;
   let dx = cx - pod.x, dy = cy - pod.y; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
-  const ang = .75, rx = dx * Math.cos(ang) - dy * Math.sin(ang), ry = dx * Math.sin(ang) + dy * Math.cos(ang);
-  const dist = Math.max(pod.w, pod.h) / 2 + 12;
-  btn.style.left = (pod.x - ar.left + rx * dist) + 'px';
-  btn.style.top = (pod.y - ar.top + ry * dist) + 'px';
+  /* try spots around the dealer's name plate and take the first that covers no bet, cards or name plate */
+  const R = 14, keep = [];
+  seats.forEach(el => el.querySelectorAll('.pod, .hole .card, .bet, .tag, .bd').forEach(e => {
+    const r = e.getBoundingClientRect();
+    if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:Math.max(r.right, r.left + 64) + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
+  }));
+  const hits = (x, y) => keep.filter(r => x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom).length;
+  let best = null;
+  const tries = [];
+  [16, 30].forEach(gap => [.75, -.75, 1.25, -1.25, 1.75, -1.75, .35, -.35, 2.3, -2.3, 3.14].forEach(ang => tries.push([ang, gap])));
+  for (const [ang, gap] of tries){
+    const rx = dx * Math.cos(ang) - dy * Math.sin(ang), ry = dx * Math.sin(ang) + dy * Math.cos(ang);
+    const dist = Math.hypot(pod.w * rx, pod.h * ry) / 2 + gap;
+    const x = pod.x + rx * dist, y = pod.y + ry * dist;
+    const out = x - R < ar.left || x + R > ar.right || y - R < ar.top || y + R > ar.bottom;
+    const h = hits(x, y) + (out ? 5 : 0);
+    if (!best || h < best.h) best = {x, y, h};
+    if (!h) break;
+  }
+  btn.style.left = (best.x - ar.left) + 'px';
+  btn.style.top = (best.y - ar.top) + 'px';
 }
 let rzT = 0;
 addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { placeDealerButton(); }, 120); });
