@@ -285,6 +285,10 @@ body.sin .sins{display:block}
 .seat.win .pod{border-color:var(--win); box-shadow:0 0 0 3px rgba(127,224,173,.18), 0 0 24px rgba(127,224,173,.3)}
 .seat.folded{opacity:.45}
 .seat.folded:not(.shown) .hole{visibility:hidden}
+/* your own folded cards stay visible (dimmed) so you can still check what you threw away */
+.seat.you.folded{opacity:.8}
+.seat.you.folded .hole{visibility:visible}
+.seat.you.folded .hole .card.dim{opacity:.85; filter:saturate(.5)}
 .seat.out{opacity:.22}
 .seat.you .nm{color:var(--gold)}
 
