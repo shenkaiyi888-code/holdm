@@ -361,7 +361,16 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .smoke-row{display:flex; align-items:center; gap:10px; font-size:11.5px; color:var(--faint)}
 .status{font-size:13px; color:var(--muted); min-height:1.5em; padding:7px 12px; background:var(--well); border-radius:10px}
 .status.you{color:var(--gold); font-weight:700; box-shadow:inset 0 0 0 1px rgba(227,179,82,.35)}
-.actions{display:flex; flex-direction:column; gap:10px; min-width:0}
+.actions{display:flex; flex-direction:column; gap:10px; min-width:0; position:relative}
+.status-row{display:flex; gap:6px; align-items:stretch}
+.status-row .status{flex:1; min-width:0}
+.chat-btn{flex:none; padding:0 12px; font-size:17px; border-radius:10px}
+.chat-btn[aria-expanded=true]{border-color:var(--gold)}
+.chat-pop{position:absolute; left:0; right:0; bottom:calc(100% + 8px); z-index:35; display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; gap:6px;
+  overflow-x:auto; overscroll-behavior:contain; padding:8px; background:var(--panel); border:1px solid var(--line-2); border-radius:14px; box-shadow:0 16px 40px rgba(0,0,0,.6)}
+.chat-pop[hidden]{display:none}
+.chat-pop button{white-space:nowrap; background:var(--well); border:1px solid var(--line); border-radius:999px; padding:6px 11px; font-size:13.5px; color:var(--text); cursor:pointer}
+.chat-pop button:active{border-color:var(--gold)}
 .raise-row{display:flex; flex-direction:column; gap:8px}
 .presets{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
 .presets button{background:var(--well); border:1px solid var(--line); border-radius:9px; padding:6px 4px; font-size:12.5px}
@@ -533,7 +542,13 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .net-list li small{color:var(--muted)}
 .net-list li .ok{color:var(--win)} .net-list li .off{color:#ff9a90}
 .net-err{color:#ff9a90; font-size:12.5px; min-height:1em}
-.net-guest #bBots, .net-guest #bNew, .net-guest label[for=optRit]{display:none!important}
+.adm-list{display:flex; flex-direction:column; gap:6px}
+.adm-row{display:flex; align-items:center; gap:10px; background:var(--well); border:1px solid var(--line); border-radius:10px; padding:7px 11px; font-size:13.5px}
+.adm-row span{flex:1; min-width:0}
+.adm-row small{color:var(--muted); margin-left:6px}
+.adm-row input{width:120px; background:var(--panel-2); border:1px solid var(--line-2); border-radius:8px; padding:6px 8px; font-family:var(--f-num); text-align:right; color:var(--text)}
+.adm-row input:focus{outline:none; border-color:var(--gold)}
+.net-guest #bBots, .net-guest #bNew, .net-guest label[for=optRit], .net-guest label[for=optAuto]{display:none!important}
 @media (max-width:520px){ .buyins{grid-template-columns:repeat(3,1fr)} }
 .tabs{display:flex; gap:4px; background:var(--well); padding:3px; border-radius:999px; width:fit-content}
 .tabs button{border:0; background:transparent; padding:5px 16px; border-radius:999px; font-size:13px; color:var(--muted)}
@@ -718,12 +733,14 @@ select.ghost option{background:var(--panel); color:var(--text)}
       <label class="toggle" for="optSound"><input type="checkbox" id="optSound" checked> 音效</label>
       <label class="toggle" for="optRit" title="全下时可以商量把剩下的牌发两次"><input type="checkbox" id="optRit" checked> 发两次协商</label>
       <label class="toggle" for="optEq"><input type="checkbox" id="optEq" checked> 显示胜率</label>
+      <label class="toggle" for="optAuto" title="一手结束 10 秒后自动发下一手；联机有朋友在桌上时总是自动"><input type="checkbox" id="optAuto" checked> 自动下一手</label>
       <select class="ghost" id="optSpeed" aria-label="节奏">
         <option value="1">正常节奏</option>
         <option value="0.4">快速</option>
       </select>
       <button class="ghost" id="bOnline" type="button">联机</button>
       <button class="ghost" id="bBots" type="button">玩家与风格</button>
+      <button class="ghost" id="bAdmin" type="button">管理</button>
       <button class="ghost" id="bReviewTop" type="button">复盘</button>
       <button class="ghost" id="bNew" type="button">新开一局</button>
       <button class="ghost m-only" id="bSmokeM" type="button">点一根烟</button>
@@ -787,7 +804,11 @@ select.ghost option{background:var(--panel); color:var(--text)}
     </div>
     <div class="actions">
       <div class="mini-read" id="miniRead"></div>
-      <div class="status" id="status">发牌中</div>
+      <div class="status-row">
+        <div class="status" id="status">发牌中</div>
+        <button class="ghost chat-btn" id="bChat" type="button" hidden aria-expanded="false" aria-label="发短句和表情">💬</button>
+      </div>
+      <div class="chat-pop" id="chatPop" hidden></div>
       <div class="raise-row" id="raiseRow">
         <div class="presets">
           <button type="button" data-p="min">最小</button>
@@ -829,6 +850,18 @@ select.ghost option{background:var(--panel); color:var(--text)}
       <div class="quick" id="chatQuick"></div>
     </div>
   </details>
+
+  <div class="modal" id="admDlg" hidden role="dialog" aria-modal="true" aria-labelledby="adTitle">
+    <div class="sheet" style="max-width:520px">
+      <header>
+        <h2 id="adTitle">管理 · 修改筹码</h2>
+        <button class="ghost" id="adClose" type="button">关闭</button>
+      </header>
+      <p class="rv-note" style="margin:0" id="adNote"></p>
+      <div class="adm-list" id="adList"></div>
+      <div class="dlg-actions"><button class="btn b-next" id="adApply" type="button">保存修改</button></div>
+    </div>
+  </div>
 
   <div class="modal" id="netDlg" hidden role="dialog" aria-modal="true" aria-labelledby="ntTitle">
     <div class="sheet" style="max-width:520px">
@@ -1439,6 +1472,7 @@ function newGame(){
 function startHand(){
   runId++;
   if (NET.role === 'host') netApplySeats();
+  applyPendingChips();
   G.players.forEach(p => {
     if (p.isNew) p.isNew--;
     if (p.chips <= 0 && !p.out){
@@ -1661,7 +1695,7 @@ function endHand(){
   G.players.forEach(p => { if (p.st && p.hand.length){ p.st.hands++; if (p.fv) p.st.vpip++; if (p.fp) p.st.pfr++; } });
   H.players.forEach((hp, i) => { hp.won = G.players[i].won; hp.end = G.players[i].chips; });
   H.net = me.chips + G.handTips - me.startChips;
-  if (NET.role === 'host') netHandDone();
+  netHandDone();
   const top = G.players.filter(p => p.won > 0).sort((a, b) => b.won - a.won)[0];
   if (me.won > 0) dealerSay(me.won >= G.bbAmt * 15 ? 'youWinBig' : 'youWin', {n:fmt(me.won)});
   else if (H.net <= -G.bbAmt * 10) dealerSay('youLoseBig');
@@ -1863,6 +1897,13 @@ function botAct(i){
 
 /* ---------- run it twice ---------- */
 let ritOn = store.get('holdem.rit', '1') === '1';
+let autoNext = store.get('holdem.auto', '1') === '1';
+$('#optAuto').checked = autoNext;
+$('#optAuto').addEventListener('change', e => {
+  autoNext = e.target.checked; store.set('holdem.auto', autoNext ? '1' : '0');
+  if (autoNext && G.handOver && !G.over && !G.nextAt && NET.role !== 'guest') netHandDone();
+  renderControls();
+});
 function equityHU(h1, h2, board, iters){
   const used = new Set(h1.concat(h2, board)), deck = [];
   for (let c = 0; c < 52; c++) if (!used.has(c)) deck.push(c);
@@ -2885,6 +2926,91 @@ $('#bSmokeM').addEventListener('click', () => $('#bSmoke').click());
 $('#bLog').addEventListener('click', () => { document.body.classList.add('show-log'); $('.log').open = true; });
 $('#bLogClose').addEventListener('click', e => { e.preventDefault(); document.body.classList.remove('show-log'); });
 
+/* ---------- admin: the host edits stacks ---------- */
+function applyPendingChips(){
+  G.players.forEach(p => {
+    if (p.pendingChips == null) return;
+    const v = p.pendingChips; delete p.pendingChips;
+    if (v === p.chips) return;
+    p.chips = v;
+    if (p.out && v > 0 && !p.vacant) p.out = false;
+    log(`管理员把${p.name}的筹码改为 ${fmt(v)}`, 'sys');
+  });
+}
+const ADMIN_SALT = '135cc77c600ba6a5c4ba45e065bbf2a5', ADMIN_HASH = 'f10b44b1f139ea9e43ddde1d49479ecb46f2ea8e6792e5374718c15b8da8bcfa';
+let adminPw = '';
+/* checks the password with the server when there is one, otherwise in this browser */
+async function adminCheck(pw){
+  if (NET.available){
+    const r = await fetch('api/admin', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw, check:true})});
+    return r.ok;
+  }
+  if (!(window.crypto && crypto.subtle)) return false;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const salt = new Uint8Array(ADMIN_SALT.match(/../g).map(x => parseInt(x, 16)));
+  const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:200000, hash:'SHA-256'}, key, 256);
+  return [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('') === ADMIN_HASH;
+}
+function renderAdmin(){
+  if (!adminPw){
+    $('#adNote').textContent = '这里只有管理员能用，请输入管理员密码。';
+    $('#adList').innerHTML = '<div class="adm-row"><input type="password" id="adPw" style="flex:1;width:auto;text-align:left" placeholder="管理员密码" autocomplete="off"></div><div class="net-err" id="adErr"></div>';
+    $('#adApply').textContent = '解锁'; $('#adApply').disabled = false;
+    $('#adPw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#adApply').click(); });
+    setTimeout(() => $('#adPw') && $('#adPw').focus(), 30);
+    return;
+  }
+  $('#adApply').textContent = '保存修改';
+  const midHand = !G.handOver && !G.over;
+  $('#adNote').textContent = G.over ? '这一局已经结束，开新局后再修改筹码。'
+    : midHand ? '现在有一手牌正在进行，修改会从下一手开始生效。' : '修改会马上生效。';
+  $('#adList').innerHTML = G.players.map((p, i) => p.vacant ? '' : `<div class="adm-row"><span>${esc(p.name)}<small>${i === 0 ? '你' : p.human ? '真人' : '电脑'}${p.out ? ' · 出局' : ''}${p.pendingChips != null ? ` · 下一手改为 ${fmt(p.pendingChips)}` : ''}</small></span>
+    <input type="number" min="0" max="10000000" step="10" data-i="${i}" value="${p.pendingChips ?? p.chips}" aria-label="${esc(p.name)}的筹码"></div>`).join('');
+  $('#adApply').disabled = G.over;
+}
+function openAdmin(){ renderAdmin(); $('#admDlg').hidden = false; }
+function closeAdmin(){ $('#admDlg').hidden = true; }
+$('#bAdmin').addEventListener('click', openAdmin);
+$('#adClose').addEventListener('click', closeAdmin);
+$('#admDlg').addEventListener('click', e => { if (e.target.id === 'admDlg') closeAdmin(); });
+$('#adApply').addEventListener('click', async () => {
+  if (!adminPw){
+    const pw = $('#adPw').value; if (!pw) return;
+    $('#adApply').disabled = true;
+    let ok = false; try { ok = await adminCheck(pw); } catch (e) {}
+    $('#adApply').disabled = false;
+    if (!ok){ $('#adErr').textContent = '密码不对'; return; }
+    adminPw = pw; renderAdmin(); return;
+  }
+  if (G.over) return;
+  const edits = [];
+  $('#adList').querySelectorAll('input[data-i]').forEach(inp => {
+    const p = G.players[+inp.dataset.i];
+    const v = Math.max(0, Math.min(10000000, Math.round(+inp.value)));
+    if (!p || !isFinite(v) || v === (p.pendingChips ?? p.chips)) return;
+    edits.push({name:p.name, chips:v});
+  });
+  if (!edits.length) return;
+  if (NET.role){
+    /* in a room the server checks the password again and passes the change to the host's page */
+    const r = await fetch('api/admin', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:adminPw, room:NET.room, id:NET.id, edits})}).catch(() => null);
+    $('#adNote').textContent = r && r.ok ? (G.handOver ? '已保存。' : '已保存，下一手开始生效。') : '保存失败，请再试一次。';
+    return;
+  }
+  adminApply(edits);
+});
+function adminApply(edits){
+  (Array.isArray(edits) ? edits : []).forEach(e => {
+    const p = G.players.find(q => q.name === e.name && !q.vacant);
+    const v = Math.max(0, Math.min(10000000, Math.round(+e.chips) || 0));
+    if (p) p.pendingChips = v;
+  });
+  if (G.handOver){ applyPendingChips(); if (G.waiting) setRaiseDefaults(); }
+  else if (G.players.some(p => p.pendingChips != null)) log('管理员修改了筹码，下一手生效', 'sys');
+  render();
+  if (!$('#admDlg').hidden) renderAdmin();
+}
+
 /* ---------- online play ----------
    The host's page runs the whole game exactly as in single-player; friends take over bot seats.
    Every change on the host is sent to each friend as a snapshot turned so that their own seat is seat 0,
@@ -2896,7 +3022,7 @@ const navType = (performance.getEntriesByType && performance.getEntriesByType('n
 if (navType !== 'reload'){ sset('holdem.netId', null); sset('holdem.netRoom', null); sset('holdem.netRole', null); }
 NET.id = sget('holdem.netId') || randHex(8); sset('holdem.netId', NET.id);
 NET.available = false; NET.lastSeq = 0; NET.roster = [];
-const TURN_MS = 30000, AWAY_MS = 2500, GONE_MS = 120000, NEXT_MS = 7000;
+const TURN_MS = 30000, AWAY_MS = 2500, GONE_MS = 120000, NEXT_MS = 10000;
 const SEAT_ORDER = {6:[3, 1, 5, 2, 4], 8:[4, 2, 6, 1, 7, 3, 5]};
 const newStats = () => ({hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0});
 
@@ -2916,7 +3042,7 @@ function netConnect(room, role){
   NET.room = room; NET.role = role; NET.lastSeq = 0; NET.hostGone = false;
   sset('holdem.netRoom', room); sset('holdem.netRole', role);
   document.body.classList.toggle('net-guest', role === 'guest');
-  $('#chat').hidden = false; $('#bLog').textContent = '聊天 · 记录';
+  $('#chat').hidden = false; $('#bChat').hidden = false; $('#bLog').textContent = '聊天 · 记录';
   const name = encodeURIComponent(myName || (role === 'host' ? '房主' : '玩家'));
   const es = new EventSource(`api/events?room=${room}&id=${NET.id}&name=${name}`);
   NET.es = es;
@@ -2936,7 +3062,7 @@ function netLeave(why){
   clearTimeout(NET.clockT); G.deadline = 0; G.nextAt = 0;
   sset('holdem.netRoom', null); sset('holdem.netRole', null);
   document.body.classList.remove('net-guest');
-  $('#chat').hidden = true; $('#bLog').textContent = '牌局记录';
+  $('#chat').hidden = true; $('#bChat').hidden = true; $('#chatPop').hidden = true; $('#bLog').textContent = '牌局记录';
   NET.notice = why || '';
   if (wasGuest){ HISTORY.length = 0; newGame(); }
   else {
@@ -3039,6 +3165,7 @@ function netPeerDrop(id, left){
 }
 function netHostMessage(m){
   if (m.t === 'welcome'){ NET.peers.forEach(x => x.avas = []); render(); return; }
+  if (m.t === 'admin'){ if (m.sys === true) adminApply(m.edits); return; }
   if (m.t === 'join') return netPeerJoin(m.id, m.name);
   if (m.t === 'drop') return netPeerDrop(m.id, false);
   if (m.t === 'leave') return netPeerDrop(m.id, true);
@@ -3133,11 +3260,19 @@ function netStartClock(i){
 }
 function netHandDone(){
   clearTimeout(NET.clockT); G.deadline = 0;
-  if (!online()){ G.nextAt = 0; return; }
-  NET.out.hist = H;
-  const ms = NEXT_MS + (G.showdown ? 1500 : 0);
-  G.nextAt = Date.now() + ms;
-  wait(() => { if (G.handOver && !G.over && NET.role === 'host') startHand(); }, ms);
+  if (online()) NET.out.hist = H;
+  G.nextAt = 0;
+  if (NET.role === 'guest' || G.over || !(autoNext || online())) return;
+  G.nextAt = Date.now() + NEXT_MS;
+  const tick = () => {
+    if (!G.handOver || G.over || NET.role === 'guest') return;
+    if (!autoNext && !online()){ G.nextAt = 0; renderControls(); return; }
+    /* playing alone: wait while a dialog such as the review is open */
+    const busy = !online() && (!$('#review').hidden || !$('#botsDlg').hidden || !$('#newDlg').hidden || !$('#netDlg').hidden || !$('#admDlg').hidden);
+    if (busy){ G.nextAt = Date.now() + 3000; return wait(tick, 3000); }
+    startHand();
+  };
+  wait(tick, NEXT_MS);
 }
 /* what one friend is allowed to see, turned so their seat is seat 0 */
 function snapFor(x){
@@ -3277,6 +3412,12 @@ const QUICK = ['👍', '😂', '😮', '😭', '🔥', '🙏', '🤔', '😎', '
   '坐等摊牌', '牌神保佑', '下次一定', '稳住，能赢', '快点吧～', '好牌！', '运气真好', '再来！'];
 $('#chatQuick').innerHTML = QUICK.map((q, k) => `<button type="button" data-q="${k}">${q}</button>`).join('');
 $('#chatQuick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => netChat(+b.dataset.q)));
+/* the 💬 button next to the status opens the same lines above the controls, so the table stays in view */
+$('#chatPop').innerHTML = $('#chatQuick').innerHTML;
+const setPop = open => { $('#chatPop').hidden = !open; $('#bChat').setAttribute('aria-expanded', String(open)); };
+$('#chatPop').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { netChat(+b.dataset.q); setPop(false); }));
+$('#bChat').addEventListener('click', e => { e.stopPropagation(); setPop($('#chatPop').hidden); });
+document.addEventListener('click', e => { if (!$('#chatPop').hidden && !e.target.closest('#chatPop')) setPop(false); });
 let chatAt = 0;
 function netChat(q){
   if (!QUICK[q] || !NET.role || Date.now() - chatAt < 700) return;
@@ -3371,7 +3512,7 @@ function netRenderDlg(){
     <div class="row" style="justify-content:space-between"><div><h3 class="rv-h" style="margin-bottom:4px">房间号</h3><div class="net-code">${NET.room}</div></div>
       <button class="ghost" id="ntCopy" type="button">复制邀请链接</button></div>
     <p class="rv-note" style="margin:0">${NET.role === 'host'
-      ? `朋友打开邀请链接（或在「联机」里输入房间号）就能加入，最多 ${SEATS - 1} 位朋友（「新开一局」里可以换成 8 人桌）。每人有 30 秒思考时间，超时自动过牌或弃牌；一手结束后几秒自动发下一手。你关掉或刷新这个页面，牌局就会结束。`
+      ? `朋友打开邀请链接（或在「联机」里输入房间号）就能加入，最多 ${SEATS - 1} 位朋友（「新开一局」里可以换成 8 人桌）。每人有 30 秒思考时间，超时自动过牌或弃牌；一手结束 10 秒后自动发下一手。你关掉或刷新这个页面，牌局就会结束。`
       : '牌局在房主那边运行，你的底牌只有你自己看得到。断线后重新打开链接，2 分钟内还能回到原来的座位。'}</p>
     <div><h3 class="rv-h">房间里的人</h3><ul class="net-list">${list}</ul></div>
     <div class="dlg-actions"><button class="btn b-fold" id="ntLeave" type="button">${NET.role === 'host' ? '关闭房间' : '离开房间'}</button></div></div>`;
@@ -3395,7 +3536,7 @@ $('#bRebuy').addEventListener('click', () => {
   else { me.wantRebuy = true; log(`${me.name}要补码，下一手生效`, 'sys'); }
   renderControls();
 });
-setInterval(() => { if (NET.role && (G.deadline || G.nextAt)) renderControls(); }, 1000);
+setInterval(() => { if (G.deadline || G.nextAt) renderControls(); }, 1000);
 /* reconnect after a reload, or open the join form from an invite link */
 function netBoot(){
   const room = sget('holdem.netRoom'), role = sget('holdem.netRole');

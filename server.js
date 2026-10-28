@@ -11,6 +11,19 @@ const MAX_PLAYERS = 8;
 const ROOM_IDLE_MS = 10 * 60 * 1000;
 const DROP_KEEP_MS = 2 * 60 * 1000;
 const PAGE = path.join(__dirname, 'index.html');
+const crypto = require('crypto');
+/* admin password: set ADMIN_PASSWORD on the host to override; otherwise only this salted hash is kept here */
+const ADMIN_SALT = '135cc77c600ba6a5c4ba45e065bbf2a5', ADMIN_HASH = 'f10b44b1f139ea9e43ddde1d49479ecb46f2ea8e6792e5374718c15b8da8bcfa';
+const adminTries = new Map();
+function adminOk(pw, ip){
+  const now = Date.now(), t = (adminTries.get(ip) || []).filter(x => now - x < 60000);
+  if (t.length >= 8) return false;
+  t.push(now); adminTries.set(ip, t);
+  pw = String(pw || '');
+  if (process.env.ADMIN_PASSWORD) return pw.length === process.env.ADMIN_PASSWORD.length && crypto.timingSafeEqual(Buffer.from(pw), Buffer.from(process.env.ADMIN_PASSWORD));
+  const got = crypto.pbkdf2Sync(pw, Buffer.from(ADMIN_SALT, 'hex'), 200000, 32, 'sha256');
+  return crypto.timingSafeEqual(got, Buffer.from(ADMIN_HASH, 'hex'));
+}
 
 /* room code -> {code, host, clients: Map(id -> {id, name, res, role, alive}), touched} */
 const rooms = new Map();
@@ -102,11 +115,23 @@ const server = http.createServer(async (req, res) => {
       room.touched = Date.now();
       for (const m of Array.isArray(b.batch) ? b.batch : []){
         if (!m || typeof m !== 'object') continue;
-        const payload = JSON.stringify(Object.assign({}, m.msg, {from:id}));
+        const body = Object.assign({}, m.msg, {from:id}); delete body.sys;   /* only the server marks messages as sys */
+        const payload = JSON.stringify(body);
         if (m.to === '*') room.clients.forEach(c => push(c, payload));
         else if (id === room.host){ const c = room.clients.get(cleanId(m.to)); if (c) push(c, payload); }
         else tellHost(room, payload);   /* guests can only talk to the host (or everyone) */
       }
+      return json(res, 200, {ok:true});
+    }
+    if (req.method === 'POST' && p === '/api/admin'){
+      const b = await readBody(req, 64 * 1024);
+      const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+      if (!adminOk(b.password, ip)) return json(res, 403, {error:'密码不对'});
+      if (b.check) return json(res, 200, {ok:true});
+      const room = rooms.get(String(b.room || '').toUpperCase()), id = cleanId(b.id);
+      if (!room || !room.clients.has(id)) return json(res, 404, {error:'不在房间里'});
+      const edits = (Array.isArray(b.edits) ? b.edits : []).slice(0, 8).map(e => ({name:String(e && e.name || '').slice(0, 12), chips:Math.max(0, Math.min(10000000, Math.round(+(e && e.chips)) || 0))}));
+      tellHost(room, {t:'admin', sys:true, edits, from:id});
       return json(res, 200, {ok:true});
     }
     if (req.method === 'POST' && p === '/api/leave'){
