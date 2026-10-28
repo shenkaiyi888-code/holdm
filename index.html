@@ -2818,22 +2818,28 @@ const dealerPoint = () => centerOf($('#dAvatar'));
 
 /* sounds: synthesized, start after the first click/tap */
 let actx = null, soundOn = store.get('holdem.sound', '1') === '1';
-function ac(){
-  if (!actx){ try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-  if (actx.state !== 'running') wake();
+/* phones cut the audio when you switch apps or tabs, and iOS / WeChat often never really give it back even when it
+   says "running". So after the page was hidden, the next tap throws the old sound channel away and opens a new one. */
+let audioStale = false;
+function ac(fresh){
+  if (actx && (fresh || audioStale)){ try { actx.close(); } catch (e) {} actx = null; }
+  if (!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    audioStale = false;
+    /* a silent sample played inside the tap unlocks output on iOS */
+    try { const s = actx.createBufferSource(); s.buffer = actx.createBuffer(1, 1, 22050); s.connect(actx.destination); s.start(0); } catch (e) {}
+  }
+  if (actx.state !== 'running') actx.resume().catch(() => {});
   return actx;
 }
-/* phones suspend audio when you switch apps (iOS even marks it "interrupted"); wake it again on return,
-   and if it still will not run, start a fresh one on the next tap */
-function wake(){
-  const a = actx;
-  try { a.resume().then(() => { if (a.state !== 'running' && a === actx && navigator.userActivation?.isActive !== false){ try { a.close(); } catch (e) {} actx = null; } }, () => {}); } catch (e) {}
-}
-['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (soundOn) ac(); }, {passive:true}));
-document.addEventListener('visibilitychange', () => { if (!document.hidden && soundOn && actx) wake(); });
-addEventListener('pageshow', () => { if (soundOn && actx) wake(); });
+['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (soundOn) ac(audioStale || (actx && actx.state !== 'running')); }, {passive:true, capture:true}));
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden){ audioStale = true; return; }
+  if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+});
+addEventListener('pagehide', () => { audioStale = true; });
 function sfx(kind){
-  if (soundOn && actx && actx.state !== 'running') wake();
+  if (soundOn && actx && actx.state !== 'running') actx.resume().catch(() => {});
   if (!soundOn || !actx || actx.state !== 'running') return;
   const a = actx, t = a.currentTime;
   const tone = (f, d, type = 'sine', v = .08, at = 0) => {
