@@ -1351,6 +1351,9 @@ $('#bSmoke').addEventListener('click', () => smoking ? putOut() : lightUp());
 let runId = 0;
 const later = (fn, ms) => { const id = runId; setTimeout(() => { if (id === runId) fn(); }, ms * G.speed); };
 const canAct = p => !p.out && !p.folded && !p.allIn;
+/* a player who already acted may raise again only if the bet has gone up by at least a full raise since then
+   (a short all-in does not reopen the betting); guests get this as a flag in their snapshot */
+const mayRaise = p => p.noRaise !== undefined && NET.role === 'guest' ? !p.noRaise : (p.actedAt == null || G.currentBet - p.actedAt >= G.minRaise);
 const live = () => G.players.filter(p => !p.out && !p.folded);
 const potTotal = () => G.players.reduce((s, p) => s + p.total, 0);
 function nextIdx(i, pred){
@@ -1431,7 +1434,7 @@ function initPlayers(){
   if (G.priv) G.players.forEach((p, i) => { if (!p.human) G.players[i] = emptySeat(); });
 }
 function resetPlayer(p){
-  p.hand = []; p.folded = false; p.allIn = false; p.bet = 0; p.total = 0; p.acted = false;
+  p.hand = []; p.folded = false; p.allIn = false; p.bet = 0; p.total = 0; p.acted = false; p.actedAt = null;
   p.lastAction = ''; p.showCards = false; p.won = 0; p.score = 0; p.fv = false; p.fp = false; p.checked = false; p.hadDraw = false; p.bluffedHand = false; p.shown = false; p.mucked = false; p.foldSt = -1; p.foldedToMe = false;
 }
 /* Fair dealing: the deck is shuffled with the browser's cryptographic random generator
@@ -1583,7 +1586,9 @@ function doAction(i, type, to){
   G.deadline = 0;
   const toCall = G.currentBet - p.bet;
   if (type === 'check' && toCall > 0) type = 'call';
-  if (type === 'raise' && (p.chips <= toCall || Math.min(to, p.bet + p.chips) <= G.currentBet)) type = 'call';
+  if (type === 'raise' && (p.chips <= toCall || Math.min(to, p.bet + p.chips) <= G.currentBet || !mayRaise(p))) type = 'call';
+  /* a raise must be at least the last full raise (opening bet: one big blind) unless it is all-in */
+  if (type === 'raise') to = Math.min(Math.max(Math.round(to), G.currentBet + G.minRaise), p.bet + p.chips);
   if (toCall > 0 && p.st){ p.st.faced++; if (type === 'fold') p.st.foldFaced++; }
   let pre = null;
   if (p.human){
@@ -1609,7 +1614,7 @@ function doAction(i, type, to){
     G.players.forEach((q, j) => { if (j !== i && canAct(q)) q.acted = false; });
     text = p.allIn ? `全下 ${to}` : (opening ? `下注 ${to}` : `加注到 ${to}`);
   }
-  p.acted = true; p.lastAction = text;
+  p.acted = true; p.actedAt = G.currentBet; p.lastAction = text;
   if (p.st){
     if (type === 'raise') p.st.raises++; else if (type === 'call') p.st.calls++;
     if (G.street === 0 && (type === 'call' || type === 'raise')){ p.fv = true; if (type === 'raise') p.fp = true; }
@@ -1627,7 +1632,7 @@ function doAction(i, type, to){
 }
 function nextStreet(){
   sweepBets();
-  G.players.forEach(p => { p.bet = 0; p.acted = false; p.checked = false; if (!p.folded && !p.allIn) p.lastAction = ''; });
+  G.players.forEach(p => { p.bet = 0; p.acted = false; p.actedAt = null; p.checked = false; if (!p.folded && !p.allIn) p.lastAction = ''; });
   G.lastAgg = G.streetAgg; G.streetAgg = -1;
   G.currentBet = 0; G.minRaise = G.bbAmt; G.streetRaises = 0;
   if (G.street >= 3) return showdown();
@@ -1644,33 +1649,42 @@ function nextStreet(){
   wait(proceed, (G.boardAnim || 0) + 120);
 }
 function seatOrder(i){ const N = G.players.length; return (i - G.dealer - 1 + N) % N; }
+/* main pot and side pots: one layer per distinct all-in level of the players still in the hand.
+   Folded chips stay in the layers they reached; only players who put in at least a layer's level can win it. */
+function potLayers(players, lv){
+  const levels = [...new Set(lv.map(p => p.total))].sort((a, b) => a - b);
+  const top = levels[levels.length - 1];
+  let prev = 0; const out = [];
+  levels.forEach(L => {
+    let amount = 0;
+    players.forEach(p => { amount += Math.max(0, Math.min(p.total, L === top ? Infinity : L) - prev); });
+    prev = L;
+    if (amount) out.push({amount, elig:lv.filter(p => p.total >= L)});
+  });
+  return out;
+}
+/* split one pot among the best hands; the odd chip goes to the first winner left of the button */
+function splitPot(amount, elig, key){
+  const best = Math.max(...elig.map(p => p[key]));
+  const winners = elig.filter(p => p[key] === best).sort((a, b) => seatOrder(G.players.indexOf(a)) - seatOrder(G.players.indexOf(b)));
+  const share = Math.floor(amount / winners.length);
+  winners.forEach(w => w.won += share);
+  winners[0].won += amount - share * winners.length;
+  return {best, winners};
+}
 function showdown(){
   G.street = 4; G.showdown = true;
   const lv = live();
   const tabled = new Set(lv.filter(p => p.showCards));
   lv.forEach(p => { p.score = evalHand(p.hand.concat(G.board)); p.lastAction = handName(p.score); });
-  const levels = [...new Set(lv.map(p => p.total))].sort((a, b) => a - b);
-  let prev = 0, given = 0; const lines = [];
-  levels.forEach((L, k) => {
-    let amount = 0;
-    G.players.forEach(p => { amount += Math.max(0, Math.min(p.total, L) - prev); });
-    prev = L;
-    if (!amount) return;
-    const elig = lv.filter(p => p.total >= L);
-    const best = Math.max(...elig.map(p => p.score));
-    const winners = elig.filter(p => p.score === best).sort((a, b) => seatOrder(G.players.indexOf(a)) - seatOrder(G.players.indexOf(b)));
-    const share = Math.floor(amount / winners.length);
-    winners.forEach(w => w.won += share);
-    winners[0].won += amount - share * winners.length;
-    given += amount;
-    const label = levels.length > 1 ? (k === 0 ? '主池' : `边池 ${k}`) : '底池';
+  const layers = potLayers(G.players, lv), lines = [];
+  layers.forEach(({amount, elig}, k) => {
+    const {best, winners} = splitPot(amount, elig, 'score');
+    const label = layers.length > 1 ? (k === 0 ? '主池' : `边池 ${k}`) : '底池';
     const names = winners.map(w => w.name).join('、');
-    const verb = winners.length > 1 ? '平分' : '赢得';
-    lines.push(`${names}以${handName(best)}${verb}${label} ${fmt(amount)}`);
-    if (elig.length === 1 && levels.length > 1) lines[lines.length - 1] = `${names}收回未被跟注的 ${fmt(amount)}`;
+    if (elig.length === 1 && layers.length > 1) lines.push(`${names}收回未被跟注的 ${fmt(amount)}`);
+    else lines.push(`${names}以${handName(best)}${winners.length > 1 ? '平分' : '赢得'}${label} ${fmt(amount)}`);
   });
-  const rest = potTotal() - given;
-  if (rest > 0){ const top = lv.slice().sort((a, b) => b.score - a.score)[0]; top.won += rest; }
   lv.forEach(p => p.chips += p.won);
   /* who has to show: winners, hands already tabled, the last bettor; you always show at showdown.
      Losing bots who were only calling may muck instead of showing. */
@@ -2026,7 +2040,7 @@ function botAct(i){
   const strongT = Math.min(.78, share * 2.2) * k;
   const medT = Math.min(.56, share * 1.5) * k * valueK;
   const pot = potTotal(), toCall = G.currentBet - p.bet, r = Math.random();
-  const canRaise = p.chips > toCall && G.players.some(q => q !== p && canAct(q)) && G.streetRaises < 4;
+  const canRaise = p.chips > toCall && G.players.some(q => q !== p && canAct(q)) && G.streetRaises < 4 && mayRaise(p);
   const sizeTo = frac => {
     const minTo = G.currentBet === 0 ? G.bbAmt : G.currentBet + G.minRaise;
     const to = G.currentBet + Math.round((pot + toCall) * frac / 5) * 5;
@@ -2174,30 +2188,16 @@ function showdownTwice(){
   G.street = 4; G.showdown = true;
   const lv = live(), b1 = G.board, b2 = G.board2;
   lv.forEach(p => { p.showCards = true; p.s1 = evalHand(p.hand.concat(b1)); p.s2 = evalHand(p.hand.concat(b2)); p.score = Math.max(p.s1, p.s2); });
-  const levels = [...new Set(lv.map(p => p.total))].sort((x, y) => x - y);
-  let prev = 0, given = 0; const lines = [];
-  levels.forEach((L, k) => {
-    let amount = 0;
-    G.players.forEach(p => { amount += Math.max(0, Math.min(p.total, L) - prev); });
-    prev = L;
-    if (!amount) return;
-    const elig = lv.filter(p => p.total >= L);
-    const label = levels.length > 1 ? (k === 0 ? '主池' : `边池 ${k}`) : '底池';
-    if (elig.length === 1){ elig[0].won += amount; given += amount; lines.push(`${elig[0].name}收回未被跟注的 ${fmt(amount)}`); return; }
+  const layers = potLayers(G.players, lv), lines = [];
+  layers.forEach(({amount, elig}, k) => {
+    const label = layers.length > 1 ? (k === 0 ? '主池' : `边池 ${k}`) : '底池';
+    if (elig.length === 1){ elig[0].won += amount; lines.push(`${elig[0].name}收回未被跟注的 ${fmt(amount)}`); return; }
     const halves = [Math.floor(amount / 2), amount - Math.floor(amount / 2)];
     ['s1', 's2'].forEach((key, r) => {
-      const part = halves[r];
-      const best = Math.max(...elig.map(p => p[key]));
-      const winners = elig.filter(p => p[key] === best).sort((x, y) => seatOrder(G.players.indexOf(x)) - seatOrder(G.players.indexOf(y)));
-      const share = Math.floor(part / winners.length);
-      winners.forEach(w => w.won += share);
-      winners[0].won += part - share * winners.length;
-      given += part;
-      lines.push(`${r ? '第二次' : '第一次'}：${winners.map(w => w.name).join('、')}以${handName(best)}${winners.length > 1 ? '平分' : '赢得'}${label}的一半 ${fmt(part)}`);
+      const {best, winners} = splitPot(halves[r], elig, key);
+      lines.push(`${r ? '第二次' : '第一次'}：${winners.map(w => w.name).join('、')}以${handName(best)}${winners.length > 1 ? '平分' : '赢得'}${label}的一半 ${fmt(halves[r])}`);
     });
   });
-  const rest = potTotal() - given;
-  if (rest > 0){ const top = lv.slice().sort((x, y) => y.score - x.score)[0]; top.won += rest; }
   lv.forEach(p => { p.chips += p.won; p.lastAction = `${handName(p.s1).split(' ')[0]} / ${handName(p.s2).split(' ')[0]}`; });
   lv.forEach(p => log(`${p.name} 亮牌 ${p.hand.map(cardText).join(' ')} · 第一次${handName(p.s1)} · 第二次${handName(p.s2)}`, 'board'));
   lines.forEach(l => log(l, 'res'));
@@ -2327,7 +2327,7 @@ function bounds(){
   let minTo = G.currentBet === 0 ? G.bbAmt : G.currentBet + G.minRaise;
   minTo = Math.min(minTo, maxTo);
   const others = G.players.some((q, j) => j !== 0 && canAct(q));
-  return {toCall, minTo, maxTo, ok: me.chips > toCall && others && maxTo > G.currentBet};
+  return {toCall, minTo, maxTo, ok: me.chips > toCall && others && maxTo > G.currentBet && mayRaise(me)};
 }
 function setRaiseDefaults(){
   const b = bounds();
@@ -3535,7 +3535,7 @@ function snapFor(x){
     const open = (seated && abs === s) || p.showCards;
     const o = {name:p.name, human:!!p.human, style:p.human ? '' : styleLabel(p), chips:p.chips, bet:p.bet, total:p.total,
       folded:!!p.folded, allIn:!!p.allIn, out:!!p.out, vacant:!!p.vacant, lastAction:p.lastAction || '', showCards:!!p.showCards,
-      shown:!!p.shown, mucked:!!p.mucked, won:p.won || 0, isNew:p.isNew || 0, away:!!p.away,
+      shown:!!p.shown, mucked:!!p.mucked, won:p.won || 0, noRaise:!mayRaise(p), isNew:p.isNew || 0, away:!!p.away,
       pid:p.remote || (abs === 0 ? NET.id : ''), hand:open ? p.hand.slice() : p.hand.map(() => -1)};
     if (open && G.showdown){ o.score = p.score; o.s1 = p.s1; o.s2 = p.s2; }
     if (x.avas[abs] !== p.ava){ x.avas[abs] = p.ava; o.ava = p.ava || ''; }
@@ -3848,6 +3848,9 @@ $('#stOnline').addEventListener('click', () => {
   startWith(lastRules() || {mode, seats:SEATS, buy:buyIn});
   openNet();
 });
+
+/* automated rule checks open the page with ?selftest */
+if (/[?&]selftest/.test(location.search)) window.__holdm = {G, HISTORY, mayRaise, bounds, get H(){ return H; }};
 
 /* ---------- boot ---------- */
 function snapshot(){
