@@ -643,6 +643,16 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .net-box input[type=text]:focus{outline:none; border-color:var(--gold)}
 .net-box input.code{width:110px; font-family:var(--f-num); letter-spacing:.2em; text-transform:uppercase; text-align:center}
 .net-box .btn{min-height:40px; padding:6px 16px; font-size:14px}
+.net-two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.net-two > div{background:var(--well); border:1px solid var(--line); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; align-items:flex-start}
+.net-two .rv-h{margin:0}
+.net-two small{color:var(--muted); font-size:12px}
+@media (max-width:440px){ .net-two{grid-template-columns:1fr} }
+.net-faq{border-top:1px solid var(--line); padding-top:10px; font-size:13px}
+.net-faq summary{cursor:pointer; color:var(--gold); min-height:32px; display:flex; align-items:center}
+.net-faq dl{margin:6px 0 0}
+.net-faq dt{font-weight:600; margin-top:8px}
+.net-faq dd{margin:2px 0 0; color:var(--muted); line-height:1.5}
 .net-code{font:600 34px/1 var(--f-num); letter-spacing:.25em; color:var(--gold)}
 .net-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
 .net-list li{display:flex; justify-content:space-between; gap:10px; background:var(--well); border:1px solid var(--line); border-radius:10px; padding:7px 11px; font-size:13px}
@@ -3063,7 +3073,7 @@ function renderControls(){
   else if (G.rit === 'talk') st.textContent = '全下了，正在商量发几次';
   else if (me.out) st.textContent = '你已出局，正在观战';
   else st.textContent = '发牌中';
-  if (NET.role === 'guest' && !NET.seated && !G.over) st.textContent = NET.status || '你已进入房间，下一手开始入座';
+  if (NET.role === 'guest' && !NET.seated && !G.over) st.textContent = NET.status || '你已进房间 · 这手打完就给你发牌';
   const left = G.deadline ? Math.max(0, Math.ceil((G.deadline - Date.now()) / 1000)) : 0;
   if (left && !G.handOver && (G.waiting || G.thinking >= 0) && left <= 20) st.textContent += `（${left} 秒）`;
   if (G.handOver && !G.over && G.nextAt){
@@ -4160,14 +4170,12 @@ function netRenderDlg(){
   if (!NET.role){
     const pre = new URLSearchParams(location.search).get('room') || '';
     body.innerHTML = `<div class="net-box">${note}
-      <div class="row"><label for="ntName" class="rv-note">你的昵称</label><input type="text" id="ntName" maxlength="8" value="${esc(myName)}" placeholder="必填，最多 8 个字"></div>
-      <div><h3 class="rv-h">开一个房间</h3>
-        <div class="row"><button class="btn b-next" id="ntCreate" type="button">创建房间</button>
-        <span class="rv-note">你当房主，牌局在你这边运行；朋友加入后从下一手开始代替电脑坐下，空位继续由电脑补。</span></div></div>
-      <div><h3 class="rv-h">加入朋友的房间</h3>
-        <div class="row"><input type="text" class="code" id="ntCode" maxlength="4" value="${esc(pre.toUpperCase())}" placeholder="房间号" aria-label="房间号">
-        <button class="btn b-call" id="ntJoin" type="button">加入</button></div></div>
-      <div class="net-err" id="ntErr"></div></div>`;
+      <div class="row"><label for="ntName" class="rv-note">昵称</label><input type="text" id="ntName" maxlength="8" value="${esc(myName)}" placeholder="最多 8 个字"></div>
+      <div class="net-two">
+        <div><h3 class="rv-h">我来开房</h3><button class="btn b-next" id="ntCreate" type="button">创建房间</button><small>拿到链接发给朋友</small></div>
+        <div><h3 class="rv-h">朋友开好了</h3><div class="row"><input type="text" class="code" id="ntCode" maxlength="4" value="${esc(pre.toUpperCase())}" placeholder="房间号" aria-label="房间号"><button class="btn b-call" id="ntJoin" type="button">加入</button></div><small>点朋友发的链接也能直接进</small></div>
+      </div>
+      <div class="net-err" id="ntErr"></div>${NET_FAQ()}</div>`;
     const nameOk = () => {
       const v = $('#ntName').value.trim().slice(0, 8);
       if (!v){ $('#ntErr').textContent = '先填一个昵称，朋友才知道你是谁'; $('#ntName').focus(); return false; }
@@ -4216,9 +4224,10 @@ function netRenderDlg(){
     <div class="row" style="justify-content:space-between"><div><h3 class="rv-h" style="margin-bottom:4px">房间号</h3><div class="net-code">${NET.room}</div></div>
       <button class="ghost" id="ntCopy" type="button">复制邀请链接</button></div>
     <p class="rv-note" style="margin:0">${NET.role === 'host'
-      ? `朋友打开邀请链接（或在「联机」里输入房间号）就能加入，最多 ${SEATS - 1} 位朋友（「新开一局」里可以换成 8 人桌）。每人有 30 秒思考时间，超时自动过牌或弃牌；一手结束 10 秒后自动发下一手。你关掉或刷新这个页面，牌局就会结束。`
-      : '牌局在房主那边运行，你的底牌只有你自己看得到。断线后重新打开链接，2 分钟内还能回到原来的座位。'}</p>
+      ? `把链接发给朋友，点开就进来了。正在打的这手结束后，他们就会坐下。`
+      : '你的底牌只有你自己看得到。正在打的这手结束后，你就会坐下。'}</p>
     <div><h3 class="rv-h">房间里的人</h3><ul class="net-list">${list}</ul></div>
+    ${NET_FAQ()}
     <div class="dlg-actions"><button class="btn b-fold" id="ntLeave" type="button">${NET.role === 'host' ? '关闭房间' : '离开房间'}</button></div></div>`;
   $('#ntCopy').addEventListener('click', () => {
     const done = () => { $('#ntCopy').textContent = '已复制'; setTimeout(() => { const b = $('#ntCopy'); if (b) b.textContent = '复制邀请链接'; }, 1500); };
@@ -4227,6 +4236,14 @@ function netRenderDlg(){
   });
   $('#ntLeave').addEventListener('click', () => netLeave(''));
 }
+/* short answers to what new players ask in a room */
+const NET_FAQ = () => `<details class="net-faq"><summary>常见问题</summary><dl>
+  <dt>为什么进来了还不能打？</dt><dd>牌已经发出去的那一手，中途不能加人，不然牌序和底池都会乱，真实牌桌也是这样。等这手打完（通常几十秒），下一手就会给你发牌。</dd>
+  <dt>空着的座位是谁？</dt><dd>是电脑。朋友进来会替换掉电脑。只想跟真人打，房主开房后在「菜单 → 新开一局」里选私人局。</dd>
+  <dt>最多几个人？</dt><dd>6 人桌最多 6 个真人，8 人桌最多 8 个。坐满了的人进来只能观战。</dd>
+  <dt>想太久会怎样？</dt><dd>每人 30 秒，超时会自动过牌，不能过牌就弃牌。</dd>
+  <dt>掉线了怎么办？</dt><dd>2 分钟内重新打开链接，会回到原来的座位。房主关掉或刷新页面，牌局就结束了。</dd>
+</dl></details>`;
 function openNet(){ $('#netDlg').hidden = false; netRenderDlg(); }
 function closeNet(){ $('#netDlg').hidden = true; }
 $('#bOnline').addEventListener('click', openNet);
