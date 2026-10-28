@@ -2847,6 +2847,9 @@ $('#bLogClose').addEventListener('click', e => { e.preventDefault(); document.bo
    with everybody else's hole cards hidden. Friends only send their decisions back. */
 const sget = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
 const sset = (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} };
+/* keep the same player id only across a reload; a duplicated tab or a fresh tab is a new player */
+const navType = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type;
+if (navType !== 'reload'){ sset('holdem.netId', null); sset('holdem.netRoom', null); sset('holdem.netRole', null); }
 NET.id = sget('holdem.netId') || randHex(8); sset('holdem.netId', NET.id);
 NET.available = false; NET.lastSeq = 0; NET.roster = [];
 const TURN_MS = 30000, AWAY_MS = 2500, GONE_MS = 120000, NEXT_MS = 7000;
@@ -2945,8 +2948,18 @@ function freeSeat(){
 }
 function netPeerJoin(id, name){
   let x = NET.peers.get(id);
+  /* the same nickname coming back from a new tab gets the old seat back */
   if (!x){
-    x = {id, name:uniqueName(name, id), ava:'', seat:freeSeat(), online:true, avas:[]};
+    const old = [...NET.peers.values()].find(o => !o.online && !o.gone && o.joinName === name);
+    if (old){
+      NET.peers.delete(old.id);
+      const p = G.players[old.seat];
+      if (p && p.remote === old.id) p.remote = id;
+      old.id = id; x = old; NET.peers.set(id, x);
+    }
+  }
+  if (!x){
+    x = {id, joinName:name, name:uniqueName(name, id), ava:'', seat:freeSeat(), online:true, avas:[]};
     NET.peers.set(id, x);
     log(`${x.name}进入了房间${x.seat ? '，下一手入座' : '（座位已满，只能观战）'}`, 'sys');
   }

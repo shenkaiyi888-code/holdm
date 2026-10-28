@@ -9,6 +9,7 @@ const path = require('path');
 const PORT = +process.env.PORT || 3000;
 const MAX_PLAYERS = 6;
 const ROOM_IDLE_MS = 10 * 60 * 1000;
+const DROP_KEEP_MS = 2 * 60 * 1000;
 const PAGE = path.join(__dirname, 'index.html');
 
 /* room code -> {code, host, clients: Map(id -> {id, name, res, role, alive}), touched} */
@@ -56,6 +57,8 @@ function openStream(req, res, q){
   if (!room) return fail('房间不存在，可能已经关闭了');
   let c = room.clients.get(id);
   if (!c){
+    /* people who dropped and never came back stop holding a place */
+    room.clients.forEach((o, k) => { if (!o.res && k !== room.host && Date.now() - (o.dropped || 0) > DROP_KEEP_MS) room.clients.delete(k); });
     if (room.clients.size >= MAX_PLAYERS) return fail('房间已满（最多 6 人）');
     c = {id, name, res:null};
     room.clients.set(id, c);
@@ -67,7 +70,7 @@ function openStream(req, res, q){
   room.clients.forEach(o => push(o, {t:'roster', list:roster(room)}));
   req.on('close', () => {
     if (c.res !== res) return;
-    c.res = null; room.touched = Date.now();
+    c.res = null; c.dropped = room.touched = Date.now();
     if (id === room.host) room.clients.forEach(o => { if (o !== c) push(o, {t:'hostgone'}); });
     else tellHost(room, {t:'drop', id});
     room.clients.forEach(o => push(o, {t:'roster', list:roster(room)}));
