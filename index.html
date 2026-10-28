@@ -7,15 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="holdm">
+<meta name="apple-mobile-web-app-title" content="bluff?">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
-<title>holdm</title>
+<title>bluff?</title>
 <meta name="author" content="Yiiiii">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2064%2064%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22%23e3b352%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22none%22%20stroke%3D%22%231d1406%22%20stroke-width%3D%227%22%20stroke-dasharray%3D%229.4%206.3%22%20opacity%3D%22.55%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2221%22%20fill%3D%22%230e1320%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2221%22%20fill%3D%22none%22%20stroke%3D%22%23e3b352%22%20stroke-width%3D%221.5%22%20opacity%3D%22.7%22/%3E%3Cpath%20d%3D%22M32%2017c4%206%2012%2010.5%2012%2017a6.5%206.5%200%200%201-10.6%205.1c.4%203%201.6%205.5%203.6%207.4H27c2-1.9%203.2-4.4%203.6-7.4A6.5%206.5%200%200%201%2020%2034c0-6.5%208-11%2012-17Z%22%20fill%3D%22%23fbf8f1%22/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,800&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,800;1,9..144,800&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
 <style>
 /* Layout: card-room table on the left that always fits the window, dealer + your console in a side column; stacked on phones */
 :root{
@@ -59,7 +59,7 @@ button{cursor:pointer}
 .brand{display:flex; align-items:center; gap:10px; flex-wrap:nowrap; min-width:0}
 .brand .logo{display:block; width:clamp(30px,3.2vw,36px); flex:none; filter:drop-shadow(0 3px 8px rgba(227,179,82,.25))}
 .brand .logo svg{display:block; width:100%; height:auto}
-.brand h1{margin:0; font-family:"Fraunces",var(--f-display); font-style:italic; font-weight:800; font-size:clamp(26px,3.2vw,32px); letter-spacing:-.01em; line-height:1; color:var(--ivory)}
+.brand h1{margin:0; font-family:"Fraunces",var(--f-display); font-style:normal; font-weight:800; font-size:clamp(26px,3.2vw,32px); letter-spacing:-.01em; line-height:1; color:var(--ivory)}
 .brand h1 em{font-style:italic; color:var(--gold)}
 .byline{cursor:default; align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
 .suits{font-size:15px; letter-spacing:.25em; color:var(--faint)}
@@ -564,7 +564,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .welcome .w-brand{display:flex; flex-direction:column; align-items:center; gap:6px}
 .welcome .w-brand .logo{width:64px; filter:drop-shadow(0 6px 18px rgba(227,179,82,.3))}
 .welcome .w-brand .logo svg{display:block; width:100%; height:auto}
-.welcome .w-brand h2{flex:none; margin:4px 0 0; font-family:"Fraunces",var(--f-display); font-style:italic; font-weight:800; font-size:44px; line-height:1; color:var(--ivory)}
+.welcome .w-brand h2{flex:none; margin:4px 0 0; font-family:"Fraunces",var(--f-display); font-style:normal; font-weight:800; font-size:44px; line-height:1; color:var(--ivory)}
 .welcome .w-brand h2 em{font-style:italic; color:var(--gold)}
 .welcome .w-brand span{font:500 12px var(--f-num); letter-spacing:.1em; color:var(--faint)}
 .welcome .w-pick{display:flex; flex-direction:column; gap:8px; text-align:left}
@@ -924,7 +924,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   <header class="top">
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
-      <h1 aria-label="holdm">hold<em>m</em></h1>
+      <h1 aria-label="bluff?">bluff<em>?</em></h1>
       <span class="byline">by Yiiiii</span>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
@@ -987,7 +987,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
     <div class="felt">
       <div class="sins" id="sins" aria-hidden="true"></div>
       <div class="center">
-        <div class="watermark" id="wmark">holdm</div>
+        <div class="watermark" id="wmark">bluff?</div>
         <div class="street" id="street">翻牌前</div>
         <div class="board" id="board"></div>
         <div class="board" id="board2" hidden></div>
@@ -1150,7 +1150,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   <div class="modal welcome" id="startDlg" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
     <div class="sheet">
       <div class="w-brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
-        <h2 id="stTitle" aria-label="holdm">hold<em>m</em></h2>
+        <h2 id="stTitle" aria-label="bluff?">bluff<em>?</em></h2>
         <span>by Yiiiii</span>
       </div>
       <div class="w-pick">
@@ -1476,7 +1476,7 @@ $('#sins').innerHTML = Object.entries(SINS).map(([k, [cn, la]], n) => {
 }).join('');
 function sinTheme(on){
   document.body.classList.toggle('sin', on);
-  $('#wmark').textContent = on ? 'SEPTEM · PECCATA' : 'holdm';
+  $('#wmark').textContent = on ? 'SEPTEM · PECCATA' : 'bluff?';
 }
 function lightSin(key){
   const k = SIN_OF[key]; if (!k) return '';
