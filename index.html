@@ -460,9 +460,11 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .b-next{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink)}
 .b-review{background:transparent; border-color:rgba(227,179,82,.45); color:var(--gold)}
 .btn kbd{font:500 10px var(--f-num); opacity:.5; margin-left:6px}
-.next-row{display:flex; gap:8px}
+.next-row{display:flex; gap:8px; flex-wrap:wrap}
 .next-row .btn{flex:1}
 .next-row .b-next{flex:1.6}
+#bStraddle{flex:1 0 100%; order:-1; min-height:40px; padding:6px 12px}
+#bStraddle[aria-pressed="true"]{border-color:var(--gold); color:var(--gold); background:rgba(227,179,82,.16)}
 .b-show{background:rgba(127,170,255,.14); border-color:rgba(127,170,255,.45); color:#bcd0ff}
 .image-line{font-size:12px; color:var(--muted); line-height:1.5; padding:6px 10px; background:var(--well); border-radius:10px}
 .image-line b{color:var(--gold)}
@@ -950,7 +952,6 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <label class="toggle" for="optSound"><input type="checkbox" id="optSound" checked> 音效</label>
       <label class="toggle" for="optRit" title="全下时可以商量把剩下的牌发两次"><input type="checkbox" id="optRit" checked> 发两次协商</label>
       <label class="toggle" for="optEq"><input type="checkbox" id="optEq" checked> 显示胜率</label>
-      <label class="toggle" for="optStraddle" title="坐在大盲下家（枪口位）时，发牌前自动多下 2 个大盲，翻牌前最后说话"><input type="checkbox" id="optStraddle"> 枪口位抓盲</label>
       <label class="toggle" for="optMute"><input type="checkbox" id="optMute"> 荷官静音</label>
       <label class="toggle" for="optDealer"><input type="checkbox" id="optDealer" checked> 显示荷官</label>
       <label class="toggle" for="optAuto" title="一手结束 10 秒后自动发下一手；联机有朋友在桌上时总是自动"><input type="checkbox" id="optAuto" checked> 自动下一手</label>
@@ -1064,6 +1065,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       </div>
       <div class="next-row" id="nextRow" hidden>
         <button class="btn b-show" id="bShow" type="button" hidden>秀牌</button>
+        <button class="btn b-show" id="bStraddle" type="button" hidden aria-pressed="false" title="抓盲：发牌前先下 2 个大盲，翻牌前你最后说话">抓盲</button>
         <button class="btn b-show" id="bRabbit" type="button" hidden>看没发的牌</button>
         <button class="btn b-show" id="bRabbitNo" type="button" hidden>不看</button>
         <button class="btn b-call" id="bRebuy" type="button" hidden>补码</button>
@@ -1419,12 +1421,20 @@ function setDealerHidden(on){
 }
 setTimeout(() => setDealerHidden(dealerHidden));
 $('#optMute').addEventListener('change', e => setMute(e.target.checked));
-let straddlePref = store.get('holdem.straddle', '0') === '1';
-$('#optStraddle').checked = straddlePref;
-$('#optStraddle').addEventListener('change', e => {
-  straddlePref = e.target.checked; store.set('holdem.straddle', straddlePref ? '1' : '0');
-  if (NET.role === 'guest') netSend({t:'hello', name:myName || '玩家', ava:myAva, straddle:straddlePref});
-  log(straddlePref ? '已打开枪口位抓盲：轮到你坐枪口位时，发牌前自动下 2 个大盲' : '已关闭枪口位抓盲', 'sys');
+/* straddle is offered between hands: when you will sit right after the big blind next hand, a button asks you */
+let straddleNext = false;
+function nextUtg(){
+  const ok = q => q && !q.out && !q.vacant && q.chips > 0;
+  if (G.players.filter(ok).length < 3) return -1;
+  const d = nextIdx(G.dealer, ok), sb = nextIdx(d, ok), bb = nextIdx(sb, ok);
+  return nextIdx(bb, ok);
+}
+const straddleOffer = () => G.handOver && !G.over && !G.waitSeat && G.handNo > 0 && nextUtg() === 0 && G.players[0].chips > G.bbAmt * 4 && !(NET.role === 'guest' && !NET.seated);
+$('#bStraddle').addEventListener('click', () => {
+  straddleNext = !straddleNext;
+  if (NET.role === 'guest') netSend({t:'straddle', on:straddleNext});
+  else G.players[0].straddleNext = straddleNext;
+  renderControls();
 });
 $('#optDealer').addEventListener('change', e => setDealerHidden(!e.target.checked));
 document.addEventListener('click', e => { if (e.target.closest('#dMute')){ e.stopPropagation(); setMute(!dealerMuted); if (!dealerMuted) dealerSay('hello'); } });
@@ -1821,7 +1831,9 @@ function startHand(){
   /* straddle: the player after the big blind may put in two big blinds blind and then acts last before the flop */
   G.straddleIdx = -1;
   const utg = nextIdx(G.bbIdx, p => !p.out), up = G.players[utg];
-  if (alive >= 3 && utg !== G.sbIdx && wantsStraddle(up) && up.chips > G.bbAmt * 4){
+  const wantS = alive >= 3 && utg !== G.sbIdx && wantsStraddle(up);
+  G.players.forEach(q => { q.straddleNext = false; }); straddleNext = false;
+  if (wantS && up.chips > G.bbAmt * 4){
     blind(utg, G.bbAmt * 2, '抓盲');
     G.straddleIdx = utg;
     log(`${up.name}在枪口位抓盲 ${G.bbAmt * 2}，翻牌前最后说话`, 'sys');
@@ -1837,8 +1849,7 @@ function startHand(){
   wait(proceed, animateDeal() + 150);
 }
 function wantsStraddle(p){
-  if (p === G.players[0]) return straddlePref;
-  if (p.remote){ const x = NET.peers.get(p.remote); return !!(x && x.straddle); }
+  if (p.human) return !!p.straddleNext;
   /* loose, aggressive computer players straddle now and then */
   return !p.human && p.aggr >= .75 && p.tight < 0 && Math.random() < .2;
 }
@@ -3107,6 +3118,11 @@ function renderControls(){
   $('#bReview').disabled = !HISTORY.some(h => h.done);
   $('#bShow').hidden = !canShow();
   const rb = rabbitMine(), R = G.rabbit;
+  const so = straddleOffer();
+  if (!so) straddleNext = false;
+  $('#bStraddle').hidden = !so;
+  $('#bStraddle').setAttribute('aria-pressed', String(straddleNext));
+  $('#bStraddle').textContent = straddleNext ? `✓ 下一手抓盲 ${fmt(G.bbAmt * 2)}` : `下一手抓盲 ${fmt(G.bbAmt * 2)}？`;
   $('#bRabbit').hidden = !rb; $('#bRabbitNo').hidden = rb !== 'answer';
   $('#bRabbit').disabled = rb === 'wait';
   $('#bRabbit').textContent = rb === 'answer' ? `同意看没发的牌` : rb === 'wait' ? '等对方同意…' : '看没发的牌';
@@ -3842,7 +3858,7 @@ function netOnMessage(m){
     if (NET.role === 'guest'){
       const h = NET.roster.find(x => x.host);
       const back = !!(h && h.online);
-      if (back && NET.hostGone){ NET.hostGone = false; netSend({t:'hello', name:myName || '玩家', ava:myAva, straddle:straddlePref}); }
+      if (back && NET.hostGone){ NET.hostGone = false; netSend({t:'hello', name:myName || '玩家', ava:myAva}); }
       NET.hostGone = !back;
       render();
     } else if (NET.role === 'host'){
@@ -3925,7 +3941,6 @@ function netHostMessage(m){
   if (m.t === 'hello'){
     const nm = uniqueName(String(m.name || '').trim() || x.name, x.id);
     if (nm !== x.name) log(`${x.name} 改名为 ${nm}`, 'sys');
-    x.straddle = !!m.straddle;
     x.name = nm; x.ava = typeof m.ava === 'string' && m.ava.startsWith('data:image/') && m.ava.length < 60000 ? m.ava : '';
     if (mine){ p.name = x.name; p.ava = x.ava; }
     render(); netRenderDlg(); return;
@@ -3952,6 +3967,7 @@ function netHostMessage(m){
     p.chips -= n; log(`${p.name}打赏荷官 ${n}`, 'sys'); render(); return;
   }
   if (m.t === 'rabbit'){ if (m.key === G.salt) rabbitAct(i, !!m.yes); return; }
+  if (m.t === 'straddle'){ p.straddleNext = !!m.on && G.handOver; return; }
   if (m.t === 'rebuy'){
     if (mode === 'cash' && p.out){ p.wantRebuy = true; log(`${p.name}要补码，下一手生效`, 'sys'); privKick(); render(); }
   }
@@ -4091,7 +4107,7 @@ function netFlush(){
 
 /* ----- guest side ----- */
 function netGuestMessage(m){
-  if (m.t === 'welcome' || m.t === 'who'){ netSend({t:'hello', name:myName || '玩家', ava:myAva, straddle:straddlePref}); return; }
+  if (m.t === 'welcome' || m.t === 'who'){ netSend({t:'hello', name:myName || '玩家', ava:myAva}); return; }
   if (m.t === 'hostgone'){ NET.hostGone = true; G.deadline = 0; netBadge(); render(); return; }
   if (m.t === 'sync'){
     if (m.seq <= NET.lastSeq) return;
