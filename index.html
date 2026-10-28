@@ -61,7 +61,7 @@ button{cursor:pointer}
 .brand .logo svg{display:block; width:100%; height:auto}
 .brand h1{margin:0; font-family:"Fraunces",var(--f-display); font-style:italic; font-weight:800; font-size:clamp(26px,3.2vw,32px); letter-spacing:-.01em; line-height:1; color:var(--ivory)}
 .brand h1 em{font-style:italic; color:var(--gold)}
-.byline{align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
+.byline{cursor:default; align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
 .suits{font-size:15px; letter-spacing:.25em; color:var(--faint)}
 .suits b{color:var(--card-red); font-weight:400}
 .meta{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
@@ -1138,7 +1138,7 @@ G.handTips = 0;
 /* online play: role is null (offline), 'host' (runs the game) or 'guest' (mirrors the host) */
 let SEATS = (() => { try { return localStorage.getItem('holdem.seats') === '8' ? 8 : 6; } catch (e) { return 6; } })();
 const NET = {role:null, room:'', id:'', peers:new Map(), out:{logs:[], says:[]}, seq:0};
-const PERSONAL_SAY = new Set(['youWin', 'youWinBig', 'youLoseBig', 'otherWin', 'champion', 'bust', 'imgBluffy', 'imgHonest',
+const PERSONAL_SAY = new Set(['heroAllIn', 'badCall', 'loseStreak', 'unlockFind', 'unlockChamp', 'youWin', 'youWinBig', 'youLoseBig', 'otherWin', 'champion', 'bust', 'imgBluffy', 'imgHonest',
   'showBluff', 'showValue', 'showOther', 'smoke', 'tipS', 'tipM', 'tipL', 'ritAsk', 'ritBotAsk', 'botShowFold']);
 const online = () => NET.role === 'host' && [...NET.peers.values()].some(x => x.seat > 0);
 const isRemote = p => !!(p && p.remote);
@@ -1151,135 +1151,28 @@ const store = {
 const DEALERS = {
   sally:{
     name:'Sally', role:'常驻荷官',
-    svg:'<svg viewBox="7 2 66 66" aria-hidden="true"><path d="M22 38 Q19 14 40 13 Q61 14 58 38 L60 66 Q50 70 40 68 Q30 70 20 66Z" fill="#17131a"/><circle cx="40" cy="13" r="7" fill="#17131a"/><rect x="29" y="11.2" width="22" height="1.8" rx=".9" fill="#5fb08a" transform="rotate(-14 40 12)"/><circle cx="50.6" cy="9.6" r="1.6" fill="#7fd0a8"/><g fill="#f07a8a"><circle cx="33" cy="12.4" r="1.7"/><circle cx="35.4" cy="11" r="1.7"/><circle cx="35.6" cy="13.8" r="1.7"/><circle cx="32.6" cy="15" r="1.7"/></g><circle cx="34.3" cy="13" r="1" fill="#ffd36b"/><path d="M41 7 Q47 2 44 7.5 Q42.5 9 41 7Z" fill="#17131a"/><path d="M40.6 8.4 Q42 4 45.5 3.4" stroke="#17131a" stroke-width="1.3" fill="none" stroke-linecap="round"/><rect x="35.5" y="47" width="9" height="12" rx="4" fill="#f3d0b6"/><path d="M10 84 Q12 64 30 60 L50 60 Q68 64 70 84Z" fill="#b51f33"/><path d="M33 56.5 L47 56.5 L47.5 61.5 Q40 63.5 32.5 61.5Z" fill="#b51f33" stroke="#e3b352" stroke-width="1"/><path d="M40 62.6 Q47 64 52 70" stroke="#e3b352" stroke-width="1" fill="none"/><path d="M44.5 64.2 h4" stroke="#e3b352" stroke-width="1.4" stroke-linecap="round"/><circle cx="49.3" cy="64.2" r="1" fill="#e3b352"/><g fill="#e3b352" opacity=".55"><circle cx="24" cy="70" r="1.2"/><circle cx="58" cy="73" r="1.2"/><circle cx="30" cy="77" r="1"/></g><ellipse cx="40" cy="36.5" rx="13" ry="15" fill="#f8dcc6"/><path d="M26.6 35 Q25 18.5 40 18 Q55 18.5 53.4 35 Q53 31 51.5 29.5 L49 31 L47 29 L44.5 31 L42 29 L39.5 31 L37 29 L34.5 31 L32 29 L29.5 31 L28.2 29.6 Q27 31.5 26.6 35Z" fill="#17131a"/><path d="M27 32 Q24.5 46 27.5 56 L23.5 54 Q21 42 27 32Z" fill="#17131a"/><path d="M53 32 Q55.5 46 52.5 56 L56.5 54 Q59 42 53 32Z" fill="#17131a"/><path d="M31.5 32.6 q3 -1.2 6 .2" stroke="#3a2a26" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M42.5 32.8 q3 -1.4 6 -.2" stroke="#3a2a26" stroke-width=".9" fill="none" stroke-linecap="round"/><ellipse cx="35" cy="38.2" rx="3" ry="3.4" fill="#2a1c1a"/><ellipse cx="45" cy="38.2" rx="3" ry="3.4" fill="#2a1c1a"/><circle cx="35.9" cy="36.9" r="1.2" fill="#fff"/><circle cx="45.9" cy="36.9" r="1.2" fill="#fff"/><circle cx="34.2" cy="39.6" r=".55" fill="#fff"/><circle cx="44.2" cy="39.6" r=".55" fill="#fff"/><path d="M31.6 35.6 l-1.3 -.9 M48.4 35.6 l1.3 -.9" stroke="#2a1c1a" stroke-width=".8" stroke-linecap="round"/><ellipse cx="40" cy="46.4" rx="1.5" ry="1.7" fill="#d9636a"/><ellipse cx="40" cy="46.9" rx=".8" ry=".7" fill="#f2a0a0"/><ellipse cx="30.6" cy="43" rx="3" ry="1.7" fill="#f49a9c" opacity=".55"/><ellipse cx="49.4" cy="43" rx="3" ry="1.7" fill="#f49a9c" opacity=".55"/><path d="M29.4 42.6 l.8 .9 M31.2 42.4 l.8 .9 M48.2 42.4 l.8 .9 M50 42.6 l.8 .9" stroke="#e07a80" stroke-width=".55" stroke-linecap="round"/><circle cx="27" cy="44.5" r="1.1" fill="#e3b352"/><ellipse cx="27" cy="47.2" rx="1.2" ry="1.6" fill="#5fb08a"/><circle cx="53" cy="44.5" r="1.1" fill="#e3b352"/><ellipse cx="53" cy="47.2" rx="1.2" ry="1.6" fill="#5fb08a"/></svg>',
-    lines:{
-      hello:['你好呀…我是 Sally，今晚的荷官。牌是发给你们的，对吧？我确认一下。','欢迎欢迎～我刚刚数了三遍筹码，三遍都不一样，算了不数了。','嗨，我是 Sally。我很专业的，我昨天才学会洗牌。'],
-      newHand:['发好啦…等一下，我是不是少发了一张。哦没有，就是两张，对的。','新的一手～我洗牌的时候在想晚饭吃什么。','这副牌我洗得很干净。……不是用水洗的。','Sally 发牌，童叟无欺。……童叟是谁呀？','第 {no} 手了吗？我以为才第三手。','嗯…牌发出去了，现在我可以发呆了吗？'],
-      flop:['翻牌～一、二、三，三张，我数过了。','翻牌来啦…这几张牌好像在看我。','翻牌！我也不知道好不好，看你们的表情吧。'],
-      turn:['转牌…为什么叫转牌呀，我转了一圈也没想明白。','第四张～我刚刚走神了，你们没看见吧？','转牌来啦，诶，河牌是下一张对吧？'],
-      river:['河牌…河里真的有牌吗？','最后一张啦，发完我就可以去喝奶茶了。','河牌到了。我屏住呼吸了，你们也屏一下。'],
-      allIn:['哇…{name}全下了。全下就是…全部都下的意思吧？','{name}把筹码全推过来了，好多，我抱不动了。','{name}全下！我心跳得比你还快。'],
-      youWin:['你赢了 {n}！诶，我是不是该鼓掌？啪啪啪。','这 {n} 是你的啦，我帮你推过去……推歪了，你自己拿一下。','赢了耶，我就说你今天头发很好看，运气一定好。'],
-      youWinBig:['{n}！好多好多，我数到一半忘了数到哪了。','这么大的底池……我要不要拍张照留念？'],
-      youLoseBig:['没关系的…我上次打麻将也输了，后来就忘了。','别难过，筹码只是暂时去别人那里玩一会儿。','输了要吃点甜的，我这有一颗糖……哦我吃掉了。'],
-      otherWin:['{name}赢了 {n}，嗯…恭喜恭喜。','这手是{name}的～我应该没看错吧。','{name}拿走了 {n}，好厉害，虽然我没太看懂。'],
-      tipS:['诶，给我的吗？谢谢你呀，我拿去买奶茶。','谢谢～我会好好发牌的，尽量不发错。'],
-      tipM:['好多！我可以买两杯奶茶了，加珍珠。','谢谢老板！Sally 今天发的牌都会是好牌……我说了不算的。'],
-      tipL:['这么多……我是不是可以把奶茶店买下来了？','哇……你是不是走错了，这是给荷官的哦。真的给我吗？'],
-      smoke:['咳咳…Sally 不会抽烟，但我帮你拿烟灰缸。……这是筹码盒，等我一下。'],
-      champion:['你把整张桌子都赢了！……那我明天还用来上班吗？','冠军！我给你颁个奖……我只有一张纸巾，给你。'],
-      bust:['筹码没有了…我的钱包也经常这样，我们再来一局吧？','嗯…筹码去旅行了。再来一局把它们接回来吧。']
-    }
+    svg:'<svg viewBox="7 2 66 66" aria-hidden="true"><path d="M21 38 Q18 13 40 12 Q62 13 59 38 Q64 46 60 52 Q65 59 60 67 Q50 71 40 69 Q30 71 20 67 Q15 59 20 52 Q16 46 21 38Z" fill="#6a1424"/><g stroke="#932a3e" stroke-width="1.2" fill="none" stroke-linecap="round"><path d="M20 46 q-2 4 1 8"/><path d="M60 46 q2 4 -1 8"/><path d="M19 58 q-2 4 2 7"/><path d="M61 58 q2 4 -2 7"/></g><rect x="35.5" y="47" width="9" height="12" rx="4" fill="#f5d4bf"/><path d="M10 84 Q12 64 30 60 L50 60 Q68 64 70 84Z" fill="#141017"/><path d="M30 60 L40 75 L50 60 L46.5 59 L40 68 L33.5 59Z" fill="#f5d4bf"/><path d="M28 60.5 L40 77 L52 60.5 L55 61.5 L40 82 L25 61.5Z" fill="#a3182c"/><path d="M28 60.5 L40 77 L52 60.5" stroke="#e3b352" stroke-width=".8" fill="none"/><path d="M35.5 59.6 Q40 63.4 44.5 59.6" stroke="#e3b352" stroke-width=".7" fill="none"/><circle cx="40" cy="63" r="1.1" fill="#e3b352"/><ellipse cx="40" cy="36.5" rx="12.6" ry="15" fill="#f8dac6"/><path d="M26.4 37 Q23.5 17 40 16.5 Q57 17 53.8 37 Q52.5 27.5 45 24 Q37.5 28.5 30.5 27.5 Q27.5 31 26.4 37Z" fill="#7d1a2e"/><path d="M32 18.5 Q42 17 49 23" stroke="#a33448" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M27 30 Q22 42 26 50 Q22.5 56 27 61 L22.5 61 Q17.5 55 21 48.5 Q18.5 40 27 30Z" fill="#7d1a2e"/><path d="M53 30 Q58 42 54 50 Q57.5 56 53 61 L57.5 61 Q62.5 55 59 48.5 Q61.5 40 53 30Z" fill="#7d1a2e"/><path d="M30.5 32.4 q3.6 -2.2 7.4 -.4" stroke="#4a1620" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M42 32 q3.8 -1.8 7.4 .4" stroke="#4a1620" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M31.4 38.6 q3.6 -3.4 7.2 0 q-3.6 2.2 -7.2 0Z" fill="#fff"/><path d="M41.4 38.6 q3.6 -3.4 7.2 0 q-3.6 2.2 -7.2 0Z" fill="#fff"/><circle cx="35" cy="38.2" r="1.9" fill="#2a9a5e"/><circle cx="45" cy="38.2" r="1.9" fill="#2a9a5e"/><circle cx="35" cy="38.3" r=".9" fill="#0c2a1a"/><circle cx="45" cy="38.3" r=".9" fill="#0c2a1a"/><circle cx="35.7" cy="37.5" r=".55" fill="#fff"/><circle cx="45.7" cy="37.5" r=".55" fill="#fff"/><path d="M31.2 38.5 q3.8 -4 7.6 -.3" stroke="#2a1018" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M30.6 38.6 l-1.4 -1.1" stroke="#2a1018" stroke-width="1.1" stroke-linecap="round"/><path d="M41.2 38.2 q3.8 -3.7 7.6 .3" stroke="#2a1018" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M49.4 38.6 l1.4 -1.1" stroke="#2a1018" stroke-width="1.1" stroke-linecap="round"/><path d="M40 41.4 q-1 2.6 .7 3.2" stroke="#d6a28a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M36.4 46 q3.6 2.8 7.2 -.2 q-3.6 1.2 -7.2 .2Z" fill="#b71e34"/><path d="M36.4 46 q3.6 -.9 7.2 -.2" stroke="#b71e34" stroke-width=".8" fill="none"/><circle cx="47.6" cy="44.4" r=".5" fill="#6b3a32"/><ellipse cx="31" cy="43" rx="2.6" ry="1.4" fill="#f09a9a" opacity=".35"/><ellipse cx="49" cy="43" rx="2.6" ry="1.4" fill="#f09a9a" opacity=".35"/><circle cx="27.2" cy="47.2" r="2.1" fill="none" stroke="#e3b352" stroke-width="1"/><circle cx="52.8" cy="47.2" r="2.1" fill="none" stroke="#e3b352" stroke-width="1"/></svg>',
+    lines:{"hello": ["Darling，准备好迎接今晚的惊喜了吗？", "欢迎，我是 Sally。今晚这张牌桌，由我来让它更精彩。"], "newHand": ["新的一手，Darling，别让我失望。", "牌发好了，好好看看你手里的秘密。", "勇敢的男人总是很迷人，但鲁莽可不是。", "Sweetheart，深呼吸，今晚还很长。", "我发出的每一张牌，都是给你的小礼物。"], "flop": ["翻牌来了，Darling，有心动的感觉吗？", "三张牌，三种可能，我最喜欢这一刻。"], "turn": ["转牌。故事开始变得有意思了。", "第四张，Sweetheart，别眨眼。"], "river": ["河牌，最后的告白时间。", "最后一张，Darling，是心跳还是心碎呢？"], "allIn": ["{name}全下了，真是热情。", "哦？{name}把一切都交出来了。"], "heroAllIn": ["All-in？Darling，你这样让我很心动……也有点担心。", "全部押上了？我就喜欢有胆量的人。"], "badCall": ["勇敢的男人总是很迷人，但鲁莽可不是。", "Sweetheart，这一跟，是为了牌还是为了我？"], "youWin": ["Sweetheart，看来幸运女神今天站在你这边。", "这 {n} 是你的了，Darling，漂亮。"], "youWinBig": ["{n}！Darling，今晚的主角是你了。"], "youLoseBig": ["输了也没关系，至少今晚还有我陪着你。", "别皱眉，Darling，皱眉可不适合你。"], "loseStreak": ["Sweetheart，连着几手不顺……过来，我帮你换一换运气。", "输了也没关系，至少今晚还有我陪着你。"], "otherWin": ["{name}赢走了 {n}，真是幸运的人。", "这一手，属于{name}。"], "tipS": ["谢谢你，Darling。"], "tipM": ["Sweetheart，你真懂得怎么讨人欢心。"], "tipL": ["{n}？Darling，你这是想让我今晚只为你发牌吗？"], "smoke": ["火给你点上了，Darling，慢慢享受。"], "champion": ["整张桌子都是你的了。今晚，你就是我的冠军，Darling。"], "bust": ["筹码没了？没关系，Darling，我们再来一局。"]}
   },
   nemo:{
-    name:'Nemo',
-    svg:'<svg viewBox="10 9 60 60" aria-hidden="true"><path d="M21 40 Q19 13 40 12 Q61 13 59 40 L61 67 Q50 71 40 69 Q30 71 19 67Z" fill="#1d1a22"/><rect x="35" y="48" width="10" height="13" rx="4" fill="#efc7aa"/><path d="M10 84 Q13 64 30 60 L40 66 L50 60 Q67 64 70 84Z" fill="#1c1f2b"/><path d="M30 60 L40 75 L50 60 L46.5 59 L40 66.5 L33.5 59Z" fill="#f6f3ee"/><path d="M35 65 L40 67.6 L45 65 L45 70.2 L40 67.6 L35 70.2Z" fill="#c0392b"/><circle cx="40" cy="67.6" r="1.3" fill="#8e2a20"/><ellipse cx="40" cy="37" rx="13.5" ry="15.5" fill="#f6d5bd"/><path d="M26 35 Q25 19 40 18.5 Q55 19 54.5 35 Q51 27 45 25.5 Q38 30 30.5 28 Q28 31 26 35Z" fill="#1d1a22"/><path d="M26.4 32 Q24 46 27.5 55 L23 53 Q20.5 41 26.4 32Z" fill="#1d1a22"/><path d="M53.6 32 Q56 46 52.5 55 L57 53 Q59.5 41 53.6 32Z" fill="#1d1a22"/><path d="M30.8 33.2 q3.6 -1.7 7.2 0" stroke="#3a2a26" stroke-width="1.15" fill="none" stroke-linecap="round"/><path d="M42 33.2 q3.6 -1.7 7.2 0" stroke="#3a2a26" stroke-width="1.15" fill="none" stroke-linecap="round"/><path d="M31.4 38.4 q3.4 -2.8 6.8 0 q-3.4 1.7 -6.8 0Z" fill="#1d1a22"/><path d="M41.8 38.4 q3.4 -2.8 6.8 0 q-3.4 1.7 -6.8 0Z" fill="#1d1a22"/><circle cx="35.6" cy="37.6" r=".75" fill="#fff"/><circle cx="46" cy="37.6" r=".75" fill="#fff"/><path d="M40 41.5 q-1.1 3 .8 3.6" stroke="#d9a98c" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M37 47.6 q3 1.9 6 0 q-3 -1.1 -6 0Z" fill="#d9636a"/><ellipse cx="31" cy="43.4" rx="3" ry="1.8" fill="#f2a3a0" opacity=".45"/><ellipse cx="49" cy="43.4" rx="3" ry="1.8" fill="#f2a3a0" opacity=".45"/><circle cx="26.7" cy="44.5" r="1.3" fill="#e3b352"/><circle cx="53.3" cy="44.5" r="1.3" fill="#e3b352"/><rect x="44" y="21" width="10" height="2" rx="1" fill="#e3b352" transform="rotate(18 49 22)"/><path d="M53.5 18.5 l2.2 2.6 -2.2 2.6 -2.2 -2.6Z" fill="#d23a36"/></svg>',
-    lines:{
-      hello:['晚上好，我是 Nemo，今晚这张桌子由我来发牌。','欢迎入座，祝你今晚手气旺。'],
-      newHand:['新的一手，祝你好运。','牌已发出，请看牌。','这一手，慢慢想。','洗好了，Nemo 从不偏心。'],
-      flop:['翻牌，三张公共牌。','翻牌来了，看看谁中了。'],
-      turn:['转牌。','第四张，局面开始清楚了。'],
-      river:['河牌，最后一张。','河牌到了，想好再下注。'],
-      allIn:['{name}全下了，大家注意。','{name}把筹码全推进来了。'],
-      youWin:['恭喜，这 {n} 是你的。','漂亮，这一手赢得好。'],
-      youWinBig:['{n} 的大底池，恭喜你！今晚状态真好。'],
-      youLoseBig:['别灰心，输一手不算什么，稳住。','下一手重新来，牌是随机的，运气会转。'],
-      otherWin:['{name}赢得 {n}。','这手归{name}。'],
-      tipS:['谢谢你，祝你好运。'],
-      tipM:['谢谢老板，Nemo 记住你了。'],
-      tipL:['这么大方，谢谢！今晚的好运都给你。'],
-      smoke:['烟灰缸给你放好了，慢慢抽。'],
-      champion:['整张桌子都被你赢下来了，恭喜！'],
-      bust:['筹码用完了。要再来一局吗？我还在这儿。']
-    }
+    name:'Nemo', role:'深海魔女',
+    svg:'<svg viewBox="7 2 66 66" aria-hidden="true"><g fill="#9fe0ff" opacity=".35"><circle cx="14" cy="22" r="1.6"/><circle cx="17" cy="15" r="1"/><circle cx="66" cy="28" r="1.3"/><circle cx="63" cy="19" r=".9"/></g><path d="M21 38 Q18 13 40 12 Q62 13 59 38 L63 69 Q50 72 40 70 Q30 72 17 69Z" fill="#121c34"/><g stroke="#2a4170" stroke-width="1.1" fill="none" stroke-linecap="round"><path d="M22 44 q-1 12 -2 22"/><path d="M58 44 q1 12 2 22"/></g><rect x="35.5" y="47" width="9" height="12" rx="4" fill="#efe2e6"/><path d="M10 84 Q12 64 30 60 L50 60 Q68 64 70 84Z" fill="#1a2b4e"/><path d="M30 60 L40 73 L50 60 L46.5 59 L40 66.5 L33.5 59Z" fill="#0a0e18"/><path d="M33.5 59 L40 66.5 L46.5 59" fill="#efe2e6"/><path d="M35 59.4 Q40 63.8 45 59.4" stroke="#cdd6de" stroke-width=".7" fill="none"/><path d="M40 63 q1.7 2.1 0 3.8 q-1.7 -1.7 0 -3.8Z" fill="#9fe0ff" stroke="#cdd6de" stroke-width=".5"/><g fill="#cdd6de" opacity=".8"><circle cx="24" cy="72" r=".9"/><circle cx="56" cy="72" r=".9"/></g><ellipse cx="40" cy="36.5" rx="12.6" ry="15" fill="#f6ecef"/><path d="M26.6 37 Q24.5 17.5 40 17 Q55.5 17.5 53.4 37 Q52 30 49 27 Q46 31.5 41 32.5 Q43.2 28.5 42 25.5 Q37 30.5 30.6 30.5 Q28 33 26.6 37Z" fill="#18264a"/><path d="M33 19 Q41 17.5 47 21" stroke="#34508a" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M27 32 Q24.5 47 26 60 L22 59 Q20 44 27 32Z" fill="#18264a"/><path d="M53 32 Q55.5 47 54 60 L58 59 Q60 44 53 32Z" fill="#18264a"/><path d="M50.5 20 l1.2 2.6 2.8 .3 -2.1 1.9 .6 2.8 -2.5 -1.4 -2.5 1.4 .6 -2.8 -2.1 -1.9 2.8 -.3Z" fill="#d6dee6"/><path d="M31 33.6 q3.4 -1.4 7 .2" stroke="#26304a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M42 33.8 q3.6 -1.6 7 -.2" stroke="#26304a" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M31.4 39.4 q3.6 -2.2 7.2 0 q-3.6 1.6 -7.2 0Z" fill="#fff"/><path d="M41.4 39.4 q3.6 -2.2 7.2 0 q-3.6 1.6 -7.2 0Z" fill="#fff"/><ellipse cx="35.4" cy="39.3" rx="1.8" ry="1.35" fill="#6cc8f0"/><ellipse cx="45.4" cy="39.3" rx="1.8" ry="1.35" fill="#6cc8f0"/><circle cx="35.4" cy="39.3" r=".7" fill="#0d2238"/><circle cx="45.4" cy="39.3" r=".7" fill="#0d2238"/><circle cx="36" cy="38.8" r=".4" fill="#fff"/><circle cx="46" cy="38.8" r=".4" fill="#fff"/><path d="M31.2 39.2 q3.8 -3 7.6 -.2" stroke="#101a30" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="M41.2 39 q3.8 -2.8 7.6 .2" stroke="#101a30" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="M40 41.6 q-1 2.6 .7 3.2" stroke="#d8b8bf" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M36.8 46.6 q3 1.4 6.4 -.8" stroke="#8e3f55" stroke-width="1.1" fill="none" stroke-linecap="round"/><ellipse cx="31" cy="43.4" rx="2.6" ry="1.3" fill="#c8a8e8" opacity=".3"/><ellipse cx="49" cy="43.4" rx="2.6" ry="1.3" fill="#c8a8e8" opacity=".3"/><circle cx="27" cy="45" r=".9" fill="#d6dee6"/><path d="M27 46 q1.3 1.7 0 3.4 q-1.3 -1.7 0 -3.4Z" fill="#9fe0ff"/><circle cx="53" cy="45" r=".9" fill="#d6dee6"/><path d="M53 46 q1.3 1.7 0 3.4 q-1.3 -1.7 0 -3.4Z" fill="#9fe0ff"/></svg>',
+    lines:{"hello": ["呵呵……欢迎来到深海。我是 Nemo，今晚由我发牌。", "别紧张，我只是想看看你会怎么选择。"], "newHand": ["新的一手……潮水又涨上来了。", "牌已经发下去了，秘密就藏在你手里。", "呵呵……你真的认为自己能赢吗？", "深海从不怜悯犹豫的人。", "慢慢想，我很有耐心……比你想象的更有耐心。"], "flop": ["三张牌浮上来了……有人的呼吸变了呢。", "翻牌。让我看看，谁先露出破绽。"], "turn": ["转牌。水压越来越大了……", "第四张。你还沉得住气吗？"], "river": ["河牌，最后一道暗流。", "最后一张……真相总是藏在最深处。"], "allIn": ["{name}全下了……真勇敢，或者真绝望。", "{name}把一切都推进了深海。"], "heroAllIn": ["全下？呵呵……你的下注，似乎暴露了你的秘密。", "把一切都押上了呢……我最喜欢看人这样挣扎。"], "badCall": ["这一跟……你在害怕什么呢？", "你的下注，似乎暴露了你的秘密。"], "youWin": ["这 {n} 归你了……真有趣，你比我想象中更难猜透。", "赢了呢。别高兴得太早，潮水还会回来。"], "youWinBig": ["{n}……你把整片深海都搅动了。我开始对你感兴趣了。"], "youLoseBig": ["沉下去的东西，有时会再浮上来……有时不会。", "疼吗？呵呵，这才是牌桌的味道。"], "loseStreak": ["……连着输了好几手呢。深呼吸，深海里也有光。", "别让水压把你压垮。我还想多看你几手。"], "otherWin": ["{name}拿走了 {n}……深海记住了。", "这一手属于{name}。"], "tipS": ["谢谢……我会记住你的善意，也会记住你的弱点。"], "tipM": ["这么大方……是想收买深海吗？呵呵。"], "tipL": ["{n}……你知道吗，深海从不拒绝宝藏。"], "smoke": ["烟雾和深海很像……都能藏住人的表情。"], "champion": ["整张桌子都沉在你脚下了……我承认，你赢了。"], "bust": ["筹码沉底了。要再潜一次吗？我在这里等你。"]}
   },
-  capy:{
-    name:'巴拉',
-    svg:'<svg viewBox="0 0 80 80" aria-hidden="true"><path d="M12 82 Q10 54 26 47 L54 47 Q70 54 68 82Z" fill="#a3794f"/><ellipse cx="19" cy="25" rx="5.5" ry="4.5" fill="#8f6744"/><ellipse cx="61" cy="25" rx="5.5" ry="4.5" fill="#8f6744"/><rect x="14" y="22" width="52" height="40" rx="19" fill="#b98c5f"/><rect x="23" y="40" width="34" height="21" rx="10.5" fill="#9c7350"/><ellipse cx="34" cy="46" rx="2.2" ry="1.5" fill="#3b2a1c"/><ellipse cx="46" cy="46" rx="2.2" ry="1.5" fill="#3b2a1c"/><path d="M36 53 q4 3 8 0" stroke="#3b2a1c" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M24 33 q4.5 2.5 9 0" stroke="#2a1d12" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M47 33 q4.5 2.5 9 0" stroke="#2a1d12" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="21" cy="40" r="3" fill="#e6957a" opacity=".45"/><circle cx="59" cy="40" r="3" fill="#e6957a" opacity=".45"/><circle cx="40" cy="15" r="8.5" fill="#f4a623"/><circle cx="37.5" cy="12.5" r="2" fill="#ffd27a" opacity=".8"/><path d="M40 7 q4 -5 9 -3 q-3 5 -9 3Z" fill="#5aa04a"/><path d="M31 66 L40 70 L49 66 L49 74 L40 70 L31 74Z" fill="#e3b352"/><circle cx="40" cy="70" r="2" fill="#a77a2a"/></svg>',
-    lines:{
-      hello:['我是巴拉。别急，慢慢玩。','坐吧，今晚的牌和温泉一样暖。'],
-      newHand:['新的一手，慢慢来。','发好了。急什么，泡着呢。','巴拉洗牌，从来不慌。','这手牌，看着就挺顺的。'],
-      flop:['翻牌来了，三张。','翻牌。巴拉眼皮都没抬。'],
-      turn:['转牌。还早，还早。','第四张，头上的橘子差点掉下来。'],
-      river:['河牌。最后一张了，别慌。','河牌到了，深呼吸。'],
-      allIn:['{name}全下了。巴拉依然很平静。','{name}推了全部筹码。哦。'],
-      youWin:['你赢了 {n}，巴拉点点头。','这手是你的，稳。'],
-      youWinBig:['{n} 的大底池！巴拉头上的橘子都激动得晃了。'],
-      youLoseBig:['输了就输了，泡个澡就好了。','没事，巴拉陪你慢慢来。'],
-      otherWin:['{name}拿走 {n}。','{name}这手赢了。'],
-      tipS:['谢谢，橘子分你一半。'],
-      tipM:['哇，巴拉今晚的温泉票有着落了。'],
-      tipL:['这么多！巴拉要去买一箱橘子了。'],
-      smoke:['巴拉把烟灰缸推到你手边了。','慢慢抽，牌不着急。'],
-      champion:['整张桌子都是你的了。巴拉为你鼓掌，慢慢地。'],
-      bust:['筹码没了也不慌，再来一局。']
-    }
+  nuo:{
+    name:'小诺', role:'毒舌荷官',
+    svg:'<svg viewBox="7 2 66 66" aria-hidden="true"><path d="M24 38 Q22 15.5 40 15 Q58 15.5 56 38 Q57.5 47 54.5 53 L25.5 53 Q22.5 47 24 38Z" fill="#cfd6e2"/><rect x="35.5" y="47" width="9" height="12" rx="4" fill="#fbe4d6"/><path d="M10 84 Q12 64 30 60 L50 60 Q68 64 70 84Z" fill="#16181e"/><path d="M32.5 59 L40 72 L47.5 59Z" fill="#f6f7fa"/><path d="M32.8 58.4 L36.6 64 L40 60.6Z M47.2 58.4 L43.4 64 L40 60.6Z" fill="#fff" stroke="#c4cad6" stroke-width=".5"/><path d="M35.6 61.2 L40 63 L44.4 61.2 L44.4 65.4 L40 63.6 L35.6 65.4Z" fill="#0e0e12"/><rect x="38.8" y="62" width="2.4" height="2.2" rx=".8" fill="#2a2a33"/><g fill="#f6f7fa"><circle cx="40" cy="74" r=".8"/><circle cx="40" cy="78" r=".8"/></g><ellipse cx="40" cy="37" rx="12.4" ry="14.6" fill="#fbe4d6"/><path d="M26.8 37 Q25 17.5 40 17 Q55 17.5 53.2 37 Q51.5 28.5 46.5 26 Q44 30.5 37 31.5 Q39.5 28.5 38.6 25.8 Q34 30 28.8 31 Q27.6 33.5 26.8 37Z" fill="#eef1f6"/><g stroke="#b6bfcd" stroke-width=".8" fill="none" stroke-linecap="round"><path d="M33 20 Q38 18 45 19.5"/><path d="M46.5 26.5 q2 2.4 3 6"/><path d="M38.6 26 q-1 3 -3.4 4.6"/></g><path d="M27 32 Q25 45 27.5 52.5 L24 51.5 Q22 41 27 32Z" fill="#eef1f6"/><path d="M53 32 Q55 45 52.5 52.5 L56 51.5 Q58 41 53 32Z" fill="#eef1f6"/><rect x="47" y="22" width="5.6" height="1.6" rx=".8" fill="#4aa3e8" transform="rotate(-28 49.8 22.8)"/><path d="M31 32.6 L37.6 34.2" stroke="#8d95a6" stroke-width="1.1" stroke-linecap="round"/><path d="M49 32.6 L42.4 34.2" stroke="#8d95a6" stroke-width="1.1" stroke-linecap="round"/><ellipse cx="35" cy="39.6" rx="2.9" ry="3.2" fill="#3a8fdc"/><ellipse cx="45" cy="39.6" rx="2.9" ry="3.2" fill="#3a8fdc"/><ellipse cx="35" cy="40.2" rx="1.3" ry="1.6" fill="#123a66"/><ellipse cx="45" cy="40.2" rx="1.3" ry="1.6" fill="#123a66"/><circle cx="35.9" cy="39.2" r=".8" fill="#fff"/><circle cx="45.9" cy="39.2" r=".8" fill="#fff"/><path d="M33 41.6 q2 1 4 0 M43 41.6 q2 1 4 0" stroke="#8fd0ff" stroke-width=".6" fill="none"/><path d="M31.4 35.8 L38.8 35.8 L38.8 38 Q35 37 31.4 38.1Z" fill="#fbe4d6"/><path d="M41.2 35.8 L48.6 35.8 L48.6 38.1 Q45 37 41.2 38Z" fill="#fbe4d6"/><path d="M31.4 38.1 Q35 36.9 38.8 38" stroke="#2a2c36" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M41.2 38 Q45 36.9 48.6 38.1" stroke="#2a2c36" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M37.8 47 q2.2 -1.2 4.4 0" stroke="#c4555f" stroke-width="1" fill="none" stroke-linecap="round"/><ellipse cx="30.8" cy="44" rx="2.6" ry="1.3" fill="#f49a9c" opacity=".45"/><ellipse cx="49.2" cy="44" rx="2.6" ry="1.3" fill="#f49a9c" opacity=".45"/><g stroke="#e0505a" stroke-width="1" fill="none" stroke-linecap="round"><path d="M55.5 21 q1.6 1 1.6 2.6"/><path d="M60.2 21 q-1.6 1 -1.6 2.6"/><path d="M55.5 27.2 q1.6 -1 1.6 -2.6"/><path d="M60.2 27.2 q-1.6 -1 -1.6 -2.6"/></g></svg>',
+    lines:{"hello": ["我是小诺。先说好，我不会对你手下留情的。", "哼，又来了啊。坐吧，别拖拖拉拉的。"], "newHand": ["发好了，自己看。", "新的一手。这次别再乱打了。", "笨蛋，这一把认真一点啊。", "看什么看，牌在你手里，又不在我脸上。", "快点下注，我很忙的。……才不是在等你。"], "flop": ["翻牌。别告诉我你又中了个寂寞。", "三张，自己算，我才不帮你算胜率。"], "turn": ["转牌。你还在啊？", "第四张。想清楚再动手。"], "river": ["河牌。最后一张了，别再犯傻。", "河牌。现在后悔还来得及吗？来不及了。"], "allIn": ["{name}全下了？胆子挺大嘛。", "{name}推了全部……哼，有意思。"], "heroAllIn": ["你确定要 All-in？行吧，筹码是你的。", "全下？……我可不管你了啊。"], "badCall": ["不是吧，这种牌你也敢跟？", "你跟注之前算过赔率吗？没有吧。", "……这一跟，我都替你的筹码心疼。"], "youWin": ["哼，运气不错嘛……也就这一次吧。", "赢了 {n}？别得意，下一手就说不定了。"], "youWinBig": ["{n}……好、好吧，这手打得还行。就一点点行。"], "youLoseBig": ["笨蛋，下一把认真一点啊。", "看吧，我就说别跟。"], "loseStreak": ["……喂，连输好几手了。不是担心你，就是看着烦。下一手稳一点。", "你、你别垂头丧气的。坐直，下一手我盯着你打。"], "otherWin": ["{name}赢了 {n}。你学着点。", "{name}拿走了，这手没你什么事。"], "tipS": ["……谁、谁稀罕。不过我收下了。"], "tipM": ["给这么多干嘛，我又不会因此对你好一点。……谢谢。"], "tipL": ["{n}？！你是笨蛋吗……哼，我会好好发牌的。"], "smoke": ["别在我面前抽烟。……算了，窗户我帮你开了。"], "champion": ["整张桌子都被你赢了？……哼，勉强承认你有点厉害。"], "bust": ["输光了吧。……再来一局，这次我看着你打。"]}
   },
-  penguin:{
-    name:'波波',
-    svg:'<svg viewBox="0 0 80 80" aria-hidden="true"><ellipse cx="40" cy="56" rx="25" ry="26" fill="#22324a"/><ellipse cx="40" cy="61" rx="16" ry="18" fill="#f4f1ea"/><circle cx="40" cy="31" r="19" fill="#22324a"/><ellipse cx="40" cy="35" rx="13.5" ry="11" fill="#f4f1ea"/><circle cx="34" cy="32" r="3" fill="#121212"/><circle cx="46" cy="32" r="3" fill="#121212"/><circle cx="35" cy="31" r="1" fill="#fff"/><circle cx="47" cy="31" r="1" fill="#fff"/><path d="M36 37 L44 37 L40 42Z" fill="#ef9a2c"/><circle cx="29" cy="38" r="2.6" fill="#f2a7a0" opacity=".7"/><circle cx="51" cy="38" r="2.6" fill="#f2a7a0" opacity=".7"/><path d="M32 49 L40 52.5 L48 49 L48 56 L40 52.5 L32 56Z" fill="#c0392b"/><circle cx="40" cy="52.5" r="1.8" fill="#8e2a20"/></svg>',
-    lines:{
-      hello:['欢迎欢迎～我是波波，今晚由我来发牌！','洗好牌啦，祝你手气好～'],
-      newHand:['新的一手，发牌咯～','嘿咻，牌发好啦。','这一手会是好牌吗？','波波洗牌洗得可认真了！'],
-      flop:['翻牌来啦！','三张公共牌，看看有没有你要的～'],
-      turn:['转牌！心跳加速了吗？','第四张来咯～'],
-      river:['最后一张，河牌！','河牌到啦，决定命运的时候～'],
-      allIn:['哇！{name}全下了！','{name}把筹码全推进来了！'],
-      youWin:['你赢了 {n}！好厉害～','这一手是你的！'],
-      youWinBig:['大底池！你赢了 {n}，波波都看呆了！'],
-      youLoseBig:['呜…下一手一定会好起来的！','别灰心，波波陪着你～'],
-      otherWin:['{name}赢下了 {n}。','这手归{name}啦～'],
-      tipS:['谢谢你～','收到！波波会认真发牌的～'],
-      tipM:['哇，谢谢老板！波波开心得想转圈～'],
-      tipL:['这么多！你是今晚最好的玩家！'],
-      smoke:['咳咳…波波帮你开个窗～'],
-      champion:['你把整张桌子都赢下来啦！波波给你鼓掌！'],
-      bust:['筹码输光了…再来一局吧，波波还在这里～']
-    }
+  frog:{
+    name:'奶蛙', role:'幸运蛙蛙',
+    svg:'<svg viewBox="0 0 80 80" aria-hidden="true"><ellipse cx="40" cy="72" rx="24" ry="14" fill="#8fdcb6"/><path d="M16 82 Q16 60 32 57 L48 57 Q64 60 64 82Z" fill="#17171c"/><path d="M33 57 L40 70 L47 57Z" fill="#f6f7fa"/><path d="M35 59.5 L40 61.6 L45 59.5 L45 64.2 L40 62.2 L35 64.2Z" fill="#c0392b"/><circle cx="40" cy="61.9" r="1.2" fill="#8e2a20"/><path d="M17 74 q-4 2 -3 7 l6 0Z M63 74 q4 2 3 7 l-6 0Z" fill="#17171c"/><circle cx="26" cy="23" r="11" fill="#a4e8c6"/><circle cx="54" cy="23" r="11" fill="#a4e8c6"/><ellipse cx="40" cy="39" rx="28" ry="19" fill="#a4e8c6"/><ellipse cx="40" cy="45" rx="17" ry="9" fill="#c9f3dd" opacity=".7"/><circle cx="26" cy="23" r="7.6" fill="#fff"/><circle cx="54" cy="23" r="7.6" fill="#fff"/><circle cx="27" cy="24" r="4.8" fill="#1d2b25"/><circle cx="53" cy="24" r="4.8" fill="#1d2b25"/><circle cx="28.8" cy="22" r="1.8" fill="#fff"/><circle cx="54.8" cy="22" r="1.8" fill="#fff"/><circle cx="25.6" cy="26" r=".8" fill="#fff"/><circle cx="51.6" cy="26" r=".8" fill="#fff"/><ellipse cx="20" cy="40" rx="5" ry="3" fill="#ff9fb2" opacity=".8"/><ellipse cx="60" cy="40" rx="5" ry="3" fill="#ff9fb2" opacity=".8"/><path d="M29 41 Q40 50 51 41" stroke="#2f5c47" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M37 44.6 q3 3 6 0 q-3 1 -6 0Z" fill="#f47a8c"/><circle cx="36" cy="35" r=".8" fill="#5fa985"/><circle cx="44" cy="35" r=".8" fill="#5fa985"/><g transform="translate(66 56)"><path d="M-6 0 L6 0 L4.6 16 L-4.6 16Z" fill="#f3e2c6" opacity=".95"/><path d="M-5.5 5 L5.5 5 L4.6 16 L-4.6 16Z" fill="#c99a6b"/><g fill="#3a2418"><circle cx="-2.4" cy="13" r="1.2"/><circle cx="1" cy="14" r="1.2"/><circle cx="2.6" cy="11" r="1.1"/><circle cx="-1" cy="10.4" r="1.1"/></g><rect x="-7" y="-1.6" width="14" height="2" rx="1" fill="#fbf8f1"/><rect x="1" y="-11" width="2" height="10" rx="1" fill="#f47a8c" transform="rotate(12 2 -6)"/></g></svg>',
+    lines:{"hello": ["呱呱！欢迎来到蛙蛙赌场！", "蛙蛙是今天的荷官！燕尾服有点大，不许笑蛙蛙！"], "newHand": ["呱！发牌啦～", "蛙蛙掐指一算，你下一把一定会……呱？算错了！", "新的一手！蛙蛙认真发牌中，呱。", "这手牌蛙蛙没偷看！……只看了一点点。", "呱～发完这手蛙蛙要喝口奶茶。"], "flop": ["翻牌！一、二、三，呱！", "三张牌跳出来啦，像三只小蝌蚪！"], "turn": ["转牌！呱呱，紧张得肚子都鼓起来了！", "第四张～蛙蛙的心扑通扑通。"], "river": ["河牌！蛙蛙最喜欢河了，呱！", "最后一张！呱！蛙蛙不敢看了！"], "allIn": ["All-in！All-in！呱！好刺激！", "{name}全下了！呱呱呱！"], "heroAllIn": ["All-in！All-in！呱！好刺激！", "你全下了！蛙蛙把奶茶都放下了！"], "badCall": ["呱……这样跟真的可以吗？蛙蛙有点担心。", "蛙蛙不太聪明，但这一跟好像也不太聪明，呱。"], "youWin": ["你赢啦！呱！要不要请蛙蛙喝奶茶？", "赢了 {n}！呱呱呱！蛙蛙替你开心！"], "youWinBig": ["{n}！！呱——！蛙蛙要跳到桌子上庆祝了！"], "youLoseBig": ["呜呜呜……你的筹码怎么又少了？", "呱……蛙蛙的脸都气鼓了，下一手一定赢回来！"], "loseStreak": ["呜呜……连着输了好几手，蛙蛙把奶茶分你一口好不好？", "呱……不哭不哭，蛙蛙给你跳个舞转转运！"], "otherWin": ["{name}赢了 {n}，呱～", "这手是{name}的！呱！"], "tipS": ["呱！可以买一颗珍珠了！"], "tipM": ["呱呱！够买一杯奶茶了！要加椰果！"], "tipL": ["{n}！！蛙蛙可以喝奶茶喝到明年了！呱——！"], "smoke": ["咳咳呱……蛙蛙的皮肤要保湿，烟有点呛……"], "champion": ["冠军！冠军！呱！蛙蛙给你颁发一杯奶茶！"], "bust": ["呜呜……筹码没有了。再来一局嘛，蛙蛙陪你！"]}
   },
-  fox:{
-    name:'阿橘',
-    svg:'<svg viewBox="0 0 80 80" aria-hidden="true"><path d="M13 16 L30 35 L18 42Z" fill="#e2772c"/><path d="M67 16 L50 35 L62 42Z" fill="#e2772c"/><path d="M17 22 L27 34 L20 38Z" fill="#3a2316"/><path d="M63 22 L53 34 L60 38Z" fill="#3a2316"/><path d="M14 40 Q40 18 66 40 L58 62 Q40 74 22 62Z" fill="#ea8a3c"/><path d="M27 54 Q40 47 53 54 L47 66 Q40 71 33 66Z" fill="#f6efe2"/><circle cx="40" cy="60" r="3.2" fill="#1a1612"/><path d="M26 47 q5 -4.5 10 0" stroke="#1a1612" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M44 47 q5 -4.5 10 0" stroke="#1a1612" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M14 35 Q40 23 66 35 L66 38 Q40 28 14 38Z" fill="#1f5c40"/><path d="M18 37 Q40 29 62 37 Q58 43 40 42 Q22 43 18 37Z" fill="#3aa86b" opacity=".88"/><path d="M32 72 L40 75.5 L48 72 L48 79 L40 75.5 L32 79Z" fill="#e3b352"/></svg>',
-    lines:{
-      hello:['我是阿橘。这副牌，我可没动过手脚。','坐吧，今晚的牌都很公平。'],
-      newHand:['新的一手。看清楚，我只洗不藏。','牌已发出，祝你好运。','下注前，先想想别人手里是什么。','这一手，谁在虚张声势呢？'],
-      flop:['三张翻牌，局势变了。','翻牌发好了，有人中了吧。'],
-      turn:['转牌。还在桌上的人，得想清楚了。','第四张，底池越来越诱人。'],
-      river:['河牌。没有下一张了。','最后一张，谈判结束。'],
-      allIn:['{name}全下。有意思。','{name}押上了全部，这可不是小事。'],
-      youWin:['漂亮，这 {n} 拿得聪明。','这一手你读对了。'],
-      youWinBig:['{n} 的大底池，干净利落。我记住你了。'],
-      youLoseBig:['运气会回来的，耐心比手牌重要。','输掉的那手，复盘一下就值了。'],
-      otherWin:['{name}收下 {n}。','{name}这手打得不错。'],
-      tipS:['老板大气，小的记住了。'],
-      tipM:['哦？这份心意，阿橘收下了。'],
-      tipL:['这么大方，今晚的牌一定不会亏待你。'],
-      smoke:['火借你。慢慢想，别急着下注。'],
-      champion:['整张桌子都是你的了。佩服。'],
-      bust:['筹码见底了。洗牌重来，阿橘随时奉陪。']
-    }
-  },
-  robot:{
-    name:'零号',
-    svg:'<svg viewBox="0 0 80 80" aria-hidden="true"><line x1="40" y1="9" x2="40" y2="19" stroke="#9aa6ad" stroke-width="3"/><circle cx="40" cy="8" r="4.5" fill="#e3b352"/><circle cx="13" cy="37" r="4.5" fill="#8d979d"/><circle cx="67" cy="37" r="4.5" fill="#8d979d"/><rect x="16" y="18" width="48" height="38" rx="10" fill="#b2bcc2"/><rect x="22" y="25" width="36" height="20" rx="5" fill="#13201c"/><rect x="28" y="31" width="7" height="7" rx="2" fill="#7fe0ad"/><rect x="45" y="31" width="7" height="7" rx="2" fill="#7fe0ad"/><rect x="33" y="49" width="14" height="3" rx="1.5" fill="#6d777d"/><rect x="23" y="58" width="34" height="20" rx="6" fill="#8d979d"/><path d="M33 62 L40 65.5 L47 62 L47 69 L40 65.5 L33 69Z" fill="#c0392b"/></svg>',
-    lines:{
-      hello:['发牌程序启动。我是零号，祝您游戏愉快。'],
-      newHand:['洗牌完成。随机性校验：通过。','第 {no} 手，发牌完毕。','发牌中。请勿偷看邻座。'],
-      flop:['翻牌已发出。','公共牌数量：3。'],
-      turn:['转牌已发出。剩余未知牌：1 张。'],
-      river:['河牌已发出。进入最终下注轮。'],
-      allIn:['警告：{name}全下。','检测到全下：{name}。'],
-      youWin:['检测到胜利。收入 {n}。恭喜。'],
-      youWinBig:['大额收入 {n}。正在为您播放掌声。'],
-      youLoseBig:['筹码下降。建议：查看复盘。'],
-      otherWin:['{name}获得 {n}。'],
-      tipS:['已收到打赏 {n}。好感度 +1。'],
-      tipM:['已收到打赏 {n}。好感度 +5。'],
-      tipL:['打赏 {n}！系统过热……开心地过热。'],
-      smoke:['检测到烟雾。牌局数据不受影响。'],
-      champion:['您已赢得全部筹码。冠军认证完成。'],
-      bust:['筹码归零。可选择：再来一局。']
-    }
+  yi:{
+    name:'Yi', role:'隐藏荷官 · 作者',
+    svg:'<svg viewBox="7 2 66 66" aria-hidden="true"><rect x="35" y="46" width="10" height="13" rx="4" fill="#f0cdb2"/><path d="M10 84 Q12 64 30 60 L50 60 Q68 64 70 84Z" fill="#131317"/><path d="M33 59 L40 70 L47 59Z" fill="#232328"/><path d="M35.6 58.6 L40 64.6 L44.4 58.6 L42.4 58.2 L40 61.6 L37.6 58.2Z" fill="#f0cdb2"/><path d="M30 60 L38 76 L33 66 L28.4 61Z M50 60 L42 76 L47 66 L51.6 61Z" fill="#0a0a0d" stroke="#e3b352" stroke-width=".7"/><path d="M54 68 l4.4 -1.4 1 3 -4.4 1.4Z" fill="#e3b352"/><ellipse cx="40" cy="36" rx="12.2" ry="14.4" fill="#f0cdb2"/><ellipse cx="27.6" cy="38.5" rx="1.8" ry="3" fill="#f0cdb2"/><ellipse cx="52.4" cy="38.5" rx="1.8" ry="3" fill="#f0cdb2"/><path d="M27.6 35 Q25.4 17 40 15.6 Q55 16 52.6 35 Q52 27.5 48 25 Q44.5 28.5 37.5 27 Q33.5 28.8 30 28 Q28.4 31 27.6 35Z" fill="#111114"/><path d="M28 26 Q29 14 40 13 Q51 12.6 54 22 Q50.5 17.6 45.5 18.4 Q47.5 15 43.2 14.6 Q41.4 17.6 36.2 17.2 Q37.2 14.6 33 15.6 Q30.2 18.6 28 26Z" fill="#1d1d22"/><path d="M36 18.5 Q42 17.5 46 22" stroke="#3a3a44" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M30.8 32.4 L37.6 32" stroke="#151518" stroke-width="1.5" stroke-linecap="round"/><path d="M42.4 31.4 Q46 29.8 49.4 31.2" stroke="#151518" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M31.6 37.4 q3.2 -2 6.4 0 q-3.2 1.6 -6.4 0Z" fill="#fff"/><path d="M42 37.2 q3.2 -2 6.4 0 q-3.2 1.6 -6.4 0Z" fill="#fff"/><circle cx="35" cy="37.3" r="1.4" fill="#221a16"/><circle cx="45.4" cy="37.1" r="1.4" fill="#221a16"/><circle cx="35.5" cy="36.8" r=".4" fill="#fff"/><circle cx="45.9" cy="36.6" r=".4" fill="#fff"/><path d="M31.2 37.2 q3.4 -2.6 7.2 -.2" stroke="#151518" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M41.6 37 q3.6 -2.6 7.2 .2" stroke="#151518" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M40 40.4 q-1.2 3 .8 3.6" stroke="#cf9f84" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M36 46 Q40.5 47.6 44.4 44.6" stroke="#9a5a4a" stroke-width="1.2" fill="none" stroke-linecap="round"/><g transform="rotate(14 62 60)"><rect x="57" y="51" width="10" height="14" rx="1.6" fill="#fbf8f1" stroke="#e3b352" stroke-width=".6"/><text x="59" y="57" font-size="5" font-family="Georgia,serif" font-weight="700" fill="#111">A</text><path d="M62 57.6c1 1.5 3 2.6 3 4.2a1.6 1.6 0 0 1-2.6 1.3c.1.7.4 1.4.9 1.8h-2.6c.5-.4.8-1.1.9-1.8A1.6 1.6 0 0 1 59 61.8c0-1.6 2-2.7 3-4.2Z" fill="#111"/></g></svg>',
+    lines:{"unlockFind": ["不是，这都能找到我？"], "unlockChamp": ["你很厉害。现在，我来给你发牌。"], "hello": ["欢迎来到我的游戏，规则是我写的，输赢可别赖我。", "哟，被你找到了。我是 Yi，这游戏的作者，今天亲自下场看热闹。", "他们负责发牌，而我负责创造这张牌桌。"], "newHand": ["第 {no} 手了，你是真喜欢我这游戏啊。", "你是不是觉得我在后台控制发牌？没有，真的是随机的。", "发好了。洗牌是 Fisher-Yates，别问，问就是公平。", "玩得开心点，毕竟这游戏我做了好久。", "这一手要是出 Bug 了，记得截图发我。"], "flop": ["翻牌。这三张不是我挑的，别看我。", "翻牌来了，这段动画我调了一晚上。"], "turn": ["转牌。到这一步还没弃，可以啊。", "第四张，剧情开始了。"], "river": ["河牌。最后一张，写代码的人也很紧张。", "河牌，是时候见真章了。"], "allIn": ["{name}全下了？我写的电脑这么猛的吗。", "{name}全推了，我靠，刺激。"], "heroAllIn": ["不是哥们，这种牌你也敢 All-in？", "你真敢啊。行，我先存个档……哦，我没写存档功能。"], "badCall": ["不是哥们，这也跟？复盘里我写了点评，你自己去看看。", "这个跟注，我写的决策点评已经在骂你了。"], "youWin": ["我靠，你真赢了？我代码没写错吧？", "赢了 {n}，可以啊，比我自己玩得都好。"], "youWinBig": ["{n}！我靠，这底池大得我都想去翻一下日志。"], "youLoseBig": ["别骂了，我只是个写代码的。", "输了别怪我，发牌是随机的，要怪就怪你的跟注键。"], "loseStreak": ["兄弟，连输好几手了，要不先喝口水？游戏又不会跑。", "我真没动发牌，你这纯属手气差。下一手稳住，我看好你。"], "otherWin": ["{name}赢了 {n}，我写的电脑有点东西。", "这手{name}拿了，我也没想到。"], "tipS": ["打赏作者？谢了哥们，我拿去续服务器……哦服务器是免费的，那我买奶茶了。"], "tipM": ["这么大方，下个版本给你加个专属称号……开玩笑的，还没写。"], "tipL": ["{n}？！你这是在赞助开发啊，我回去就修 Bug。"], "smoke": ["抽烟这个功能是我加的，但我劝你少抽点。"], "champion": ["你把整桌都赢了，牛。这个结局我写的时候都没想到真有人能打出来。"], "bust": ["输光了。没事，刷新一下页面就能重来，这是我留给你的后门。"]}
   },
   custom:{
     name:'我的荷官',
@@ -1297,9 +1190,21 @@ const DEALERS = {
     }
   }
 };
-const DEALER_ORDER = ['sally', 'nemo', 'capy', 'penguin', 'fox', 'robot', 'custom'];
+const DEALER_ORDER = ['sally', 'nemo', 'nuo', 'frog', 'yi', 'custom'];
+let yiUnlocked = store.get('holdem.yi', '') === '1';
 let dealerKey = store.get('holdem.dealer4', 'sally');
-if (!DEALERS[dealerKey]) dealerKey = 'sally';
+if (!DEALERS[dealerKey] || (dealerKey === 'yi' && !yiUnlocked)) dealerKey = 'sally';
+const hasLine = k => !!DEALERS[dealerKey].lines[k];
+/* hidden dealer: the author shows up when you tap "by Yiiiii" or win a whole table */
+function summonYi(how){
+  const first = !yiUnlocked;
+  yiUnlocked = true; store.set('holdem.yi', '1');
+  buildPicker(); setDealer('yi', false);
+  dealerSay(how === 'champ' ? 'unlockChamp' : 'unlockFind');
+  $('#stAva').innerHTML = dealerArt('yi'); $('#stDealer').textContent = `隐藏荷官 Yi：${$('#dSay').textContent}`;
+  if (first) log('你发现了隐藏荷官 Yi，以后可以在「换荷官」里找到他', 'sys');
+}
+document.addEventListener('click', e => { if (e.target.closest('.byline, .w-brand span')) summonYi('find'); });
 let tipTotal = +store.get('holdem.tips', 0) || 0;
 let customAva = store.get('holdem.cAva', '');
 let customName = store.get('holdem.cName', '我的荷官');
@@ -1308,7 +1213,7 @@ const dealerName = k => k === 'custom' ? (customName || '我的荷官') : DEALER
 function buildPicker(){
   const pick = $('#dPick');
   pick.querySelectorAll('button').forEach(b => b.remove());
-  DEALER_ORDER.forEach(k => {
+  DEALER_ORDER.filter(k => k !== 'yi' || yiUnlocked).forEach(k => {
     const b = document.createElement('button');
     b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.k = k;
     b.setAttribute('aria-label', k === 'custom' ? '自定义荷官' : dealerName(k));
@@ -1714,7 +1619,8 @@ function doAction(i, type, to){
   if (G.bluffFlag && !p.human) p.bluffedHand = true;
   G.bluffFlag = null;
   if (pre){ pre.type = type; pre.text = text; Object.assign(pre, judge(pre)); H.decisions.push(pre); }
-  if (p.allIn && type !== 'fold') dealerSay('allIn', {name:p.name});
+  if (p.allIn && type !== 'fold') dealerSay(i === 0 && hasLine('heroAllIn') ? 'heroAllIn' : 'allIn', {name:p.name});
+  else if (i === 0 && pre && type === 'call' && pre.grade === 'bad' && hasLine('badCall') && Math.random() < .75) dealerSay('badCall');
   G.waiting = false; G.thinking = -1;
   G.toAct = nextIdx(i, canAct);
   proceed();
@@ -1811,7 +1717,9 @@ function endHand(){
   H.net = me.chips + G.handTips - me.startChips;
   netHandDone();
   const top = G.players.filter(p => p.won > 0).sort((a, b) => b.won - a.won)[0];
+  if (H.net > 0) G.loseRun = 0; else if (H.net < 0) G.loseRun = (G.loseRun || 0) + 1;
   if (me.won > 0) dealerSay(me.won >= G.bbAmt * 15 ? 'youWinBig' : 'youWin', {n:fmt(me.won)});
+  else if (G.loseRun >= 3 && hasLine('loseStreak')){ G.loseRun = 0; dealerSay('loseStreak'); }
   else if (H.net <= -G.bbAmt * 10) dealerSay('youLoseBig');
   else if (top) dealerSay('otherWin', {name:top.name, n:fmt(top.won)});
   G.holdStacks = reduceMotion ? null : new Set(G.players.map((p, i) => p.won > 0 ? i : -1).filter(i => i >= 0));
@@ -1829,6 +1737,7 @@ function gameOver(win){
   const hid = G.players.filter(p => p.hidden);
   if (hid.length){ log(`风格揭晓：${hid.map(p => `${p.name}是${p.style}`).join('，')}`, 'sys'); hid.forEach(p => p.hidden = false); }
   log(G.msg[0], 'sys');
+  if (win && !yiUnlocked) wait(() => summonYi('champ'), 3500);
   dealerSay(win ? 'champion' : 'bust');
   render();
   if (G.priv) setTimeout(openLedger, 1500);
