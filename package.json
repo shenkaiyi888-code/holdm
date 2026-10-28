@@ -1,0 +1,9 @@
+{
+  "name": "texas-holdem-online",
+  "version": "1.0.0",
+  "private": true,
+  "description": "德州扑克六人桌联机版：房主的浏览器运行牌局，服务器只负责转发",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

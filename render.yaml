@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: texas-holdem-online
+    runtime: node
+    plan: free
+    buildCommand: echo no build
+    startCommand: node server.js
