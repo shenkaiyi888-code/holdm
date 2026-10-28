@@ -1693,8 +1693,10 @@ function freshName(exclude){
 }
 let botPrefs = pad7([], 'random');
 try { const v = JSON.parse(store.get('holdem.botPrefs', 'null')); if (Array.isArray(v) && (v.length === 5 || v.length === 7)) botPrefs = pad7(v, 'random'); } catch (e) {}
-function applyPref(p, pref){
-  const st = pref === 'random' ? STYLES[Math.floor(Math.random() * STYLES.length)] : (STYLES.find(x => x.style === pref) || STYLES[5]);
+/* avoid: a style not to draw again, so a newcomer on a random seat never plays like the player who just left */
+function applyPref(p, pref, avoid){
+  const pool = STYLES.filter(x => x.style !== avoid);
+  const st = pref === 'random' ? pool[Math.floor(Math.random() * pool.length)] : (STYLES.find(x => x.style === pref) || STYLES[5]);
   Object.assign(p, {style:st.style, tight:st.tight, aggr:st.aggr, bluff:st.bluff, pro:st.pro || null, hidden:pref === 'random'});
 }
 const styleLabel = p => p.hidden ? '？' : p.style;
@@ -3560,7 +3562,7 @@ function depthWord(n){ return n >= buyIn * 1.7 ? '深码' : n <= buyIn * .65 ? '
 function seatNewcomer(i){
   const used = G.players.filter((q, j) => j !== i && !q.vacant).map(q => q.name).concat(botNames);
   const p = {name:freshName(used.concat([G.players[0].name])), chips:randStack(), ava:''};
-  applyPref(p, botPrefs[i - 1]);
+  applyPref(p, botPrefs[i - 1], G.players[i].style);
   p.st = {hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0};
   p.out = false; p.vacant = false; p.isNew = 2;
   resetPlayer(p); p.startChips = p.chips;
@@ -3982,7 +3984,7 @@ function botTakeover(i){
   if (G.priv){ G.players[i] = emptySeat(); log(`${old.name}离开了座位，带走 ${fmt(Math.max(0, old.chips))}`, 'sys'); return; }
   const used = G.players.map(q => q.name).concat(botNames, [G.players[0].name]);
   const p = {name:freshName(used), chips:Math.max(0, old.chips), ava:botAvas[i - 1] || ''};
-  applyPref(p, botPrefs[i - 1]);
+  applyPref(p, botPrefs[i - 1], old.style);
   p.st = newStats(); resetPlayer(p); p.startChips = p.chips;
   p.out = p.chips <= 0;
   if (p.out && mode === 'cash'){ p.vacant = true; p.vacantFor = 1; }
