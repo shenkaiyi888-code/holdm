@@ -473,6 +473,10 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .dec .why{list-style:none; margin:4px 0 0; padding:8px 0 0; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); line-height:1.55}
 .dec .why b{display:inline-block; min-width:4.2em; color:#c9cfdb; font-weight:600; margin-right:6px}
 .dec.sum{border-color:rgba(227,179,82,.35)}
+.dec .fix{font-size:12.5px; padding:7px 10px; border-radius:9px; background:rgba(127,224,173,.07); box-shadow:inset 0 0 0 1px rgba(127,224,173,.3); color:var(--text)}
+.dec .fix b{color:var(--win); margin-right:8px; font-weight:700}
+.dec .todo{margin:6px 0 0; padding-left:20px; font-size:12.5px; display:flex; flex-direction:column; gap:3px}
+.dec .todo b{color:var(--gold); font-weight:600; margin-right:4px}
 .dec.sum .g{color:var(--win)} .dec.sum .m{color:var(--gold)} .dec.sum .b{color:#ff9a90}
 .rv-note{font-size:12px; color:var(--muted)}
 .bots{display:flex; flex-direction:column; gap:8px}
@@ -1723,7 +1727,7 @@ function doAction(i, type, to){
   H.streets[H.streets.length - 1].acts.push({i, text, pot:potTotal(), bluff:p.human ? null : (G.bluffFlag || null)});
   if (G.bluffFlag && !p.human) p.bluffedHand = true;
   G.bluffFlag = null;
-  if (pre){ pre.type = type; pre.text = text; Object.assign(pre, judge(pre)); H.decisions.push(pre); }
+  if (pre){ pre.type = type; pre.text = text; Object.assign(pre, judge(pre)); pre.fix = fixFor(pre); H.decisions.push(pre); }
   if (p.allIn && type !== 'fold') dealerSay(i === 0 && hasLine('heroAllIn') ? 'heroAllIn' : 'allIn', {name:p.name});
   else if (i === 0 && pre && type === 'call' && pre.grade === 'bad' && hasLine('badCall') && Math.random() < .75) dealerSay('badCall');
   G.waiting = false; G.thinking = -1;
@@ -2027,6 +2031,42 @@ function judge(d){
     }
   }
   return {grade, verdict, note, points:pts, loss:Math.max(0, Math.round(loss))};
+}
+/* what to do instead, from the same facts the player had at that moment (no peeking at anyone's cards) */
+function fixFor(d){
+  if (!d || d.grade === 'good') return '';
+  const bb = d.bb || G.bbAmt, cur = d.cur || 0, pot = d.pot || 0, call = d.toCall || 0;
+  const r = x => fmt(Math.max(bb, Math.round(x / Math.max(1, bb / 2)) * Math.max(1, bb / 2)));
+  const bet = f => `下注 ${r(pot * f)}（约 ${Math.round(f * 100)}% 底池）`;
+  const raiseTo = m => `加注到 ${r(Math.max(cur * m, cur + bb * 2))}`;
+  const M = {
+    '可以免费过牌':'过牌，免费看下一张牌',
+    '弃得太紧':d.raises >= 1 ? `至少跟注 ${fmt(call)}，牌很强时可以${raiseTo(3)}` : `加注到 ${r(bb * 2.5)}（2.5 个大盲）入池`,
+    '大盲可以防守':`跟注 ${fmt(call)} 防守大盲`,
+    '应该加注入池':`加注到 ${r(bb * 2.5)}–${r(bb * 3)}，而不是平跟`,
+    '边缘平跟':`要么加注到 ${r(bb * 2.5)}，要么直接弃牌`,
+    '不该入池':'弃牌，等更好的牌',
+    '可以 3-bet':`再加注（3-bet）${raiseTo(3)}`,
+    '偏松的跟注':'弃牌；如果跟了，翻牌没中就放弃',
+    '跟注太松':'弃牌',
+    '开池偏松':'弃牌，这个位置只用更强的牌开池',
+    '偏诈唬的再加注':'换成跟注，或者直接弃牌',
+    '弃得可惜':`跟注 ${fmt(call)}`,
+    '听牌可以跟':`跟注 ${fmt(call)}，靠中牌后的隐含赔率`,
+    '价值流失':bet(.6),
+    '应该下注保护':bet(.66),
+    '价值下注偏小':`把注下到 ${r(pot * .66)} 以上（约 2/3 底池）`,
+    '略亏的跟注':'弃牌，除非你有把握后面能多赢回来',
+    '跟注亏损':'弃牌',
+    '诈唬时机不好':call > 0 ? '弃牌' : '过牌，等更好的诈唬时机',
+    '偏诈唬':call > 0 ? '对手不爱弃牌时改成跟注或弃牌' : '对手不爱弃牌时改成过牌',
+    '中等牌下注':call > 0 ? `跟注 ${fmt(call)}，控制底池` : '过牌控制底池',
+    '边缘弃牌':'跟和弃差不多，看对手：对手偏紧就弃，偏松就跟',
+    '半诈唬':'对手三个以上时改成过牌（或跟注）看牌，少诈唬'
+  };
+  if (d.verdict === '可以加注') return d.st === 0 ? `加注到 ${r(bb * 4)} 拿价值` : call > 0 ? `${raiseTo(3)} 拿价值、逼听牌的人付钱` : bet(.6);
+  if (d.verdict === '可以下注') return bet(.5);
+  return M[d.verdict] || '';
 }
 /* the original judgement, kept for hands recorded before the detailed review */
 function judgeBasic(d){
@@ -2996,17 +3036,21 @@ function renderReview(h){
       <div class="facts">指纹：${h.hash || '（当前浏览器不支持计算）'}</div>
       ${h.players.some(secret) ? '<div class="rv-note">这手有真人玩家没亮牌，为了不泄露他们的底牌，完整牌序不公开。</div>' : `<div class="facts" style="word-break:break-all">盐|牌序（按发牌顺序）：${h.salt}|${h.deckText}</div>`}</div></section>`;
   }
-  html += '<section><h3 class="rv-h">你的决策点评</h3><div class="rv-dec">';
+  html += '<section><h3 class="rv-h">你的决策点评</h3><p class="rv-note" style="margin:0 0 8px">点评只用你当时看得到的信息：你的牌、公共牌、底池、下注和对手公开的打法。胜率按对手拿随机牌估算，不会去看对手的底牌，也不会用后面才发出来的牌。</p><div class="rv-dec">';
   const myDec = h.decisions.filter(d => (d.i ?? 0) === (h.me ?? 0));
   if (!myDec.length) html += '<p class="rv-note">这一手你没有需要做的决定。</p>';
   if (myDec.length){
     const n = k => myDec.filter(d => d.grade === k).length, worst = myDec.slice().sort((a, b) => (b.loss || 0) - (a.loss || 0))[0];
-    html += `<div class="dec sum"><b>本手小结</b><div class="rv-note">${myDec.length} 个决定：<span class="g">好 ${n('good')}</span> · <span class="m">可改进 ${n('meh')}</span> · <span class="b">失误 ${n('bad')}</span>。${worst && worst.loss ? `最贵的一步是${worst.street}的「${esc(worst.text)}」，按当时的底池算大约少赚或多亏 ${fmt(worst.loss)}。` : n('bad') ? '' : '没有明显的亏钱决定。'}</div></div>`;
+    html += `<div class="dec sum"><b>本手小结</b><div class="rv-note">${myDec.length} 个决定：<span class="g">好 ${n('good')}</span> · <span class="m">可改进 ${n('meh')}</span> · <span class="b">失误 ${n('bad')}</span>。${worst && worst.loss ? `最贵的一步是${worst.street}的「${esc(worst.text)}」，按当时的底池算大约少赚或多亏 ${fmt(worst.loss)}。` : n('bad') ? '' : '没有明显的亏钱决定。'}</div>${(() => {
+      const todo = myDec.filter(d => d.grade !== 'good').map(d => [d, d.fix ?? fixFor(d)]).filter(([, f]) => f);
+      return todo.length ? `<ol class="todo">${todo.map(([d, f]) => `<li><b>${d.street}</b>「${esc(d.text)}」→ ${esc(f)}</li>`).join('')}</ol>` : '';
+    })()}</div>`;
   }
   myDec.forEach(d => {
     html += `<div class="dec"><div class="row1"><span><b>${d.street}</b> · 你选择 ${esc(d.text)}</span><span class="pill ${d.grade}">${d.verdict}</span></div>
       <div class="facts">底池 ${fmt(d.pot)} · 需跟注 ${fmt(d.toCall)} · 胜率 ${Math.round(d.eq * 100)}% · 所需 ${d.toCall ? Math.round(d.odds * 100) + '%' : '—'} · 对手 ${d.opps} 人</div>
       <div class="rv-note verdict">${esc(d.note)}</div>
+      ${d.grade !== 'good' && (d.fix ?? fixFor(d)) ? `<div class="fix"><b>更好的打法</b>${esc(d.fix ?? fixFor(d))}</div>` : ''}
       ${d.points && d.points.length ? `<ul class="why">${d.points.map(([k, t]) => `<li><b>${esc(k)}</b>${esc(t)}</li>`).join('')}</ul>` : ''}</div>`;
   });
   html += '</div></section>';
