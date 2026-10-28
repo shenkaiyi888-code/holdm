@@ -230,6 +230,10 @@ body.sin .sins{display:block}
   background:linear-gradient(160deg, hsl(var(--h) 55% 52%), hsl(var(--h) 50% 34%));
   box-shadow:inset 0 0 0 2px rgba(255,255,255,.16);
 }
+/* seat medallion: a lacquered casino chip with a gold rim and the player's initial in serif */
+.ava.chip{background:none; box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.ava.chip svg{display:block; width:100%; height:100%}
+.ava.chip text{font-family:var(--f-display); font-weight:700}
 .info{min-width:0; line-height:1.25; text-align:left}
 .nm{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .nm i{font-style:normal; font-weight:400; font-size:10.5px; color:var(--muted); margin-left:5px}
@@ -2926,6 +2930,22 @@ function renderControls(){
   $('#bCancel').hidden = !(isPhone() && raising && canR);
   if (armed === 'raise' && v < b.maxTo) armed = '';
 }
+// eight lacquer tones that sit with the felt and gold, one per seat; the player's own seat is always ivory and gold
+const CHIP_TONES = [['#173F32','#0c241c'],['#6b2430','#3a1219'],['#1f3358','#101b31'],['#4a2a5c','#28163a'],['#7a5528','#432d12'],['#2f4a4f','#172a2d'],['#5c1f1f','#2e0e0e'],['#33363f','#1a1c22']];
+function chipAva(name, human, seat){
+  name = String(name || '?');
+  const ch = [...name][0].toUpperCase();
+  const hsh = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const [a, b] = human ? ['#e8d3a2','#b8924f'] : CHIP_TONES[Math.abs(seat ?? hsh) % CHIP_TONES.length];
+  const ink = human ? '#2a1d08' : '#f1e3bf', rim = human ? '#fff3d6' : '#d5b678';
+  const id = 'c' + hsh.toString(36) + (seat ?? '');
+  return `<svg viewBox="0 0 48 48" aria-hidden="true"><defs><radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient></defs>`
+    + `<circle cx="24" cy="24" r="23" fill="url(#${id})"/>`
+    + `<circle cx="24" cy="24" r="21" fill="none" stroke="${rim}" stroke-width="3.2" stroke-dasharray="5.5 5.5" opacity=".85"/>`
+    + `<circle cx="24" cy="24" r="23" fill="none" stroke="${rim}" stroke-width="1" opacity=".9"/>`
+    + `<circle cx="24" cy="24" r="15.5" fill="none" stroke="${rim}" stroke-width=".8" opacity=".55"/>`
+    + `<text x="24" y="25" text-anchor="middle" dominant-baseline="central" font-size="${/[\u4e00-\u9fff]/.test(ch) ? 17 : 19}" fill="${ink}">${esc(ch)}</text></svg>`;
+}
 function render(){
   const P = G.players;
   P.forEach((p, i) => {
@@ -2937,7 +2957,9 @@ function render(){
     el.classList.toggle('shown', !!p.shown && G.handOver);
     el.querySelector('.nm').innerHTML = p.human || p.vacant ? esc(p.name) : `${esc(p.name)}<i>${styleLabel(p)}</i>`;
     const ava = el.querySelector('.ava');
-    ava.textContent = p.ava ? '' : [...p.name][0].toUpperCase();
+    const chipKey = p.ava ? '' : p.name + (p.human ? '#h' : '#' + i);
+    if (ava._chip !== chipKey){ ava._chip = chipKey; ava.innerHTML = p.ava ? '' : chipAva(p.name, p.human || i === 0, i); }
+    ava.classList.toggle('chip', !p.ava);
     ava.classList.toggle('pic', !!p.ava);
     ava.style.backgroundImage = p.ava ? `url(${p.ava})` : '';
     ava.style.setProperty('--h', p.human ? 40 : [...p.name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 7));
@@ -3143,14 +3165,14 @@ function renderBots(){
   const opts = '<option value="random">随机（隐藏）</option>'
     + `<optgroup label="普通玩家">${STYLES.filter(x => !PRO(x.style)).map(x => `<option value="${x.style}">${x.style}</option>`).join('')}</optgroup>`
     + `<optgroup label="职业模板">${STYLES.filter(x => PRO(x.style)).map(x => `<option value="${x.style}">${x.style}</option>`).join('')}</optgroup>`;
-  const avaBtn = (p, key, h) => `<label class="ava ava-up${p.ava ? ' pic' : ''}" style="--h:${h};${p.ava ? `background-image:url(${p.ava})` : ''}" title="上传头像">${p.ava ? '' : esc([...p.name][0].toUpperCase())}<input type="file" accept="image/*" data-ava="${key}" aria-label="上传${esc(p.name)}的头像"></label>`;
+  const avaBtn = (p, key, h) => `<label class="ava ava-up${p.ava ? ' pic' : ' chip'}" style="--h:${h};${p.ava ? `background-image:url(${p.ava})` : ''}" title="上传头像">${p.ava ? '' : chipAva(p.name, key === 'me', key === 'me' ? undefined : key)}<input type="file" accept="image/*" data-ava="${key}" aria-label="上传${esc(p.name)}的头像"></label>`;
   const me = G.players[0];
   const meRow = `<div class="bot-row me-row">${avaBtn(me, 'me', 40)}
       <div><div class="nm-row"><input class="nm-in" type="text" id="myNameIn" maxlength="8" value="${esc(myName)}" placeholder="你" aria-label="你的名字">${me.ava ? '<button class="ava-clear" type="button" data-clear="me">清除头像</button>' : ''}</div><small>你自己 · 留空就显示「你」</small></div>
       <div></div></div>`;
   $('#bxRows').innerHTML = meRow + G.players.slice(1).map((p, k) => {
     const pref = botPrefs[k];
-    if (p.human) return `<div class="bot-row"><div class="ava${p.ava ? ' pic' : ''}" style="--h:40;${p.ava ? `background-image:url(${p.ava})` : ''}">${p.ava ? '' : esc([...p.name][0])}</div>
+    if (p.human) return `<div class="bot-row"><div class="ava${p.ava ? ' pic' : ' chip'}" style="--h:40;${p.ava ? `background-image:url(${p.ava})` : ''}">${p.ava ? '' : chipAva(p.name, false)}</div>
       <div><b>${esc(p.name)}</b><small>真人玩家（联机）${p.away ? ' · 离线' : ''}</small></div><div></div><div class="stats">${statLine(p)}</div></div>`;
     const desc = pref === 'random' ? '打法已暗中分配，你看不到' : STYLE_DESC[pref];
     const h = [...p.name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 360, 7);
