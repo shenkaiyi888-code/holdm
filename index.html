@@ -197,6 +197,8 @@ body.sin .sins{display:block}
 .rit-btns{display:grid; grid-template-columns:1.4fr 1fr; gap:8px}
 .flipper.hl > .card:not(.back){box-shadow:0 0 0 2px var(--gold), 0 0 18px rgba(227,179,82,.6)}
 /* dim the face, not the flipper: opacity on a 3D parent flattens it and the card back shows through */
+.flipper.rabbit > .card{opacity:.55; filter:saturate(.4)}
+.flipper.rabbit{outline:1.5px dashed rgba(213,182,120,.6); outline-offset:2px; border-radius:6px}
 .flipper.lo > .card{opacity:.4; filter:saturate(.5); transition:opacity .4s}
 .hole .card.hl{box-shadow:0 0 0 2px var(--gold), 0 0 14px rgba(227,179,82,.6)}
 .dbtn{
@@ -1051,6 +1053,8 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       </div>
       <div class="next-row" id="nextRow" hidden>
         <button class="btn b-show" id="bShow" type="button" hidden>秀牌</button>
+        <button class="btn b-show" id="bRabbit" type="button" hidden>看没发的牌</button>
+        <button class="btn b-show" id="bRabbitNo" type="button" hidden>不看</button>
         <button class="btn b-call" id="bRebuy" type="button" hidden>补码</button>
         <button class="btn b-review" id="bReview" type="button">复盘这手</button>
         <button class="btn b-next" id="bNext" type="button">下一手<kbd>空格</kbd></button>
@@ -1504,7 +1508,8 @@ function dealerSay(key, vars = {}){
     ritBotAsk:['{name}问要不要发两次。'],
     rit2:['好的，剩下的牌发两次。','双方同意，发两次，每次一半底池。'],
     rit1:['那就发一次，一锤定音。','只发一次，开牌。'],
-    rebuy:['{name}补码 {n}，继续。','{name}又买了 {n} 的筹码。']
+    rebuy:['{name}补码 {n}，继续。','{name}又买了 {n} 的筹码。'],
+    rabbit:['来看看，要是没弃会发生什么。','这几张没发出来的牌，只是看看。']
   };
   const opts = DEALERS[dealerKey].lines[key] || COMMON[key];
   if (!opts) return;
@@ -1727,6 +1732,7 @@ function newGame(){
 }
 function startHand(){
   runId++;
+  G.rabbit = null; G.lastFolder = -1;
   if (NET.role === 'host') netApplySeats();
   applyPendingChips();
   G.players.forEach(p => {
@@ -1847,7 +1853,7 @@ function doAction(i, type, to){
     Object.assign(pre, decisionContext(i, p, type === 'raise' ? Math.min(Math.round(to), p.bet + p.chips) : 0));
   }
   let text = '';
-  if (type === 'fold'){ p.folded = true; p.foldSt = G.street; p.foldedToMe = G.streetAgg === 0; text = '弃牌'; H.players[i].foldAt = STREET[G.street]; if (i !== 0) muck(i); else sfx('fold'); }
+  if (type === 'fold'){ G.lastFolder = i; p.folded = true; p.foldSt = G.street; p.foldedToMe = G.streetAgg === 0; text = '弃牌'; H.players[i].foldAt = STREET[G.street]; if (i !== 0) muck(i); else sfx('fold'); }
   else if (type === 'check'){ text = '过牌'; p.checked = true; sfx('check'); }
   else if (type === 'call'){
     const a = Math.min(toCall, p.chips); pay(p, a); if (a > 0) queueChips(i);
@@ -1979,6 +1985,7 @@ function winByFold(p){
   p.won = amount; p.chips += amount;
   const line = `${p.name}赢得 ${fmt(amount)}，其他人都弃牌了`;
   log(line, 'res'); G.msg = [line]; H.result = [line];
+  if (G.board.length < 5 && G.deck.length >= 8) G.rabbit = {state:'avail', parties:[G.players.indexOf(p), G.lastFolder].filter(k => k >= 0), asks:[], from:-1, cards:[]};
   endHand();
   if (!p.human) wait(() => botMaybeShow(p), 500 + Math.random() * 400);
   else if (p === G.players[0]) wait(botsShowFolds, 700 + Math.random() * 500);
@@ -2569,6 +2576,44 @@ function botReact(kind){
   const q = others[Math.floor(Math.random() * others.length)], pool = REACT[kind || 'other'];
   log(`${q.name}：${pool[Math.floor(Math.random() * pool.length)]}`);
 }
+/* the hand ended before the river: the players who were dealt in may peek at the cards that never came.
+   It changes nothing. With friends at the table, the winner and the last player to fold both have to agree. */
+function rabbitAct(i, yes){
+  const R = G.rabbit, p = G.players[i];
+  if (!R || !G.handOver || G.over || !p || !p.hand.length) return;
+  if (R.state === 'avail' && yes){
+    const others = R.parties.filter(k => k !== i && G.players[k] && G.players[k].human && !G.players[k].out);
+    R.from = i; R.asks = others; R.at = Date.now();
+    if (!others.length) return rabbitReveal();
+    R.state = 'ask';
+    log(`${p.name}想看看没发出来的牌，等${others.map(k => G.players[k].name).join('、')}同意`, 'sys');
+  } else if (R.state === 'ask' && R.asks.includes(i)){
+    if (!yes){ R.state = 'no'; log(`${p.name}不想看没发的牌`, 'sys'); }
+    else { R.asks = R.asks.filter(k => k !== i); if (!R.asks.length) return rabbitReveal(); }
+  }
+  render();
+}
+function rabbitReveal(){
+  const R = G.rabbit, run = [];
+  while (G.board.length + run.length < 5){ G.deck.pop(); const n = G.board.length + run.length === 0 ? 3 : 1; for (let k = 0; k < n; k++) run.push(G.deck.pop()); }
+  R.state = 'shown'; R.cards = run; R.shownAt = Date.now();
+  log(`没发出来的牌：${run.map(cardText).join(' ')}（只是看看，不算数）`, 'board');
+  dealerSay('rabbit');
+  render();
+}
+function rabbitMine(){
+  const R = G.rabbit, me = G.players[0];
+  if (!R || !G.handOver || G.over || !me || !me.hand.length || me.out) return '';
+  if (R.state === 'avail') return 'offer';
+  if (R.state === 'ask') return R.asks.includes(0) ? 'answer' : R.from === 0 ? 'wait' : '';
+  return '';
+}
+function rabbitClick(yes){
+  if (NET.role === 'guest'){ netSend({t:'rabbit', yes, key:G.salt}); if (G.rabbit && yes && G.rabbit.state === 'avail'){ G.rabbit.state = 'ask'; G.rabbit.from = 0; G.rabbit.asks = []; } renderControls(); return; }
+  rabbitAct(0, yes);
+}
+$('#bRabbit').addEventListener('click', () => rabbitClick(true));
+$('#bRabbitNo').addEventListener('click', () => rabbitClick(false));
 function canShow(){
   const me = G.players[0];
   return G.handOver && !G.over && me.hand.length && !me.shown && !me.out && !(G.showdown && !me.folded);
@@ -2821,7 +2866,10 @@ function renderBoardInto(boardEl, arr, instant){
   return n ? (n - 1) * 160 * spd() + 360 * spd() + 480 : 0;
 }
 function renderBoard(){
-  G.boardAnim = renderBoardInto($('#board'), G.board, 0);
+  const extra = G.rabbit && G.rabbit.state === 'shown' && !G.board2 ? G.rabbit.cards : [];
+  G.boardAnim = renderBoardInto($('#board'), G.board.concat(extra), 0);
+  [...$('#board').children].forEach((n, k) => n.classList.toggle('rabbit', k >= G.board.length && extra.length > 0));
+  $('#board').classList.toggle('has-rabbit', extra.length > 0);
   const b2 = $('#board2');
   if (G.board2){
     b2.hidden = false;
@@ -2977,6 +3025,11 @@ function renderControls(){
   $('#bNext').firstChild.textContent = G.over ? '再来一局' : '下一手';
   $('#bReview').disabled = !HISTORY.some(h => h.done);
   $('#bShow').hidden = !canShow();
+  const rb = rabbitMine(), R = G.rabbit;
+  $('#bRabbit').hidden = !rb; $('#bRabbitNo').hidden = rb !== 'answer';
+  $('#bRabbit').disabled = rb === 'wait';
+  $('#bRabbit').textContent = rb === 'answer' ? `同意看没发的牌` : rb === 'wait' ? '等对方同意…' : '看没发的牌';
+  if (rb === 'answer') $('#bRabbit').title = `${G.players[R.from] ? G.players[R.from].name : '对方'}想看看没发出来的牌`;
   $('#bShow').textContent = G.players[0].folded ? '秀出弃掉的牌' : '秀牌';
   $('#bReviewTop').disabled = !HISTORY.some(h => h.done);
   document.querySelectorAll('.tip button').forEach(b => b.disabled = G.over || me.out || me.chips <= +b.dataset.tip);
@@ -3124,7 +3177,7 @@ function render(){
   });
   placeDealerButton();
   flushChips();
-  $('#street').textContent = G.over ? '牌局结束' : STREET[G.street];
+  $('#street').textContent = G.over ? '牌局结束' : G.rabbit && G.rabbit.state === 'shown' ? '没发出的牌 · 只是看看' : STREET[G.street];
   tweenNum($('#pot'), G.potCleared ? 0 : G.handOver ? (P.reduce((s, p) => s + p.won, 0) || potTotal()) : potTotal());
   $('#msg').innerHTML = G.msg.map(l => `<div>${l}</div>`).join('');
   $('#handNo').textContent = G.handNo || 1;
@@ -3816,6 +3869,7 @@ function netHostMessage(m){
     if (!n || G.over || p.out || p.chips <= n) return;
     p.chips -= n; log(`${p.name}打赏荷官 ${n}`, 'sys'); render(); return;
   }
+  if (m.t === 'rabbit'){ if (m.key === G.salt) rabbitAct(i, !!m.yes); return; }
   if (m.t === 'rebuy'){
     if (mode === 'cash' && p.out){ p.wantRebuy = true; log(`${p.name}要补码，下一手生效`, 'sys'); privKick(); render(); }
   }
@@ -3890,6 +3944,8 @@ function netHandDone(){
     if (!G.handOver || G.over || NET.role === 'guest') return;
     if (!autoNext && !online()){ G.nextAt = 0; renderControls(); return; }
     /* playing alone: wait while a dialog such as the review is open */
+    const R = G.rabbit;
+    if (R && ((R.state === 'ask' && Date.now() - R.at < 20000) || (R.shownAt && Date.now() - R.shownAt < 4000))){ G.nextAt = Date.now() + 2000; return wait(tick, 2000); }
     const busy = !online() && (!$('#review').hidden || !$('#botsDlg').hidden || !$('#newDlg').hidden || !$('#netDlg').hidden || !$('#admDlg').hidden || welcoming);
     if (busy){ G.nextAt = Date.now() + 3000; return wait(tick, 3000); }
     startHand();
@@ -3919,6 +3975,7 @@ function snapFor(x){
     board:G.board, board2:G.board2 || null, ritBase:G.ritBase || 0, street:G.street, currentBet:G.currentBet, minRaise:G.minRaise,
     sbAmt:G.sbAmt, bbAmt:G.bbAmt, toAct:rot(G.toAct), thinking, waiting, handOver:G.handOver, over:G.over, showdown:G.showdown,
     msg:G.msg, rit:G.rit === 2 ? 2 : ['bot', 'me', 'wait'].includes(G.rit) ? 'talk' : G.rit,
+    rabbit:G.rabbit ? {state:G.rabbit.state, from:rot(G.rabbit.from), asks:G.rabbit.asks.map(rot), cards:G.rabbit.cards, parties:[]} : null,
     dl:G.deadline ? Math.max(0, G.deadline - Date.now()) : 0, nx:G.nextAt ? Math.max(0, G.nextAt - Date.now()) : 0};
 }
 /* a finished hand for one friend's review: other people's cards that were never shown stay hidden */
@@ -3989,7 +4046,7 @@ function netApply(m){
     if (!('score' in o)) p.score = 0;
   });
   ['handNo', 'dealer', 'sbIdx', 'bbIdx', 'board', 'board2', 'ritBase', 'street', 'currentBet', 'minRaise', 'sbAmt', 'bbAmt', 'toAct',
-    'thinking', 'waiting', 'handOver', 'over', 'showdown', 'msg', 'rit'].forEach(k => { G[k] = s[k]; });
+    'thinking', 'waiting', 'handOver', 'over', 'showdown', 'msg', 'rit', 'rabbit'].forEach(k => { G[k] = s[k]; });
   G.salt = s.key;
   G.deadline = s.dl ? Date.now() + s.dl : 0;
   G.nextAt = s.nx ? Date.now() + s.nx : 0;
