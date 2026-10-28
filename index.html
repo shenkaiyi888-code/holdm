@@ -2407,6 +2407,23 @@ function botAct(i){
     const bl = plan();
     if (bl) return bluffRaise(bl);
   }
+  /* facing a raise or a bet: strong hands raise back (3-bet, 4-bet, raise a bet) instead of only calling */
+  if (canRaise && G.streetRaises >= 1){
+    const r2 = Math.random(), inPos = seatOrder(i) > seatOrder(G.streetAgg);
+    const shoveOr = to => to >= (p.bet + p.chips) * .45 ? p.bet + p.chips : Math.min(to, p.bet + p.chips);
+    if (G.street === 0){
+      let need = (G.streetRaises === 1 ? 10 : G.streetRaises === 2 ? 12 : 15) + Math.round(p.tight * 10);
+      /* someone who raises every hand gets played back at lighter */
+      const ag = G.players[G.streetAgg];
+      if (ag && ag.st && ag.st.hands >= 8 && ag.st.pfr / ag.st.hands > .35 && (pro || p.aggr > .6)) need -= 2;
+      if (chenScore(p.hand) >= need && r2 < .55 + p.aggr * .45)
+        return doAction(i, 'raise', shoveOr(Math.round(G.currentBet * (G.streetRaises === 1 ? (inPos ? 3 : 3.6) : 2.3) / 5) * 5));
+    } else {
+      const raiseT = (opps === 1 ? .8 : Math.min(.86, share * 2.4)) + p.tight * .4 + (G.streetRaises >= 2 ? .1 : 0);
+      /* a monster sometimes just calls to keep you betting */
+      if (eq > raiseT && !(eq > .95 && r2 < .25) && r2 < .5 + p.aggr * .45) return doAction(i, 'raise', shoveOr(sizeTo(pro ? valueSize() + .2 : .7 + Math.random() * .5)));
+    }
+  }
   const potOdds = toCall / (pot + toCall);
   if (pro && canRaise && G.street > 0 && p.checked && eq > strongT && r < .55) return doAction(i, 'raise', sizeTo(.9));
   if (canRaise && eq > strongT && r < .35 + p.aggr * .6) return doAction(i, 'raise', sizeTo(pro ? valueSize() + .1 : .6 + Math.random() * .6));
@@ -2780,11 +2797,20 @@ const dealerPoint = () => centerOf($('#dAvatar'));
 let actx = null, soundOn = store.get('holdem.sound', '1') === '1';
 function ac(){
   if (!actx){ try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-  if (actx.state === 'suspended') actx.resume();
+  if (actx.state !== 'running') wake();
   return actx;
 }
-document.addEventListener('pointerdown', () => { if (soundOn) ac(); }, {passive:true});
+/* phones suspend audio when you switch apps (iOS even marks it "interrupted"); wake it again on return,
+   and if it still will not run, start a fresh one on the next tap */
+function wake(){
+  const a = actx;
+  try { a.resume().then(() => { if (a.state !== 'running' && a === actx && navigator.userActivation?.isActive !== false){ try { a.close(); } catch (e) {} actx = null; } }, () => {}); } catch (e) {}
+}
+['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (soundOn) ac(); }, {passive:true}));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && soundOn && actx) wake(); });
+addEventListener('pageshow', () => { if (soundOn && actx) wake(); });
 function sfx(kind){
+  if (soundOn && actx && actx.state !== 'running') wake();
   if (!soundOn || !actx || actx.state !== 'running') return;
   const a = actx, t = a.currentTime;
   const tone = (f, d, type = 'sine', v = .08, at = 0) => {
@@ -4371,7 +4397,7 @@ $('#stOnline').addEventListener('click', () => {
 });
 
 /* automated rule checks open the page with ?selftest */
-if (/[?&]selftest/.test(location.search)) window.__holdm = {G, HISTORY, mayRaise, bounds, get H(){ return H; }};
+if (/[?&]selftest/.test(location.search)) window.__holdm = {G, HISTORY, mayRaise, bounds, doAction, get H(){ return H; }};
 
 /* ---------- boot ---------- */
 function snapshot(){
