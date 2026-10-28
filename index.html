@@ -499,6 +499,25 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .buyins button[aria-checked="true"]{border-color:var(--gold); background:rgba(227,179,82,.08); color:var(--gold)}
 .buy-custom{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); flex-wrap:wrap}
 .buy-custom input{width:110px; background:var(--well); border:1px solid var(--line); border-radius:9px; padding:6px 8px; font-family:var(--f-num); text-align:right; color:var(--text)}
+.welcome .sheet{max-width:520px; margin:auto 0; text-align:center; gap:18px; padding:26px 20px 20px}
+.welcome .w-brand{display:flex; flex-direction:column; align-items:center; gap:6px}
+.welcome .w-brand .logo{width:64px; filter:drop-shadow(0 6px 18px rgba(227,179,82,.3))}
+.welcome .w-brand .logo svg{display:block; width:100%; height:auto}
+.welcome .w-brand h2{flex:none; margin:4px 0 0; font-family:"Fraunces",var(--f-display); font-style:italic; font-weight:800; font-size:44px; line-height:1; color:var(--ivory)}
+.welcome .w-brand h2 em{font-style:italic; color:var(--gold)}
+.welcome .w-brand span{font:500 12px var(--f-num); letter-spacing:.1em; color:var(--faint)}
+.welcome .w-pick{display:flex; flex-direction:column; gap:8px; text-align:left}
+.welcome .w-pick button{display:flex; align-items:center; gap:12px; background:var(--well); border:1px solid var(--line); border-radius:14px; padding:12px 14px; color:var(--text); text-align:left}
+.welcome .w-pick button:hover, .welcome .w-pick button:focus-visible{border-color:var(--gold)}
+.welcome .w-pick button i{font-style:normal; font-size:22px; width:30px; text-align:center; flex:none}
+.welcome .w-pick button div{display:flex; flex-direction:column; gap:2px; min-width:0}
+.welcome .w-pick b{font-family:var(--f-display); font-size:16px; font-weight:900}
+.welcome .w-pick small{font-size:12px; color:var(--muted); line-height:1.45}
+.welcome .w-pick .mem{border-color:rgba(227,179,82,.55); background:rgba(227,179,82,.08)}
+.welcome .w-pick .mem b{color:var(--gold)}
+.welcome .w-dealer{display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--muted)}
+.welcome .w-dealer span.ava{width:34px; height:34px; border-radius:50%; overflow:hidden; background:var(--well); border:1px solid var(--line); flex:none}
+.welcome .w-dealer span.ava svg, .welcome .w-dealer span.ava img{display:block; width:100%; height:100%; object-fit:cover}
 .modes{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .modes button{
   text-align:left; background:var(--well); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
@@ -773,7 +792,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
     <div class="d-top">
       <div class="avatar" id="dAvatar"></div>
       <div class="dtext">
-        <div class="dname"><b id="dName">Nemo</b><span id="dRole">常驻荷官</span><button class="ghost d-more" id="dMore" type="button" aria-expanded="false">换荷官 · 打赏</button></div>
+        <div class="dname"><b id="dName">Sally</b><span id="dRole">常驻荷官</span><button class="ghost d-more" id="dMore" type="button" aria-expanded="false">换荷官 · 打赏</button></div>
         <div class="bubble" id="dSay" aria-live="polite">欢迎入座。</div>
       </div>
     </div>
@@ -951,6 +970,23 @@ select.ghost option{background:var(--panel); color:var(--text)}
     </div>
   </div>
 
+
+  <div class="modal welcome" id="startDlg" hidden role="dialog" aria-modal="true" aria-labelledby="stTitle">
+    <div class="sheet">
+      <div class="w-brand"><span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
+        <h2 id="stTitle" aria-label="holdm">hold<em>m</em></h2>
+        <span>by Yiiiii</span>
+      </div>
+      <div class="w-pick">
+        <button type="button" class="mem" id="stMem" hidden><i>↻</i><div><b>记忆模式 · 继续上一局的规则</b><small id="stMemTxt"></small></div></button>
+        <button type="button" id="stTourney"><i>🏆</i><div><b>淘汰赛</b><small>输光就离场，盲注逐步上涨，赢光所有人获胜。</small></div></button>
+        <button type="button" id="stCash"><i>🪙</i><div><b>现金局</b><small>常驻牌桌，有人走就有新人坐下，盲注固定。</small></div></button>
+        <button type="button" id="stOnline"><i>👥</i><div><b>和朋友联机</b><small>开房间发链接给朋友，或者输入房间号加入。</small></div></button>
+      </div>
+      <div class="w-dealer"><span class="ava" id="stAva"></span><span id="stDealer"></span></div>
+    </div>
+  </div>
+
   <div class="modal" id="botsDlg" hidden role="dialog" aria-modal="true" aria-labelledby="bxTitle">
     <div class="sheet">
       <header>
@@ -1113,8 +1149,30 @@ const store = {
   set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
 };
 const DEALERS = {
+  sally:{
+    name:'Sally', role:'常驻荷官',
+    svg:'<svg viewBox="7 2 66 66" aria-hidden="true"><path d="M22 38 Q19 14 40 13 Q61 14 58 38 L60 66 Q50 70 40 68 Q30 70 20 66Z" fill="#17131a"/><circle cx="40" cy="13" r="7" fill="#17131a"/><rect x="29" y="11.2" width="22" height="1.8" rx=".9" fill="#5fb08a" transform="rotate(-14 40 12)"/><circle cx="50.6" cy="9.6" r="1.6" fill="#7fd0a8"/><g fill="#f07a8a"><circle cx="33" cy="12.4" r="1.7"/><circle cx="35.4" cy="11" r="1.7"/><circle cx="35.6" cy="13.8" r="1.7"/><circle cx="32.6" cy="15" r="1.7"/></g><circle cx="34.3" cy="13" r="1" fill="#ffd36b"/><path d="M41 7 Q47 2 44 7.5 Q42.5 9 41 7Z" fill="#17131a"/><path d="M40.6 8.4 Q42 4 45.5 3.4" stroke="#17131a" stroke-width="1.3" fill="none" stroke-linecap="round"/><rect x="35.5" y="47" width="9" height="12" rx="4" fill="#f3d0b6"/><path d="M10 84 Q12 64 30 60 L50 60 Q68 64 70 84Z" fill="#b51f33"/><path d="M33 56.5 L47 56.5 L47.5 61.5 Q40 63.5 32.5 61.5Z" fill="#b51f33" stroke="#e3b352" stroke-width="1"/><path d="M40 62.6 Q47 64 52 70" stroke="#e3b352" stroke-width="1" fill="none"/><path d="M44.5 64.2 h4" stroke="#e3b352" stroke-width="1.4" stroke-linecap="round"/><circle cx="49.3" cy="64.2" r="1" fill="#e3b352"/><g fill="#e3b352" opacity=".55"><circle cx="24" cy="70" r="1.2"/><circle cx="58" cy="73" r="1.2"/><circle cx="30" cy="77" r="1"/></g><ellipse cx="40" cy="36.5" rx="13" ry="15" fill="#f8dcc6"/><path d="M26.6 35 Q25 18.5 40 18 Q55 18.5 53.4 35 Q53 31 51.5 29.5 L49 31 L47 29 L44.5 31 L42 29 L39.5 31 L37 29 L34.5 31 L32 29 L29.5 31 L28.2 29.6 Q27 31.5 26.6 35Z" fill="#17131a"/><path d="M27 32 Q24.5 46 27.5 56 L23.5 54 Q21 42 27 32Z" fill="#17131a"/><path d="M53 32 Q55.5 46 52.5 56 L56.5 54 Q59 42 53 32Z" fill="#17131a"/><path d="M31.5 32.6 q3 -1.2 6 .2" stroke="#3a2a26" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M42.5 32.8 q3 -1.4 6 -.2" stroke="#3a2a26" stroke-width=".9" fill="none" stroke-linecap="round"/><ellipse cx="35" cy="38.2" rx="3" ry="3.4" fill="#2a1c1a"/><ellipse cx="45" cy="38.2" rx="3" ry="3.4" fill="#2a1c1a"/><circle cx="35.9" cy="36.9" r="1.2" fill="#fff"/><circle cx="45.9" cy="36.9" r="1.2" fill="#fff"/><circle cx="34.2" cy="39.6" r=".55" fill="#fff"/><circle cx="44.2" cy="39.6" r=".55" fill="#fff"/><path d="M31.6 35.6 l-1.3 -.9 M48.4 35.6 l1.3 -.9" stroke="#2a1c1a" stroke-width=".8" stroke-linecap="round"/><ellipse cx="40" cy="46.4" rx="1.5" ry="1.7" fill="#d9636a"/><ellipse cx="40" cy="46.9" rx=".8" ry=".7" fill="#f2a0a0"/><ellipse cx="30.6" cy="43" rx="3" ry="1.7" fill="#f49a9c" opacity=".55"/><ellipse cx="49.4" cy="43" rx="3" ry="1.7" fill="#f49a9c" opacity=".55"/><path d="M29.4 42.6 l.8 .9 M31.2 42.4 l.8 .9 M48.2 42.4 l.8 .9 M50 42.6 l.8 .9" stroke="#e07a80" stroke-width=".55" stroke-linecap="round"/><circle cx="27" cy="44.5" r="1.1" fill="#e3b352"/><ellipse cx="27" cy="47.2" rx="1.2" ry="1.6" fill="#5fb08a"/><circle cx="53" cy="44.5" r="1.1" fill="#e3b352"/><ellipse cx="53" cy="47.2" rx="1.2" ry="1.6" fill="#5fb08a"/></svg>',
+    lines:{
+      hello:['你好呀…我是 Sally，今晚的荷官。牌是发给你们的，对吧？我确认一下。','欢迎欢迎～我刚刚数了三遍筹码，三遍都不一样，算了不数了。','嗨，我是 Sally。我很专业的，我昨天才学会洗牌。'],
+      newHand:['发好啦…等一下，我是不是少发了一张。哦没有，就是两张，对的。','新的一手～我洗牌的时候在想晚饭吃什么。','这副牌我洗得很干净。……不是用水洗的。','Sally 发牌，童叟无欺。……童叟是谁呀？','第 {no} 手了吗？我以为才第三手。','嗯…牌发出去了，现在我可以发呆了吗？'],
+      flop:['翻牌～一、二、三，三张，我数过了。','翻牌来啦…这几张牌好像在看我。','翻牌！我也不知道好不好，看你们的表情吧。'],
+      turn:['转牌…为什么叫转牌呀，我转了一圈也没想明白。','第四张～我刚刚走神了，你们没看见吧？','转牌来啦，诶，河牌是下一张对吧？'],
+      river:['河牌…河里真的有牌吗？','最后一张啦，发完我就可以去喝奶茶了。','河牌到了。我屏住呼吸了，你们也屏一下。'],
+      allIn:['哇…{name}全下了。全下就是…全部都下的意思吧？','{name}把筹码全推过来了，好多，我抱不动了。','{name}全下！我心跳得比你还快。'],
+      youWin:['你赢了 {n}！诶，我是不是该鼓掌？啪啪啪。','这 {n} 是你的啦，我帮你推过去……推歪了，你自己拿一下。','赢了耶，我就说你今天头发很好看，运气一定好。'],
+      youWinBig:['{n}！好多好多，我数到一半忘了数到哪了。','这么大的底池……我要不要拍张照留念？'],
+      youLoseBig:['没关系的…我上次打麻将也输了，后来就忘了。','别难过，筹码只是暂时去别人那里玩一会儿。','输了要吃点甜的，我这有一颗糖……哦我吃掉了。'],
+      otherWin:['{name}赢了 {n}，嗯…恭喜恭喜。','这手是{name}的～我应该没看错吧。','{name}拿走了 {n}，好厉害，虽然我没太看懂。'],
+      tipS:['诶，给我的吗？谢谢你呀，我拿去买奶茶。','谢谢～我会好好发牌的，尽量不发错。'],
+      tipM:['好多！我可以买两杯奶茶了，加珍珠。','谢谢老板！Sally 今天发的牌都会是好牌……我说了不算的。'],
+      tipL:['这么多……我是不是可以把奶茶店买下来了？','哇……你是不是走错了，这是给荷官的哦。真的给我吗？'],
+      smoke:['咳咳…Sally 不会抽烟，但我帮你拿烟灰缸。……这是筹码盒，等我一下。'],
+      champion:['你把整张桌子都赢了！……那我明天还用来上班吗？','冠军！我给你颁个奖……我只有一张纸巾，给你。'],
+      bust:['筹码没有了…我的钱包也经常这样，我们再来一局吧？','嗯…筹码去旅行了。再来一局把它们接回来吧。']
+    }
+  },
   nemo:{
-    name:'Nemo', role:'常驻荷官',
+    name:'Nemo',
     svg:'<svg viewBox="10 9 60 60" aria-hidden="true"><path d="M21 40 Q19 13 40 12 Q61 13 59 40 L61 67 Q50 71 40 69 Q30 71 19 67Z" fill="#1d1a22"/><rect x="35" y="48" width="10" height="13" rx="4" fill="#efc7aa"/><path d="M10 84 Q13 64 30 60 L40 66 L50 60 Q67 64 70 84Z" fill="#1c1f2b"/><path d="M30 60 L40 75 L50 60 L46.5 59 L40 66.5 L33.5 59Z" fill="#f6f3ee"/><path d="M35 65 L40 67.6 L45 65 L45 70.2 L40 67.6 L35 70.2Z" fill="#c0392b"/><circle cx="40" cy="67.6" r="1.3" fill="#8e2a20"/><ellipse cx="40" cy="37" rx="13.5" ry="15.5" fill="#f6d5bd"/><path d="M26 35 Q25 19 40 18.5 Q55 19 54.5 35 Q51 27 45 25.5 Q38 30 30.5 28 Q28 31 26 35Z" fill="#1d1a22"/><path d="M26.4 32 Q24 46 27.5 55 L23 53 Q20.5 41 26.4 32Z" fill="#1d1a22"/><path d="M53.6 32 Q56 46 52.5 55 L57 53 Q59.5 41 53.6 32Z" fill="#1d1a22"/><path d="M30.8 33.2 q3.6 -1.7 7.2 0" stroke="#3a2a26" stroke-width="1.15" fill="none" stroke-linecap="round"/><path d="M42 33.2 q3.6 -1.7 7.2 0" stroke="#3a2a26" stroke-width="1.15" fill="none" stroke-linecap="round"/><path d="M31.4 38.4 q3.4 -2.8 6.8 0 q-3.4 1.7 -6.8 0Z" fill="#1d1a22"/><path d="M41.8 38.4 q3.4 -2.8 6.8 0 q-3.4 1.7 -6.8 0Z" fill="#1d1a22"/><circle cx="35.6" cy="37.6" r=".75" fill="#fff"/><circle cx="46" cy="37.6" r=".75" fill="#fff"/><path d="M40 41.5 q-1.1 3 .8 3.6" stroke="#d9a98c" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M37 47.6 q3 1.9 6 0 q-3 -1.1 -6 0Z" fill="#d9636a"/><ellipse cx="31" cy="43.4" rx="3" ry="1.8" fill="#f2a3a0" opacity=".45"/><ellipse cx="49" cy="43.4" rx="3" ry="1.8" fill="#f2a3a0" opacity=".45"/><circle cx="26.7" cy="44.5" r="1.3" fill="#e3b352"/><circle cx="53.3" cy="44.5" r="1.3" fill="#e3b352"/><rect x="44" y="21" width="10" height="2" rx="1" fill="#e3b352" transform="rotate(18 49 22)"/><path d="M53.5 18.5 l2.2 2.6 -2.2 2.6 -2.2 -2.6Z" fill="#d23a36"/></svg>',
     lines:{
       hello:['晚上好，我是 Nemo，今晚这张桌子由我来发牌。','欢迎入座，祝你今晚手气旺。'],
@@ -1239,9 +1297,9 @@ const DEALERS = {
     }
   }
 };
-const DEALER_ORDER = ['nemo', 'capy', 'penguin', 'fox', 'robot', 'custom'];
-let dealerKey = store.get('holdem.dealer3', 'nemo');
-if (!DEALERS[dealerKey]) dealerKey = 'nemo';
+const DEALER_ORDER = ['sally', 'nemo', 'capy', 'penguin', 'fox', 'robot', 'custom'];
+let dealerKey = store.get('holdem.dealer4', 'sally');
+if (!DEALERS[dealerKey]) dealerKey = 'sally';
 let tipTotal = +store.get('holdem.tips', 0) || 0;
 let customAva = store.get('holdem.cAva', '');
 let customName = store.get('holdem.cName', '我的荷官');
@@ -1261,7 +1319,7 @@ function buildPicker(){
   });
 }
 function setDealer(k, greet){
-  dealerKey = k; store.set('holdem.dealer3', k);
+  dealerKey = k; store.set('holdem.dealer4', k);
   $('#dRole').textContent = DEALERS[k].role || '荷官';
   $('#dAvatar').innerHTML = dealerArt(k);
   $('#dName').textContent = dealerName(k);
@@ -1502,6 +1560,7 @@ const cardText = c => rname(cr(c)) + SUIT[cs(c)];
 /* ---------- flow ---------- */
 function newGame(){
   runId++;
+  saveRules();
   G.priv = privPref && NET.role === 'host';
   G.endAfter = false; G.waitSeat = false;
   initPlayers();
@@ -3049,7 +3108,7 @@ $('#buyCustom').addEventListener('change', e => {
   e.target.value = pendingBuy; renderNew();
 });
 function openNew(){ pendingMode = mode; pendingSeats = SEATS; pendingPriv = privPref; pendingBuy = buyIn; $('#buyCustom').value = buyIn; renderNew(); $('#newDlg').hidden = false; $('#nwStart').focus(); }
-function closeNew(){ $('#newDlg').hidden = true; }
+function closeNew(){ $('#newDlg').hidden = true; if (welcoming) openStart(); }
 $('#nwClose').addEventListener('click', closeNew);
 $('#newDlg').addEventListener('click', e => { if (e.target.id === 'newDlg') closeNew(); });
 $('#nwStart').addEventListener('click', () => {
@@ -3057,7 +3116,7 @@ $('#nwStart').addEventListener('click', () => {
   SEATS = pendingSeats; store.set('holdem.seats', String(SEATS));
   if (NET.role === 'host'){ privPref = pendingPriv; store.set('holdem.priv', privPref ? '1' : '0'); }
   mode = pendingMode; store.set('holdem.mode', mode);
-  closeNew(); newGame();
+  welcoming = false; closeNew(); newGame();
   log(mode === 'cash' ? `新开一场现金局：你买入 ${fmt(buyIn)}，盲注固定，会有新人入座` : `新开一局淘汰赛：每人买入 ${fmt(buyIn)}，输完不补`, 'sys');
 });
 function showBuy(){
@@ -3551,7 +3610,7 @@ function netHandDone(){
     if (!G.handOver || G.over || NET.role === 'guest') return;
     if (!autoNext && !online()){ G.nextAt = 0; renderControls(); return; }
     /* playing alone: wait while a dialog such as the review is open */
-    const busy = !online() && (!$('#review').hidden || !$('#botsDlg').hidden || !$('#newDlg').hidden || !$('#netDlg').hidden || !$('#admDlg').hidden);
+    const busy = !online() && (!$('#review').hidden || !$('#botsDlg').hidden || !$('#newDlg').hidden || !$('#netDlg').hidden || !$('#admDlg').hidden || welcoming);
     if (busy){ G.nextAt = Date.now() + 3000; return wait(tick, 3000); }
     startHand();
   };
@@ -3836,6 +3895,51 @@ fetch('api/ping', {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(j =
   NET.available = true; netRenderDlg(); netBoot();
 }).catch(() => {});
 
+/* ---------- start screen ---------- */
+/* shown on every page load; 记忆模式 starts with the rules used last time */
+let welcoming = false;
+function lastRules(){
+  try { const r = JSON.parse(store.get('holdem.last', '')); if (r && r.mode) return r; } catch (e) {}
+  return null;
+}
+function saveRules(){ store.set('holdem.last', JSON.stringify({mode, seats:SEATS, buy:buyIn, priv:privPref})); }
+function rulesText(r){
+  const L = levelsFor(r.buy)[0];
+  return `${r.mode === 'cash' ? '现金局' : '淘汰赛'} · ${r.seats} 人桌 · 买入 ${fmt(r.buy)} · 盲注 ${L[0]}/${L[1]}${r.mode === 'cash' ? '' : ' 起'}`;
+}
+function openStart(){
+  welcoming = true;
+  const r = lastRules();
+  $('#stMem').hidden = !r;
+  if (r) $('#stMemTxt').textContent = '上次：' + rulesText(r);
+  $('#stAva').innerHTML = dealerArt(dealerKey);
+  $('#stDealer').textContent = `今晚的荷官是 ${dealerName(dealerKey)}，进桌后可以换`;
+  $('#startDlg').hidden = false;
+  ($('#stMem').hidden ? $('#stTourney') : $('#stMem')).focus();
+}
+function closeStart(){ $('#startDlg').hidden = true; welcoming = false; }
+function startWith(r){
+  mode = r.mode === 'cash' ? 'cash' : 'tourney'; store.set('holdem.mode', mode);
+  buyIn = Math.min(100000, Math.max(200, +r.buy || 1000)); store.set('holdem.buyIn', buyIn);
+  SEATS = +r.seats === 8 ? 8 : 6; store.set('holdem.seats', String(SEATS));
+  closeStart(); newGame();
+}
+$('#stMem').addEventListener('click', () => {
+  const r = lastRules();
+  startWith(r);
+  log(`记忆模式：沿用上一局的规则（${rulesText(r)}）`, 'sys');
+});
+function startPick(m){
+  $('#startDlg').hidden = true;
+  openNew(); pendingMode = m; renderNew();
+}
+$('#stTourney').addEventListener('click', () => startPick('tourney'));
+$('#stCash').addEventListener('click', () => startPick('cash'));
+$('#stOnline').addEventListener('click', () => {
+  startWith(lastRules() || {mode, seats:SEATS, buy:buyIn});
+  openNet();
+});
+
 /* ---------- boot ---------- */
 function snapshot(){
   return {players:G.players.map(p => ({chips:p.startChips, out:p.out, vacant:!!p.vacant, vacantFor:p.vacantFor || 0, name:p.name, style:p.style, hidden:!!p.hidden, tight:p.tight, aggr:p.aggr, bluff:p.bluff})), dealer:G.prevDealer, handNo:Math.max(0, G.handNo - 1)};
@@ -3850,7 +3954,8 @@ function start(data){
     });
     G.dealer = data.dealer; G.handNo = data.handNo;
     startHand();
-  } else newGame();
+  } else if (new URLSearchParams(location.search).get('room')) newGame();
+  else { initPlayers(); G.handOver = true; G.over = false; render(); openStart(); }
 }
 try { window.claude?.hot?.snapshot?.(snapshot); } catch (e) {}
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
