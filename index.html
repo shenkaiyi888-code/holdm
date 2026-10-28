@@ -1158,7 +1158,8 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <span>by Yiiiii</span>
       </div>
       <div class="w-pick">
-        <button type="button" class="play" id="stPlay"><i>▶</i><div><b>开始游戏</b><small id="stPlayTxt"></small></div></button>
+        <button type="button" class="play" id="stResume" hidden><i>↻</i><div><b>继续上次牌局</b><small id="stResumeTxt"></small></div></button>
+        <button type="button" class="play" id="stPlay"><i>▶</i><div><b id="stPlayB">开始游戏</b><small id="stPlayTxt"></small></div></button>
         <button type="button" id="stOnline"><i>👥</i><div><b>好友联机</b><small>开房间发链接给朋友，或者输入房间号加入。</small></div></button>
         <button type="button" id="stSet"><i>⚙️</i><div><b>游戏设置</b><small>换玩法（淘汰赛 / 现金局）、几人桌、带多少筹码。</small></div></button>
       </div>
@@ -1723,6 +1724,7 @@ function newGame(){
   G.ledger = {};
   G.players.forEach(p => { if (p.human) ledgerBuy(p, p.chips); });
   G.handNo = 0; G.over = false; G.img = {bluff:0, value:0};
+  if (!NET.role) clearSave();
   G.dealer = Math.floor(Math.random() * G.players.length);
   logEl.innerHTML = '';
   HISTORY.length = 0;
@@ -1799,7 +1801,9 @@ function startHand(){
   blind(G.sbIdx, G.sbAmt, '小盲');
   blind(G.bbIdx, G.bbAmt, '大盲');
   if (G.sayNext){ dealerSay(...G.sayNext); G.sayNext = null; }
-  else dealerSay(G.handNo === 1 ? 'hello' : 'newHand');
+  else dealerSay(G.handNo === 1 && !G.resumed ? 'hello' : 'newHand');
+  G.resumed = false;
+  saveGame();
   G.currentBet = G.bbAmt; G.minRaise = G.bbAmt;
   G.toAct = nextIdx(G.bbIdx, canAct);
   G.potCleared = false; G.holdStacks = null; G.lastAgg = -1; G.streetAgg = -1;
@@ -1882,7 +1886,7 @@ function doAction(i, type, to){
   else if (i === 0 && pre && type === 'call' && pre.grade === 'bad' && hasLine('badCall') && Math.random() < .75) dealerSay('badCall');
   else if (i === 0 && pre && type === 'fold' && pre.toCall === 0 && hasLine('lazyFold')) dealerSay('lazyFold');
   else if (i === 0 && Math.random() < .5) dealerSay({fold:'heroFold', check:'heroCheck', call:'heroCall', raise:'heroRaise'}[type]);
-  if (i === 0) clearTimeout(G.idleT);
+  if (i === 0){ clearTimeout(G.idleT); saveGame(); }
   G.waiting = false; G.thinking = -1;
   G.toAct = nextIdx(i, canAct);
   proceed();
@@ -2017,10 +2021,12 @@ function endHand(){
   else if (H.showdown && !me.folded && me.hand.length && hasLine('youLose')) dealerSay('youLose');
   else if (top) dealerSay('otherWin', {name:top.name, n:fmt(top.won)});
   G.holdStacks = reduceMotion ? null : new Set(G.players.map((p, i) => p.won > 0 ? i : -1).filter(i => i >= 0));
+  saveGame();
   render();
   celebrate();
 }
 function gameOver(win){
+  if (!NET.role) clearSave();
   G.over = true; G.handOver = true; G.waiting = false; G.thinking = -1; G.deadline = 0;
   G.msg = win ? ['你赢下了整张桌子的筹码'] : [mode === 'cash' ? `你的筹码输光了，这一场结束（买入 ${fmt(buyIn)}，打了 ${G.handNo} 手）` : '你的筹码输光了，输完不补，本局结束'];
   if (G.players.some(isRemote)){
@@ -4254,6 +4260,52 @@ function lastRules(){
   try { const r = JSON.parse(store.get('holdem.last', '')); if (r && r.mode) return r; } catch (e) {}
   return null;
 }
+/* single-player auto-save: written when a hand starts, after each of your actions and when it ends.
+   Leaving mid-hand counts as folding it: your chips already in the pot stay lost, so a reload can't undo a bad hand. */
+const SAVE_KEY = 'holdem.save';
+const canSave = () => !NET.role && !G.priv && !G.over;
+function saveGame(){
+  if (!canSave() || !G.players || !G.handNo) return;
+  const me = G.players[0];
+  const mid = !G.handOver;
+  if (me.chips <= 0) return clearSave();
+  const players = G.players.map((p, i) => ({name:p.name, human:!!p.human, chips:i === 0 || !mid ? p.chips : p.startChips, out:!!p.out, vacant:!!p.vacant, vacantFor:p.vacantFor || 0, isNew:p.isNew || 0, rebuys:p.rebuys || 0,
+    style:p.style, tight:p.tight, aggr:p.aggr, bluff:p.bluff, hidden:!!p.hidden, st:p.st, ava:(p.ava || '').length < 30000 ? p.ava || '' : ''}));
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({v:1, t:Date.now(), mode, seats:SEATS, buy:buyIn, handNo:G.handNo, dealer:G.dealer, ledger:G.ledger, img:G.img, loseRun:G.loseRun || 0, players})); } catch (e) {}
+}
+function clearSave(){ try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+function loadSave(){
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+    if (s && s.v === 1 && Array.isArray(s.players) && s.players.length === (+s.seats === 8 ? 8 : 6) && s.players[0] && s.players[0].chips > 0) return s;
+  } catch (e) {}
+  return null;
+}
+function resumeGame(s){
+  runId++;
+  mode = s.mode === 'cash' ? 'cash' : 'tourney'; store.set('holdem.mode', mode);
+  buyIn = Math.min(100000, Math.max(200, +s.buy || 1000)); store.set('holdem.buyIn', buyIn);
+  SEATS = +s.seats === 8 ? 8 : 6; store.set('holdem.seats', String(SEATS));
+  saveRules();
+  G.priv = false; G.endAfter = false; G.waitSeat = false;
+  initPlayers();
+  s.players.forEach((d, i) => {
+    const p = G.players[i];
+    Object.assign(p, {name:String(d.name || p.name).slice(0, 12), chips:Math.max(0, Math.round(+d.chips || 0)), out:!!d.out, vacant:!!d.vacant, vacantFor:d.vacantFor || 0, isNew:d.isNew || 0, rebuys:d.rebuys || 0});
+    if (i === 0) p.ava = myAva || d.ava || '';
+    else { if (d.style){ p.style = d.style; p.tight = d.tight; p.aggr = d.aggr; p.bluff = d.bluff; p.pro = (STYLES.find(x => x.style === d.style) || {}).pro || null; p.hidden = !!d.hidden; } p.ava = d.ava || ''; }
+    if (d.st && typeof d.st === 'object') p.st = Object.assign(p.st, d.st);
+    if (p.chips <= 0 && i > 0) p.out = true;
+    resetPlayer(p); p.startChips = p.chips;
+  });
+  G.ledger = s.ledger && typeof s.ledger === 'object' ? s.ledger : {};
+  G.handNo = Math.max(0, +s.handNo || 0); G.over = false; G.img = s.img || {bluff:0, value:0}; G.loseRun = s.loseRun || 0;
+  G.dealer = Math.min(G.players.length - 1, Math.max(0, +s.dealer || 0));
+  logEl.innerHTML = ''; HISTORY.length = 0;
+  log(`接着上次的牌局：${rulesText({mode, seats:SEATS, buy:buyIn}).replace(' 起', '')} · 已打 ${G.handNo} 手`, 'sys');
+  startHand();
+}
+const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? '刚刚' : m < 60 ? `${m} 分钟前` : m < 1440 ? `${Math.round(m / 60)} 小时前` : `${Math.round(m / 1440)} 天前`; };
 function saveRules(){ store.set('holdem.last', JSON.stringify({mode, seats:SEATS, buy:buyIn, priv:privPref})); }
 function rulesText(r){
   const L = levelsFor(r.buy)[0];
@@ -4264,10 +4316,15 @@ function openStart(){
   const r = lastRules();
   $('#stPlayTxt').textContent = (r ? `${rulesText(r)} · 沿用上次的规则` : rulesText(defaultRules())).replace(' 起', '');
   $('#stTip').hidden = !!r;
+  const sv = loadSave();
+  $('#stResume').hidden = !sv;
+  $('#stPlay').classList.toggle('play', !sv);
+  $('#stPlayB').textContent = sv ? '开新一局' : '开始游戏';
+  if (sv) $('#stResumeTxt').textContent = `${sv.mode === 'cash' ? '现金局' : '淘汰赛'} · 第 ${sv.handNo} 手 · 你有 ${fmt(sv.players[0].chips)} 筹码 · ${ago(sv.t)}`;
   $('#stAva').innerHTML = dealerArt(dealerKey);
   $('#stDealer').textContent = `今晚的荷官是 ${dealerName(dealerKey)}，进桌后可以换`;
   $('#startDlg').hidden = false;
-  $('#stPlay').focus();
+  $(sv ? '#stResume' : '#stPlay').focus();
 }
 function closeStart(){ $('#startDlg').hidden = true; welcoming = false; }
 function startWith(r){
@@ -4282,6 +4339,13 @@ $('#stPlay').addEventListener('click', () => {
   const r = lastRules();
   startWith(r || defaultRules());
   if (r) log(`沿用上一局的规则：${rulesText(r)}`, 'sys');
+});
+$('#stResume').addEventListener('click', () => {
+  const sv = loadSave();
+  closeStart();
+  if (!sv) return newGame();
+  G.resumed = true;
+  resumeGame(sv);
 });
 $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; openNew(); });
 $('#stOnline').addEventListener('click', () => {
