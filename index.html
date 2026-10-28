@@ -364,6 +364,15 @@ body.sin .sins{display:block}
 .dealer.open .bubble{grid-area:say; width:auto; max-width:none; white-space:normal; opacity:1; transform:none; border-radius:12px; padding:9px 14px; font-size:14px}
 .dealer.open .d-pick{grid-area:pick} .dealer.open .custom{grid-area:custom} .dealer.open .tip{grid-area:tip}
 .avatar{cursor:pointer}
+.d-mute{flex:none; align-self:center; width:44px; height:44px; margin:-6px -8px -6px -6px; padding:0; border:0; background:none; display:grid; place-items:center; cursor:pointer; color:var(--muted)}
+.d-mute::before{content:""; width:30px; height:30px; border-radius:50%; background:var(--well) center/16px no-repeat; border:1px solid var(--line-2);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d5b678' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9v6h4l5 4V5L8 9H4z'/%3E%3Cpath d='M16.5 8.5a5 5 0 0 1 0 7'/%3E%3C/svg%3E")}
+.d-mute[aria-pressed="true"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c65353' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9v6h4l5 4V5L8 9H4z'/%3E%3Cpath d='M17 9l5 6M22 9l-5 6'/%3E%3C/svg%3E"); border-color:rgba(198,83,83,.55)}
+.dealer.muted .avatar{opacity:.55; filter:grayscale(.5)}
+.dealer.muted .bubble{display:none}
+.dealer.muted.open .bubble{display:block; opacity:.5}
+.dealer.open .d-mute{grid-area:ava; justify-self:end; align-self:end; margin:0 -12px -10px 0; width:30px; height:30px}
+.dealer.open .d-mute::before{width:22px; height:22px; background-size:12px}
 .d-pick{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
 .d-pick .lbl{font-size:11.5px; color:var(--muted); margin-right:2px}
 .d-pick button{
@@ -948,6 +957,7 @@ body.sin .sins{display:block}
   <section class="dealer card-panel" aria-label="荷官">
     <div class="d-top">
       <div class="avatar" id="dAvatar"></div>
+      <button class="d-mute" id="dMute" type="button" aria-pressed="false" aria-label="荷官静音" title="荷官静音"></button>
       <div class="dtext">
         <div class="dname"><b id="dName">Sally</b><span id="dRole">常驻荷官</span><small class="dtag" id="dTag"></small><button class="ghost d-more" id="dMore" type="button" aria-expanded="false">换荷官 · 打赏</button></div>
         <div class="bubble" id="dSay" aria-live="polite">欢迎入座。</div>
@@ -1369,6 +1379,16 @@ function summonYi(how){
 }
 document.addEventListener('click', e => { if (e.target.closest('.byline, .w-brand span')) summonYi('find'); });
 let tipTotal = +store.get('holdem.tips', 0) || 0;
+let dealerMuted = store.get('holdem.mute', '') === '1';
+function setMute(on){
+  dealerMuted = on; store.set('holdem.mute', on ? '1' : '');
+  $('#dMute').setAttribute('aria-pressed', String(on));
+  $('#dMute').title = on ? '荷官已静音，点一下恢复' : '荷官静音';
+  $('.dealer').classList.toggle('muted', on);
+  if (on){ $('.dealer').classList.remove('talk'); $('#dSay').textContent = '（已静音）'; }
+}
+setTimeout(() => setMute(dealerMuted));
+document.addEventListener('click', e => { if (e.target.closest('#dMute')){ e.stopPropagation(); setMute(!dealerMuted); if (!dealerMuted) dealerSay('hello'); } });
 let customAva = store.get('holdem.cAva', '');
 let customName = store.get('holdem.cName', '我的荷官');
 const dealerArt = k => (k === 'custom' && customAva) ? `<img src="${customAva}" alt="">` : DEALERS[k].svg;
@@ -1473,6 +1493,10 @@ function dealerSay(key, vars = {}){
   if (!opts) return;
   if (NET.role === 'host' && !PERSONAL_SAY.has(key)) NET.out.says.push([key, vars]);
   vars.no = G.handNo;
+  // muted, or you already folded this hand: the dealer stays quiet (guests still get the host's lines)
+  if (dealerMuted) return;
+  const me = G.players[0];
+  if (me && me.folded && !G.handOver && key !== 'heroFold' && key !== 'lazyFold') return;
   const line = (dealerKey === 'yi' ? lightSin(key) : '') + opts[Math.floor(Math.random() * opts.length)].replace(/\{(\w+)\}/g, (_, v) => vars[v] ?? '');
   const b = $('#dSay');
   b.textContent = line;
