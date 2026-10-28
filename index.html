@@ -7,13 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="德州扑克">
+<meta name="apple-mobile-web-app-title" content="holdm">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
-<title>德州扑克六人桌</title>
+<title>holdm</title>
+<meta name="author" content="Yiiiii">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2064%2064%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22%23e3b352%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22none%22%20stroke%3D%22%231d1406%22%20stroke-width%3D%227%22%20stroke-dasharray%3D%229.4%206.3%22%20opacity%3D%22.55%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2221%22%20fill%3D%22%230e1320%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2221%22%20fill%3D%22none%22%20stroke%3D%22%23e3b352%22%20stroke-width%3D%221.5%22%20opacity%3D%22.7%22/%3E%3Cpath%20d%3D%22M32%2017c4%206%2012%2010.5%2012%2017a6.5%206.5%200%200%201-10.6%205.1c.4%203%201.6%205.5%203.6%207.4H27c2-1.9%203.2-4.4%203.6-7.4A6.5%206.5%200%200%201%2020%2034c0-6.5%208-11%2012-17Z%22%20fill%3D%22%23fbf8f1%22/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,800&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
 <style>
 /* Layout: card-room table on the left that always fits the window, dealer + your console in a side column; stacked on phones */
 :root{
@@ -54,8 +56,12 @@ button{cursor:pointer}
 
 /* header */
 .top{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px}
-.brand{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
-.brand h1{margin:0; font-family:var(--f-display); font-weight:900; font-size:clamp(24px,3vw,30px); letter-spacing:.06em; line-height:1.1}
+.brand{display:flex; align-items:center; gap:10px; flex-wrap:nowrap; min-width:0}
+.brand .logo{display:block; width:clamp(30px,3.2vw,36px); flex:none; filter:drop-shadow(0 3px 8px rgba(227,179,82,.25))}
+.brand .logo svg{display:block; width:100%; height:auto}
+.brand h1{margin:0; font-family:"Fraunces",var(--f-display); font-style:italic; font-weight:800; font-size:clamp(26px,3.2vw,32px); letter-spacing:-.01em; line-height:1; color:var(--ivory)}
+.brand h1 em{font-style:italic; color:var(--gold)}
+.byline{align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
 .suits{font-size:15px; letter-spacing:.25em; color:var(--faint)}
 .suits b{color:var(--card-red); font-weight:400}
 .meta{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
@@ -456,6 +462,11 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .dec .facts{color:var(--muted); font-family:var(--f-num); font-size:12px}
 .pill{font-size:11.5px; padding:2px 9px; border-radius:999px; border:1px solid currentColor; white-space:nowrap}
 .pill.good{color:var(--win)} .pill.meh{color:var(--gold)} .pill.bad{color:#ff9a90}
+.dec .verdict{color:var(--text); font-size:12.5px}
+.dec .why{list-style:none; margin:4px 0 0; padding:8px 0 0; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); line-height:1.55}
+.dec .why b{display:inline-block; min-width:4.2em; color:#c9cfdb; font-weight:600; margin-right:6px}
+.dec.sum{border-color:rgba(227,179,82,.35)}
+.dec.sum .g{color:var(--win)} .dec.sum .m{color:var(--gold)} .dec.sum .b{color:#ff9a90}
 .rv-note{font-size:12px; color:var(--muted)}
 .bots{display:flex; flex-direction:column; gap:8px}
 .bot-row{display:grid; grid-template-columns:auto minmax(0,1fr) minmax(0,190px); gap:10px; align-items:center; background:var(--well); border:1px solid var(--line); border-radius:12px; padding:8px 10px}
@@ -600,8 +611,9 @@ select.ghost option{background:var(--panel); color:var(--text)}
 @media (orientation:portrait) and (max-width:1099px), (orientation:landscape) and (max-height:560px){
   .m-only{display:inline-flex}
   .top{position:relative; flex-wrap:nowrap; gap:10px}
-  .brand h1{font-size:20px}
-  .suits{display:none}
+  .brand h1{font-size:22px}
+  .brand .logo{width:26px}
+  .byline{display:none}
   .mini-info{font:600 12px var(--f-num); color:var(--muted); white-space:nowrap; align-items:center}
   #bMenu{margin-left:auto; padding:5px 14px}
   .meta{display:none}
@@ -727,8 +739,9 @@ select.ghost option{background:var(--panel); color:var(--text)}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1>德州扑克</h1>
-      <span class="suits" aria-hidden="true">♠<b>♥</b>♣<b>♦</b></span>
+      <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
+      <h1 aria-label="holdm">hold<em>m</em></h1>
+      <span class="byline">by Yiiiii</span>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
     <button class="ghost m-only" id="bMenu" type="button" aria-expanded="false">菜单</button>
@@ -783,7 +796,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
   <section class="arena" id="arena" aria-label="牌桌">
     <div class="felt">
       <div class="center">
-        <div class="watermark">德州扑克</div>
+        <div class="watermark">holdm</div>
         <div class="street" id="street">翻牌前</div>
         <div class="board" id="board"></div>
         <div class="board" id="board2" hidden></div>
@@ -1614,6 +1627,7 @@ function doAction(i, type, to){
     const need = Math.min(toCall, p.chips), potBefore = potTotal();
     pre = {i, street:STREET[G.street], board:G.board.slice(), toCall:need, pot:potBefore, opps,
       eq:equity(p.hand, G.board, opps, 1000), odds:need > 0 ? need / (potBefore + need) : 0};
+    Object.assign(pre, decisionContext(i, p, type === 'raise' ? Math.min(Math.round(to), p.bet + p.chips) : 0));
   }
   let text = '';
   if (type === 'fold'){ p.folded = true; p.foldSt = G.street; p.foldedToMe = G.streetAgg === 0; text = '弃牌'; H.players[i].foldAt = STREET[G.street]; if (i !== 0) muck(i); else sfx('fold'); }
@@ -1762,8 +1776,168 @@ function gameOver(win){
 }
 
 /* ---------- review: judging your decisions ---------- */
+/* everything about the spot that a coach would look at, captured before the action is applied */
+function chenScore(h){
+  const [a, b] = [cr(h[0]), cr(h[1])].sort((x, y) => y - x);
+  const hv = r => r === 14 ? 10 : r === 13 ? 8 : r === 12 ? 7 : r === 11 ? 6 : r / 2;
+  if (a === b) return Math.max(5, hv(a) * 2);
+  let sc = hv(a);
+  if (cs(h[0]) === cs(h[1])) sc += 2;
+  const gap = a - b - 1;
+  sc -= gap <= 0 ? 0 : gap === 1 ? 1 : gap === 2 ? 2 : gap === 3 ? 4 : 5;
+  if (gap <= 1 && a < 12) sc += 1;
+  return Math.ceil(sc);
+}
+const chenClass = c => c >= 10 ? '顶级起手牌' : c >= 8 ? '强起手牌' : c >= 6 ? '中等/投机牌' : c >= 4 ? '边缘牌' : '弱牌';
+function seatName(i){
+  const seq = []; let j = G.dealer;
+  for (let k = 0; k < G.players.length; k++){ j = (j + 1) % G.players.length; if (!G.players[j].out) seq.push(j); }
+  const n = seq.length, back = (seq.indexOf(G.dealer) - seq.indexOf(i) + n) % n;
+  if (n === 2) return i === G.dealer ? ['庄位/小盲', '后位'] : ['大盲', '盲注'];
+  if (i === G.sbIdx) return ['小盲', '盲注'];
+  if (i === G.bbIdx) return ['大盲', '盲注'];
+  if (back === 0) return ['庄位', '后位'];
+  if (back === 1) return ['关煞位', '后位'];
+  if (back === 2 && n >= 6) return ['劫持位', '中位'];
+  const early = seq.indexOf(i) - seq.indexOf(G.bbIdx);
+  return [early === 1 ? '枪口位' : '前位', n <= 4 ? '中位' : '前位'];
+}
+function madeInfo(hole, board){
+  if (board.length < 3) return {cat:-1, text:preflopName(hole)};
+  const sc = evalHand(hole.concat(board)), cat = Math.floor(sc / 0x100000), name = handName(sc);
+  const br = board.map(cr).sort((x, y) => y - x), hr = hole.map(cr);
+  if (cat === 1){
+    const r = Math.floor(sc / 0x10000) % 16;
+    if (hr[0] === hr[1] && hr[0] === r) return {cat, rel:r > br[0] ? 'over' : 'under', text:r > br[0] ? `超对 ${rname(r)}` : `口袋对 ${rname(r)}（比牌面最大牌小）`};
+    if (!hr.includes(r)) return {cat, rel:'board', text:`公共牌上的对子 ${rname(r)}，你只靠高牌`};
+    const kick = hr[0] === r ? hr[1] : hr[0];
+    const uniq = [...new Set(br)];
+    if (r === uniq[0]) return {cat, rel:'top', text:`顶对 ${rname(r)}，踢脚 ${rname(kick)}${kick >= 12 ? '（好踢脚）' : kick <= 8 ? '（踢脚偏弱）' : ''}`};
+    if (r === uniq[1]) return {cat, rel:'mid', text:`中对 ${rname(r)}`};
+    return {cat, rel:'low', text:`底对 ${rname(r)}`};
+  }
+  const boardCat = board.length >= 5 ? Math.floor(evalHand(board) / 0x100000) : -1;
+  if (cat >= 2 && boardCat === cat) return {cat, rel:'board', text:`${name}，但主要是公共牌组成的`};
+  return {cat, rel:cat >= 2 ? 'strong' : 'air', text:name};
+}
+function styleOf(q){
+  if (q.human){ const g = guessStyle(q.st); return g ? `真人，打法像${g}` : '真人'; }
+  if (q.hidden){ const g = guessStyle(q.st); return g ? `风格未知，数据看像${g}` : '风格未知'; }
+  return q.style;
+}
+function decisionContext(i, p, raiseTo){
+  const live = G.players.filter(q => !q.out && !q.folded);
+  const others = live.filter(q => q !== p);
+  const [pos, posCat] = seatName(i);
+  const order = seatOrder(i);
+  const inPos = others.every(q => seatOrder(G.players.indexOf(q)) < order);
+  const behind = G.players.filter((q, j) => j !== i && canAct(q) && (G.street === 0 ? (seatOrder(j) - 2 + G.players.length) % G.players.length > (order - 2 + G.players.length) % G.players.length : seatOrder(j) > order)).length;
+  const made = madeInfo(p.hand, G.board);
+  const dr = drawInfo(p.hand, G.board);
+  const outs = (dr.flush ? 9 : 0) + (dr.oesd ? 8 : dr.gut ? 4 : 0) - (dr.flush && (dr.oesd || dr.gut) ? 2 : 0);
+  const tex = boardTexture(G.board);
+  const eff = Math.min(p.chips, Math.max(0, ...others.map(q => q.chips + q.bet - p.bet)));
+  const agg = G.streetAgg >= 0 && G.streetAgg !== i ? G.players[G.streetAgg] : null;
+  return {pos, posCat, inPos, behind, made, dr, outs, tex, eff, stack:p.chips, bb:G.bbAmt, cur:G.currentBet, myBet:p.bet,
+    raiseTo, raises:G.streetRaises, chen:G.street === 0 ? chenScore(p.hand) : null, wasAgg:G.lastAgg === i,
+    agg:agg ? {name:agg.name, style:styleOf(agg)} : null, foes:others.map(q => ({name:q.name, style:styleOf(q)})), st:G.street};
+}
+const pct = x => `${Math.round(x * 100)}%`;
+const chipsTxt = n => `${n >= 0 ? '+' : '−'}${fmt(Math.round(Math.abs(n)))}`;
 function judge(d){
-  const pct = x => `${Math.round(x * 100)}%`;
+  const share = 1 / (d.opps + 1);
+  const strong = d.eq > Math.max(.6, share * 2);
+  const pts = [];
+  let grade = 'good', verdict = '', note = '', loss = 0;
+  /* older saved hands have no context: keep the simple verdict */
+  if (d.pos === undefined) return judgeBasic(d);
+  const evCall = d.toCall > 0 ? d.eq * (d.pot + d.toCall) - d.toCall : 0;
+  const sensitive = s => /岩石|紧弱|紧凶|稳健/.test(s), loose = s => /疯子|松凶|高压/.test(s), station = s => /跟注站/.test(s);
+  pts.push(['位置', `${d.pos}（${d.posCat}）${d.st > 0 ? (d.inPos ? '，翻牌后最后说话，有位置优势' : '，翻牌后要先于对手行动，没有位置') : ''}${d.behind ? `，后面还有 ${d.behind} 人没说话` : ''}。`]);
+  if (d.st === 0){
+    const c = d.chen, opened = d.raises >= 1, threeBet = d.raises >= 2;
+    const openNeed = d.posCat === '前位' ? 9 : d.posCat === '中位' ? 8 : d.posCat === '后位' ? 6 : 7;
+    const callNeed = threeBet ? 10 : (d.inPos || d.posCat === '后位') ? 7 : 8;
+    const bbDefend = d.pos === '大盲' && opened && !threeBet && d.toCall <= d.bb * 3;
+    pts.push(['起手牌', `${d.made.text}，强度评分 ${c}（${chenClass(c)}）。${opened ? (threeBet ? '前面已经有人再加注（3-bet），对手范围很强。' : '前面已经有人加注。') : '前面没人加注，你可以第一个进池。'}`]);
+    if (d.type === 'fold'){
+      if (d.toCall === 0){ grade = 'bad'; verdict = '可以免费过牌'; note = '没人加注时大盲可以免费看翻牌，弃牌白白放弃了机会。'; }
+      else if ((opened ? c >= callNeed + 2 : c >= openNeed + 2) || c >= 12){ grade = 'bad'; verdict = '弃得太紧'; note = `${chenClass(c)}在${d.posCat}${opened ? '面对加注' : ''}通常应该继续，至少跟注，常常可以加注。`; loss = Math.max(0, evCall); }
+      else if (bbDefend && c >= 5 && d.eq > d.odds){ grade = 'meh'; verdict = '大盲可以防守'; note = `你在大盲已经投入了钱，跟注只需要 ${pct(d.odds)} 的胜率，你有 ${pct(d.eq)}，这类牌常常值得防守。`; loss = Math.max(0, evCall); }
+      else { verdict = '合理弃牌'; note = opened ? `面对加注，这手牌达不到继续的标准（建议评分 ${callNeed} 以上）。` : `在${d.posCat}开池建议评分 ${openNeed} 以上，这手牌不够。`; }
+    } else if (d.type === 'check'){
+      if (c >= 10){ grade = 'meh'; verdict = '可以加注'; note = '大盲拿着顶级牌，主动加注能把底池做大，让跛入的人付出代价。'; }
+      else { verdict = '过牌合理'; note = '大盲免费看翻牌，没问题。'; }
+    } else if (d.type === 'call'){
+      if (!opened && d.pos !== '大盲'){
+        if (c >= openNeed){ grade = 'meh'; verdict = '应该加注入池'; note = '这手牌够格开池，平跟（跛入）会让后面的人便宜进来，也拿不到主动权。通常加注到 2.5–3 个大盲更好。'; }
+        else if (c >= 5 && d.posCat !== '前位'){ grade = 'meh'; verdict = '边缘平跟'; note = '投机牌在后位便宜看翻牌可以接受，但长期来看要么加注、要么弃牌更好。'; }
+        else { grade = 'bad'; verdict = '不该入池'; note = `${chenClass(c)}在${d.posCat}进池，翻牌后很难打，常常被更好的牌压制。`; }
+      } else if (c >= (threeBet ? 12 : 10) && !threeBet){ grade = 'meh'; verdict = '可以 3-bet'; note = '这么强的牌面对加注，再加注（3-bet）能拿更多价值，也能把边缘牌赶走。'; }
+      else if (c >= callNeed || (bbDefend && c >= 5) || d.eq >= d.odds + .1){ verdict = '跟注合理'; note = bbDefend ? '大盲有价格优势，用中等牌防守是对的。' : `这手牌够格${threeBet ? '跟 3-bet' : '跟注加注'}${d.inPos ? '，而且有位置' : ''}。`; }
+      else if (c >= callNeed - 2 && d.inPos){ grade = 'meh'; verdict = '偏松的跟注'; note = '有位置可以勉强跟，但这类牌常被领先，翻牌没中要舍得放弃。'; loss = Math.max(0, -evCall); }
+      else { grade = 'bad'; verdict = '跟注太松'; note = `面对加注用${chenClass(c)}跟注，常常被压制（比如同样有 A 但踢脚更大）。`; loss = Math.max(0, -evCall); }
+    } else {
+      const size = d.raiseTo / d.bb;
+      pts.push(['尺度', `加注到 ${fmt(d.raiseTo)}，约 ${size.toFixed(1)} 个大盲。${!opened ? (size < 2 ? '偏小，后面的人跟注太便宜。' : size > 4.5 ? '偏大，好牌会被跟、差牌都弃了，拿不到太多。' : '标准尺度。') : ''}`]);
+      if (c >= (threeBet ? 12 : opened ? 10 : openNeed)){ verdict = '价值加注'; note = '牌够强，加注拿价值、拿主动权，很好。'; }
+      else if (!opened && d.posCat === '后位'){ verdict = '后位偷盲'; note = '后位没人进池时用宽一点的范围加注偷盲是标准打法，被反加时要舍得放弃。'; }
+      else if (!opened){ grade = 'meh'; verdict = '开池偏松'; note = `在${d.posCat}开池建议评分 ${openNeed} 以上，这手牌偏弱，后面人多，被反加的可能大。`; }
+      else { grade = 'meh'; verdict = '偏诈唬的再加注'; note = '用中等牌再加注，主要靠对手弃牌；对手如果是跟注站或很少弃牌，就别这么打。'; }
+    }
+    pts.push(['胜率', `对 ${d.opps} 个对手的胜率约 ${pct(d.eq)}${d.toCall ? `，跟注需要 ${pct(d.odds)}` : ''}。`]);
+  } else {
+    pts.push(['牌力', d.made.text + '。']);
+    if (d.outs) pts.push(['听牌', `${[d.dr.flush && '同花听牌', d.dr.oesd && '两头顺子听牌', !d.dr.oesd && d.dr.gut && '卡顺听牌'].filter(Boolean).join(' + ')}，大约 ${d.outs} 张出牌，${d.st === 1 ? `到河牌约 ${Math.min(65, d.outs * 4)}%` : `下一张约 ${d.outs * 2}%`} 能中。`]);
+    pts.push(['牌面', `${d.tex.wet ? '湿润的牌面（顺子、同花可能多），领先的牌要保护' : d.tex.dry ? '干燥的牌面，很难有听牌，诈唬和小注都好用' : '中等结构的牌面'}${d.tex.scare ? '；刚发出的牌比较吓人，对手的范围可能变强' : ''}。`]);
+    if (d.agg) pts.push(['对手', `下注的是${d.agg.name}（${d.agg.style}）。${sensitive(d.agg.style) ? '这类玩家下注通常有货，边缘牌要谨慎。' : loose(d.agg.style) ? '这类玩家常常诈唬，中等牌可以多抓。' : station(d.agg.style) ? '跟注站很少主动下注，下注就要尊重。' : ''}`]);
+    else if (d.foes.length) pts.push(['对手', d.foes.map(f => `${f.name}（${f.style}）`).join('、') + (d.opps >= 3 ? '。多人底池，诈唬成功率低，需要更强的牌才能下注拿价值。' : '。')]);
+    const spr = d.pot ? d.eff / d.pot : 0;
+    pts.push(['筹码深度', `有效筹码 ${fmt(d.eff)}，约是底池的 ${spr.toFixed(1)} 倍${spr < 1.5 ? '，已经接近被底池套住，好牌要准备打光' : spr > 6 ? '，筹码很深，单对这类牌别打太大的底池' : ''}。`]);
+    if (d.type === 'fold'){
+      const W = d.eq > 0 ? d.toCall / d.eq - (d.pot + d.toCall) : Infinity;
+      pts.push(['算账', `跟注的期望值约 ${chipsTxt(evCall)}（只算现在的底池）。`]);
+      if (d.toCall === 0){ grade = 'bad'; verdict = '可以免费过牌'; note = '没人下注时弃牌，白白放弃了免费看牌的机会。'; }
+      else if (d.eq > d.odds + .08){ grade = 'bad'; verdict = '弃得可惜'; note = `胜率 ${pct(d.eq)} 明显高于所需的 ${pct(d.odds)}，跟注长期能赚。${d.agg && sensitive(d.agg.style) ? '虽然对手偏紧，但差距太大，仍然值得跟。' : ''}`; loss = evCall; }
+      else if (d.eq > d.odds){ grade = 'meh'; verdict = '边缘弃牌'; note = `胜率和所需赔率很接近${d.agg && sensitive(d.agg.style) ? '，对手偏紧，弃牌说得过去' : '，跟和弃都可以'}。`; loss = evCall; }
+      else if (d.outs >= 8 && d.st < 3 && W > 0 && W <= d.eff * .5){ grade = 'meh'; verdict = '听牌可以跟'; note = `直接赔率不够，但中了以后只要再多赢 ${fmt(W)}（对手后手还有 ${fmt(d.eff)}）就回本，有隐含赔率。`; }
+      else { verdict = '合理弃牌'; note = `胜率 ${pct(d.eq)} 低于跟注所需的 ${pct(d.odds)}，弃牌省钱。`; }
+    } else if (d.type === 'check'){
+      if (strong && d.st === 3 && d.inPos){ grade = 'meh'; verdict = '价值流失'; note = '河牌有位置、牌力领先，再过牌就拿不到对手的跟注了，下注 50–75% 底池更好。'; }
+      else if (strong && d.tex.wet && d.st < 3){ grade = 'meh'; verdict = '应该下注保护'; note = '牌力领先但牌面湿润，过牌让对手免费听牌，下注能拿价值也能保护底池。'; }
+      else if (strong){ grade = 'meh'; verdict = '可以下注'; note = `胜率 ${pct(d.eq)} 领先，下注让更差的牌付钱。慢打只适合干燥牌面、你特别强的时候。`; }
+      else if (d.outs >= 8 && d.inPos && d.st < 3){ verdict = '免费看牌'; note = '有位置拿听牌，过牌免费看下一张没问题；也可以半诈唬下注。'; }
+      else { verdict = '过牌合理'; note = `胜率 ${pct(d.eq)} 一般，控制底池。`; }
+    } else if (d.type === 'call'){
+      const W = d.eq > 0 ? d.toCall / d.eq - (d.pot + d.toCall) : Infinity;
+      pts.push(['算账', `跟注的期望值约 ${chipsTxt(evCall)}（只算现在的底池）${d.toCall > d.stack * .4 ? `；这次跟注占你剩余筹码的 ${pct(d.toCall / Math.max(1, d.stack))}` : ''}。`]);
+      if (d.eq >= d.odds){
+        if (strong && d.st < 3){ grade = 'meh'; verdict = '可以加注'; note = `胜率 ${pct(d.eq)} 远高于所需的 ${pct(d.odds)}${d.tex.wet ? '，牌面又湿，' : '，'}加注能拿更多价值、也逼听牌的人付钱。`; }
+        else { verdict = '跟注划算'; note = `胜率 ${pct(d.eq)} 高于所需的 ${pct(d.odds)}。`; }
+      } else if (d.outs >= 8 && d.st < 3 && W <= d.eff * .5){ grade = 'meh'; verdict = '靠隐含赔率'; note = `直接赔率不够（差 ${pct(d.odds - d.eq)}），但中了以后只要再多赢 ${fmt(W)} 就回本，对手后手 ${fmt(d.eff)}，勉强可以。`; }
+      else if (d.agg && loose(d.agg.style) && d.eq >= d.odds - .1 && d.st === 3){ grade = 'meh'; verdict = '抓诈唬'; note = `数学上略亏，但${d.agg.name}很爱诈唬，实际胜率可能比估算的高。`; }
+      else if (d.eq >= d.odds - .07 && d.st < 3){ grade = 'meh'; verdict = '略亏的跟注'; note = pct(d.eq) === pct(d.odds) ? `胜率 ${pct(d.eq)} 刚好卡在所需线上，不赚不亏，要靠后面多赢一点。` : `胜率 ${pct(d.eq)} 略低于所需 ${pct(d.odds)}，要靠后面赢更多才能补回来。`; loss = -evCall; }
+      else { grade = 'bad'; verdict = '跟注亏损'; note = `胜率只有 ${pct(d.eq)}，跟注需要 ${pct(d.odds)}${d.agg && sensitive(d.agg.style) ? `，而且${d.agg.name}下注一般都有货` : ''}，长期会亏钱。`; loss = -evCall; }
+    } else {
+      const add = d.raiseTo - d.myBet, base = d.pot + (d.cur - d.myBet), frac = d.cur === 0 ? d.raiseTo / Math.max(1, d.pot) : (d.raiseTo - d.cur) / Math.max(1, base);
+      const needFold = add / (add + d.pot);
+      const value = d.eq > Math.max(.5, share * 1.6), bluff = d.eq < share, semi = bluff && d.outs >= 8 && d.st < 3;
+      pts.push(['尺度', `${d.cur === 0 ? '下注' : '加注到'} ${fmt(d.raiseTo)}，约 ${pct(frac)} 底池${frac < .35 ? '（偏小）' : frac > 1.05 ? '（超池）' : ''}。${value && d.tex.wet && frac < .45 ? '牌面湿、你又领先，下这么小给了对手便宜的听牌价格。' : ''}${bluff && frac > 1.2 ? '诈唬下这么大，风险很高。' : ''}`]);
+      pts.push(['算账', `如果对手全都不弃牌，这注要靠牌力赢；作为纯诈唬，对手需要弃牌超过 ${pct(needFold)} 才能直接回本。`]);
+      if (value){ verdict = '价值下注'; note = `胜率约 ${pct(d.eq)}，牌力领先，${d.cur === 0 ? '下注' : '加注'}让更差的牌付钱。`; if (d.tex.wet && frac < .45){ grade = 'meh'; verdict = '价值下注偏小'; note += '但牌面湿，可以下到 2/3 底池以上。'; } }
+      else if (semi){ verdict = '半诈唬'; note = `现在落后，但有 ${d.outs} 张出牌，对手弃牌你直接赢，被跟了也还有机会中牌，是好的诈唬时机。`; if (d.opps >= 3){ grade = 'meh'; note += '不过对手人多，弃牌率会低。'; } }
+      else if (bluff){
+        const foeStation = d.foes.some(f => station(f.style));
+        if (foeStation || d.opps >= 3){ grade = 'bad'; verdict = '诈唬时机不好'; note = foeStation ? '对手里有跟注站，他们很少弃牌，诈唬基本只会亏。' : '三个以上对手同时弃牌的概率很低，多人底池尽量少诈唬。'; }
+        else if (d.tex.dry || (d.wasAgg && d.st === 1) || (d.inPos && d.st >= 2)){ grade = 'meh'; verdict = '合理的诈唬'; note = `${d.wasAgg && d.st === 1 ? '你翻前加过注，翻牌持续下注很可信' : d.tex.dry ? '干燥牌面对手很难击中' : '有位置，对手过牌示弱'}。成不成功取决于对手会不会弃牌超过 ${pct(needFold)}。`; }
+        else { grade = 'meh'; verdict = '偏诈唬'; note = `胜率约 ${pct(d.eq)}，低于平均的 ${pct(share)}，这注主要靠对手弃牌。`; }
+      } else { grade = 'meh'; verdict = '中等牌下注'; note = `胜率约 ${pct(d.eq)}，略好于平均。更好的牌会跟，更差的牌会弃，这种下注常常两头不讨好，过牌控池也可以。`; }
+    }
+  }
+  return {grade, verdict, note, points:pts, loss:Math.max(0, Math.round(loss))};
+}
+/* the original judgement, kept for hands recorded before the detailed review */
+function judgeBasic(d){
   const share = 1 / (d.opps + 1);
   const strong = d.eq > Math.max(.6, share * 2);
   if (d.type === 'fold'){
@@ -1772,14 +1946,9 @@ function judge(d){
     if (d.eq > d.odds) return {grade:'meh', verdict:'边缘弃牌', note:`胜率 ${pct(d.eq)} 和所需的 ${pct(d.odds)} 很接近，弃牌也说得过去。`};
     return {grade:'good', verdict:'合理弃牌', note:`胜率约 ${pct(d.eq)}，低于跟注所需的 ${pct(d.odds)}。`};
   }
-  if (d.type === 'check'){
-    if (strong) return {grade:'meh', verdict:'可以下注', note:`你的胜率约 ${pct(d.eq)}，牌力领先，下注能让对手付钱看牌。`};
-    return {grade:'good', verdict:'过牌合理', note:`胜率约 ${pct(d.eq)}，控制底池、免费看牌。`};
-  }
+  if (d.type === 'check') return strong ? {grade:'meh', verdict:'可以下注', note:`你的胜率约 ${pct(d.eq)}，牌力领先，下注能让对手付钱看牌。`} : {grade:'good', verdict:'过牌合理', note:`胜率约 ${pct(d.eq)}，控制底池、免费看牌。`};
   if (d.type === 'call'){
-    if (d.eq >= d.odds) return strong && d.street !== '河牌'
-      ? {grade:'meh', verdict:'跟注划算，也可加注', note:`胜率 ${pct(d.eq)} 远高于所需 ${pct(d.odds)}，加注能赢得更多。`}
-      : {grade:'good', verdict:'跟注划算', note:`胜率 ${pct(d.eq)} 高于所需 ${pct(d.odds)}。`};
+    if (d.eq >= d.odds) return strong && d.street !== '河牌' ? {grade:'meh', verdict:'跟注划算，也可加注', note:`胜率 ${pct(d.eq)} 远高于所需 ${pct(d.odds)}，加注能赢得更多。`} : {grade:'good', verdict:'跟注划算', note:`胜率 ${pct(d.eq)} 高于所需 ${pct(d.odds)}。`};
     if (d.eq >= d.odds - .07 && d.street !== '河牌') return {grade:'meh', verdict:'略亏的跟注', note:`胜率 ${pct(d.eq)} 略低于所需 ${pct(d.odds)}，要靠后面赢更多才能补回来。`};
     return {grade:'bad', verdict:'跟注亏损', note:`胜率只有 ${pct(d.eq)}，跟注需要 ${pct(d.odds)}，长期会亏钱。`};
   }
@@ -2723,10 +2892,15 @@ function renderReview(h){
   html += '<section><h3 class="rv-h">你的决策点评</h3><div class="rv-dec">';
   const myDec = h.decisions.filter(d => (d.i ?? 0) === (h.me ?? 0));
   if (!myDec.length) html += '<p class="rv-note">这一手你没有需要做的决定。</p>';
+  if (myDec.length){
+    const n = k => myDec.filter(d => d.grade === k).length, worst = myDec.slice().sort((a, b) => (b.loss || 0) - (a.loss || 0))[0];
+    html += `<div class="dec sum"><b>本手小结</b><div class="rv-note">${myDec.length} 个决定：<span class="g">好 ${n('good')}</span> · <span class="m">可改进 ${n('meh')}</span> · <span class="b">失误 ${n('bad')}</span>。${worst && worst.loss ? `最贵的一步是${worst.street}的「${esc(worst.text)}」，按当时的底池算大约少赚或多亏 ${fmt(worst.loss)}。` : n('bad') ? '' : '没有明显的亏钱决定。'}</div></div>`;
+  }
   myDec.forEach(d => {
     html += `<div class="dec"><div class="row1"><span><b>${d.street}</b> · 你选择 ${esc(d.text)}</span><span class="pill ${d.grade}">${d.verdict}</span></div>
       <div class="facts">底池 ${fmt(d.pot)} · 需跟注 ${fmt(d.toCall)} · 胜率 ${Math.round(d.eq * 100)}% · 所需 ${d.toCall ? Math.round(d.odds * 100) + '%' : '—'} · 对手 ${d.opps} 人</div>
-      <div class="rv-note">${esc(d.note)}</div></div>`;
+      <div class="rv-note verdict">${esc(d.note)}</div>
+      ${d.points && d.points.length ? `<ul class="why">${d.points.map(([k, t]) => `<li><b>${esc(k)}</b>${esc(t)}</li>`).join('')}</ul>` : ''}</div>`;
   });
   html += '</div></section>';
   $('#rvBody').innerHTML = html;
