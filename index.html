@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e1320">
+<meta name="theme-color" content="#101715">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,15 +19,15 @@
 <style>
 /* Layout: card-room table on the left that always fits the window, dealer + your console in a side column; stacked on phones */
 :root{
-  --room:#0e1320; --room-2:#1a2340; --panel:#151c2c; --panel-2:#1b2337; --well:#0f1522;
-  --felt:#21865f; --felt-mid:#146446; --felt-deep:#0a3a29;
+  --room:#101715; --room-2:#182420; --panel:#151d1a; --panel-2:#1b2521; --well:#0c1210;
+  --felt:#215a47; --felt-mid:#173F32; --felt-deep:#0c2a20;
   --leather:#2b1d15; --leather-2:#110b08; --trim:#d5ad5b;
   --ivory:#fbf8f1; --ink:#15171c; --card-red:#d23a36;
   --back:#1f3266;
-  --text:#eef1f7; --muted:#8e98ad; --faint:#5d6780; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
-  --gold:#e3b352; --gold-ink:#1d1406;
+  --text:#F1EEE6; --muted:#949e98; --faint:#5f6b65; --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --gold:#D5B678; --gold-ink:#1d1406;
   --teal:#25a57e; --teal-2:#1d8c6a;
-  --danger:#e05a52; --win:#7fe0ad;
+  --danger:#C65353; --win:#7fe0ad;
   --f-display:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
   --f-body:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -379,7 +379,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .chat-pop button{white-space:nowrap; background:var(--well); border:1px solid var(--line); border-radius:999px; padding:6px 11px; font-size:13.5px; color:var(--text); cursor:pointer}
 .chat-pop button:active{border-color:var(--gold)}
 .raise-row{display:flex; flex-direction:column; gap:8px}
-.presets{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.presets{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
 .presets button{background:var(--well); border:1px solid var(--line); border-radius:9px; padding:6px 4px; font-size:12.5px}
 .presets button:hover:not(:disabled){border-color:rgba(227,179,82,.45); color:var(--gold)}
 .slider{display:flex; align-items:center; gap:10px}
@@ -396,10 +396,16 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .btn:active:not(:disabled){transform:translateY(1px)}
 .btn:hover:not(:disabled){filter:brightness(1.08)}
 .btn:disabled,.presets button:disabled{opacity:.35; cursor:not-allowed}
-.b-fold{background:#262e40; color:#d6dbe6}
+.btn.allin{background:linear-gradient(180deg, #d46a6a, var(--danger))!important; color:#fff!important; box-shadow:0 6px 16px rgba(198,83,83,.3)!important; border-color:transparent!important}
+.slider .step{display:none; flex:none; width:44px; height:44px; border-radius:12px; background:var(--well); border:1px solid var(--line); font:600 20px var(--f-num)}
+.hud{display:none}
+@keyframes react{0%{transform:scale(1)} 20%{transform:scale(1.18) rotate(-6deg)} 45%{transform:scale(1.12) rotate(5deg)} 70%{transform:scale(1.05)} 100%{transform:scale(1)}}
+.avatar.react{animation:react .9s ease-out}
+.b-fold{background:#232c28; color:#dcd8cf}
+.b-back{background:transparent; border-color:var(--line-2); color:var(--muted)}
 .b-call{background:linear-gradient(180deg, var(--teal), var(--teal-2)); color:#fff; box-shadow:0 6px 16px rgba(37,165,126,.25)}
-.b-raise{background:linear-gradient(180deg, #f0c364, #d6a03e); color:var(--gold-ink); box-shadow:0 6px 16px rgba(227,179,82,.25)}
-.b-next{background:linear-gradient(180deg, #f0c364, #d6a03e); color:var(--gold-ink)}
+.b-raise{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink); box-shadow:0 6px 16px rgba(227,179,82,.25)}
+.b-next{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink)}
 .b-review{background:transparent; border-color:rgba(227,179,82,.45); color:var(--gold)}
 .btn kbd{font:500 10px var(--f-num); opacity:.5; margin-left:6px}
 .next-row{display:flex; gap:8px}
@@ -514,11 +520,21 @@ select.ghost option{background:var(--panel); color:var(--text)}
 .welcome .w-pick button div{display:flex; flex-direction:column; gap:2px; min-width:0}
 .welcome .w-pick b{font-family:var(--f-display); font-size:16px; font-weight:900}
 .welcome .w-pick small{font-size:12px; color:var(--muted); line-height:1.45}
-.welcome .w-pick .play{background:linear-gradient(180deg,#f0c76a,#d9a441); border-color:transparent; color:#1d1406; padding:16px 16px}
+.welcome .w-pick .play{background:linear-gradient(180deg,#e2c68e,#c9a463); border-color:transparent; color:#1d1406; padding:16px 16px}
 .welcome .w-pick .play b{font-size:20px}
 .welcome .w-pick .play small{color:rgba(29,20,6,.75)}
 .welcome .w-pick .play:hover, .welcome .w-pick .play:focus-visible{filter:brightness(1.06); border-color:transparent}
 .conf{font-size:11.5px; color:var(--muted)}
+@media (max-height:560px){
+  .welcome .sheet{gap:12px; padding:16px; max-width:760px}
+  .welcome .w-brand{flex-direction:row; justify-content:center; gap:10px}
+  .welcome .w-brand .logo{width:38px}
+  .welcome .w-brand h2{font-size:32px; margin:0}
+  .welcome .w-pick{display:grid; grid-template-columns:1.4fr 1fr 1fr}
+  .welcome .w-pick button{flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px}
+  .welcome .w-pick button i{display:none}
+  .welcome .w-tip{display:none}
+}
 .welcome .w-tip{margin:-6px 0 0; font-size:12px; color:var(--muted); line-height:1.5}
 .welcome .w-dealer{display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--muted)}
 .welcome .w-dealer span.ava{width:34px; height:34px; border-radius:50%; overflow:hidden; background:var(--well); border:1px solid var(--line); flex:none}
@@ -685,7 +701,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
 @media (orientation:portrait) and (max-width:1099px){
   html,body{height:100%}
   .app{
-    height:100%; min-height:620px; gap:8px; padding-block:6px 4px;
+    height:100%; min-height:500px; gap:8px; padding-block:6px 4px;
     display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr) auto;
   }
   .stage{container-type:size; min-height:0; display:grid; place-items:center}
@@ -714,6 +730,71 @@ select.ghost option{background:var(--panel); color:var(--text)}
   .t8 .seat:not(.you){--cw:clamp(18px,6cqw,30px)}
   .t8 .pod{min-width:0}
 }
+
+/* PHONE (upright): its own layout, not the desktop one shrunk.
+   Top: pot + whose turn. Middle: the table, with a small dealer that only speaks for a few seconds.
+   Bottom: a fixed betting dock. Everything else lives in the menu. Touch targets are at least 44px. */
+@media (orientation:portrait) and (max-width:1099px){
+  .app{grid-template-rows:auto minmax(0,1fr) auto}
+  .mini-info{display:none!important}
+  .brand h1{font-size:20px}
+  .hud{display:flex; flex:1; min-width:0; align-items:center; justify-content:center; gap:8px; font-size:13px}
+  .hud-pot{font-family:var(--f-num); color:var(--muted); white-space:nowrap}
+}
+@media (orientation:portrait) and (max-width:420px){
+  .brand h1{display:none}
+  .hud{justify-content:flex-start}
+  .hud-pot b{color:var(--gold); font-size:16px; font-weight:600}
+  .hud-turn{padding:5px 11px; border-radius:999px; background:var(--well); color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  .hud-turn.you{background:rgba(213,182,120,.14); color:var(--gold); font-weight:700; box-shadow:inset 0 0 0 1px rgba(213,182,120,.55)}
+  #bMenu{margin-left:0; min-height:44px; min-width:56px; align-items:center; justify-content:center}
+  .stage{grid-row:2; grid-column:1}
+  .dealer{grid-row:2; grid-column:1; align-self:start; justify-self:start; z-index:6; margin:2px 0 0 2px;
+    background:none; border:0; box-shadow:none; padding:0; max-width:calc(100% - 4px); pointer-events:none}
+  .dealer > *{pointer-events:auto}
+  .dealer .avatar{width:44px; height:44px; cursor:pointer}
+  .dealer .d-more{display:none}
+  .dealer .bubble{flex:0 1 auto; max-width:min(72vw, 330px); white-space:normal; opacity:0; transform:translateY(-4px) scale(.97);
+    transition:opacity .25s, transform .25s; pointer-events:none; box-shadow:0 8px 20px rgba(0,0,0,.45)}
+  .dealer.talk .bubble{opacity:1; transform:none}
+  .dealer.open{position:fixed; z-index:39; left:10px; right:10px; top:calc(10px + env(safe-area-inset-top, 0px)); margin:0;
+    background:var(--panel); border:1px solid var(--line-2); border-radius:16px; padding:12px; box-shadow:0 20px 50px rgba(0,0,0,.65); pointer-events:auto}
+  .dealer.open .bubble{opacity:1; transform:none; max-width:none}
+  .dealer.open .dtext{flex-direction:column; align-items:stretch; gap:6px}
+  .dealer.open .dname{order:0; display:flex; align-items:center; gap:8px}
+  .dealer.open .dname b, .dealer.open .dname span{display:inline}
+  .dealer.open .d-more{margin-left:auto}
+  .dealer.open .d-more{display:inline-flex; min-height:44px}
+  .d-pick button, .tip button{min-width:44px; min-height:44px}
+  .console{position:sticky; bottom:0; z-index:5}
+  .btns{grid-template-columns:1fr 1.45fr 1.15fr}
+  .btn{min-height:50px; font-size:15.5px; white-space:nowrap; padding-inline:6px}
+  .b-fold{background:transparent; border-color:rgba(198,83,83,.5); color:#e49a9a}
+  .b-raise{background:transparent; border-color:rgba(213,182,120,.6); color:var(--gold); box-shadow:none}
+}
+/* every compact layout (phones upright or sideways): raise panel and touch targets */
+@media (orientation:portrait) and (max-width:1099px), (orientation:landscape) and (max-height:560px){
+  .actions.raising .btns{grid-template-columns:1fr 2.2fr}
+  .actions.raising .b-fold, .actions.raising .b-call{display:none}
+  .actions.raising .b-raise{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink); border-color:transparent}
+  .presets{grid-template-columns:repeat(4,1fr)}
+  .presets [data-p=min]{display:none}
+  .presets button{min-height:44px; font-size:13.5px; padding:4px 2px}
+  .presets [data-p=all]{color:#e49a9a; border-color:rgba(198,83,83,.45)}
+  .slider{gap:6px}
+  .slider .step{display:block}
+  .slider input[type=range]{height:44px}
+  .slider input[type=number]{width:84px; min-height:44px; font-size:15px}
+  .raise-row{flex-direction:column; gap:8px}
+  #bMenu{min-height:44px; white-space:nowrap}
+  .btn{white-space:nowrap}
+}
+@media (orientation:landscape) and (max-height:560px){
+  .btn{min-height:44px}
+  .actions.raising .mini-read{display:none}
+  .slider input[type=number]{width:64px}
+  .presets button{font-size:12.5px}
+}
 @media (orientation:portrait) and (max-width:1099px) and (min-width:600px){
   .app{max-width:860px; gap:12px; padding-block:12px}
   .pod{padding:4px 14px 4px 4px; gap:8px}
@@ -725,9 +806,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
   .mini-read,.status{font-size:13.5px}
 }
 @media (orientation:portrait) and (max-width:599px) and (max-height:700px){
-  .dealer{padding:4px 8px}
-  .avatar{width:32px; height:32px}
-  .btn{min-height:40px}
+  .btn{min-height:44px}
 }
 
 @media (orientation:landscape) and (max-height:560px){
@@ -745,7 +824,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
   .nm{font-size:11.5px}
   .stk{font-size:11.5px}
   .tag{margin-top:2px; padding:2px 7px; font-size:10.5px; min-height:15px}
-  .btn{min-height:38px; font-size:13.5px}
+  .btn{min-height:44px; font-size:13.5px}
   .status{padding:4px 8px; font-size:12px}
   .bet{font-size:11px}
 }
@@ -768,6 +847,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
       <span class="byline">by Yiiiii</span>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
+    <div class="hud" id="hud" aria-live="polite"><span class="hud-pot">底池 <b id="hudPot">0</b></span><span class="hud-turn" id="hudTurn"></span></div>
     <button class="ghost m-only" id="bMenu" type="button" aria-expanded="false">菜单</button>
     <div class="meta">
       <span class="chip-info">第 <b id="handNo">1</b> 手</span>
@@ -789,6 +869,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
       <button class="ghost" id="bReviewTop" type="button">复盘</button>
       <button class="ghost" id="bNew" type="button">新开一局</button>
       <button class="ghost m-only" id="bSmokeM" type="button">点一根烟</button>
+      <button class="ghost m-only" id="bDealerM" type="button">换荷官 · 打赏</button>
       <button class="ghost m-only" id="bLog" type="button">牌局记录</button>
     </div>
   </header>
@@ -857,12 +938,15 @@ select.ghost option{background:var(--panel); color:var(--text)}
       <div class="raise-row" id="raiseRow">
         <div class="presets">
           <button type="button" data-p="min">最小</button>
-          <button type="button" data-p="half">½ 底池</button>
-          <button type="button" data-p="pot">底池</button>
-          <button type="button" data-p="all">全下</button>
+          <button type="button" data-p="half">½ 池</button>
+          <button type="button" data-p="pot">1 池</button>
+          <button type="button" data-p="pot2">2 倍池</button>
+          <button type="button" data-p="all">All-in</button>
         </div>
         <div class="slider">
+          <button type="button" class="step" data-d="-1" aria-label="少加一个大盲">−</button>
           <input type="range" id="amt" min="20" max="1000" step="1" value="40" aria-label="加注金额">
+          <button type="button" class="step" data-d="1" aria-label="多加一个大盲">+</button>
           <input type="number" id="amtNum" min="20" max="1000" step="1" value="40" aria-label="加注金额">
         </div>
       </div>
@@ -874,6 +958,7 @@ select.ghost option{background:var(--panel); color:var(--text)}
         </div>
       </div>
       <div class="btns" id="btns">
+        <button class="btn b-back" id="bCancel" type="button" hidden>返回</button>
         <button class="btn b-fold" id="bFold" type="button">弃牌<kbd>F</kbd></button>
         <button class="btn b-call" id="bCall" type="button">过牌<kbd>C</kbd></button>
         <button class="btn b-raise" id="bRaise" type="button">加注<kbd>R</kbd></button>
@@ -1261,6 +1346,7 @@ $('#cFile').addEventListener('change', e => {
   rd.readAsDataURL(f);
   e.target.value = '';
 });
+const REACT_SAY = new Set(['allIn', 'heroAllIn', 'badCall', 'youWinBig', 'youLoseBig', 'loseStreak', 'champion', 'bust', 'unlockFind', 'unlockChamp', 'showBluff', 'botShowBluff']);
 function dealerSay(key, vars = {}){
   const COMMON = {
     newcomer:['欢迎{name}入座，带了 {n}。','{name}坐下了，带了 {n}，欢迎。'],
@@ -1289,6 +1375,8 @@ function dealerSay(key, vars = {}){
   const b = $('#dSay');
   b.textContent = line;
   b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  const d = $('.dealer'); d.classList.add('talk'); clearTimeout(dealerSay.t); dealerSay.t = setTimeout(() => d.classList.remove('talk'), 4500);
+  if (REACT_SAY.has(key)){ const a = $('#dAvatar'); a.classList.remove('react'); void a.offsetWidth; a.classList.add('react'); }
 }
 function hop(){ const a = $('#dAvatar'); a.classList.remove('hop'); void a.offsetWidth; a.classList.add('hop'); }
 function flyChip(from){
@@ -2361,18 +2449,33 @@ amt.addEventListener('input', () => { amtNum.value = amt.value; renderControls()
 amtNum.addEventListener('change', () => setAmt(+amtNum.value));
 document.querySelectorAll('.presets button').forEach(btn => btn.addEventListener('click', () => {
   const b = bounds(), pot = potTotal();
-  const m = {min:b.minTo, half:G.currentBet + (pot + b.toCall) * .5, pot:G.currentBet + pot + b.toCall, all:b.maxTo}[btn.dataset.p];
+  const m = {min:b.minTo, half:G.currentBet + (pot + b.toCall) * .5, pot:G.currentBet + pot + b.toCall, pot2:G.currentBet + (pot + b.toCall) * 2, all:b.maxTo}[btn.dataset.p];
   setAmt(m);
 }));
+document.querySelectorAll('.slider .step').forEach(btn => btn.addEventListener('click', () => setAmt(+amt.value + (+btn.dataset.d) * G.bbAmt)));
+/* going all-in by accident is the costliest mis-tap: an all-in button asks for a second tap within 3 seconds */
+let armed = '', armT = 0;
+function armOr(key, fn){
+  if (armed === key){ armed = ''; clearTimeout(armT); fn(); return; }
+  armed = key; clearTimeout(armT); armT = setTimeout(() => { armed = ''; renderControls(); }, 3000);
+  renderControls();
+}
 $('#bFold').addEventListener('click', () => G.waiting && doAction(0, 'fold'));
-$('#bCall').addEventListener('click', () => G.waiting && doAction(0, G.currentBet > G.players[0].bet ? 'call' : 'check'));
+$('#bCall').addEventListener('click', () => {
+  if (!G.waiting) return;
+  const me = G.players[0], toCall = G.currentBet - me.bet;
+  if (toCall > 0 && toCall >= me.chips) return armOr('call', () => doAction(0, 'call'));
+  doAction(0, toCall > 0 ? 'call' : 'check');
+});
+$('#bCancel').addEventListener('click', () => { raising = false; armed = ''; renderControls(); });
 $('#optRit').checked = ritOn;
 $('#optRit').addEventListener('change', e => { ritOn = e.target.checked; store.set('holdem.rit', ritOn ? '1' : '0'); });
 $('#bRaise').addEventListener('click', () => {
   if (!G.waiting || !bounds().ok) return;
   if (isPhone() && !raising){ raising = true; renderControls(); return; }
-  raising = false;
-  doAction(0, 'raise', clampAmt(+amt.value));
+  const v = clampAmt(+amt.value), go = () => { raising = false; doAction(0, 'raise', v); };
+  if (v >= bounds().maxTo) return armOr('raise', go);
+  go();
 });
 $('#bNext').addEventListener('click', () => { if (NET.role === 'guest') return; if (G.over) newGame(); else if (G.handOver) startHand(); });
 $('#bNew').addEventListener('click', () => openNew());
@@ -2711,7 +2814,10 @@ function renderControls(){
   $('#bFold').disabled = !w;
   $('#bCall').disabled = !w;
   const callBtn = $('#bCall');
-  callBtn.firstChild.textContent = b.toCall <= 0 ? '过牌' : (b.toCall >= me.chips ? `全下 ${fmt(me.chips)}` : `跟注 ${fmt(b.toCall)}`);
+  if (!w) armed = '';
+  const callAll = b.toCall > 0 && b.toCall >= me.chips;
+  callBtn.firstChild.textContent = b.toCall <= 0 ? '过牌' : (callAll ? (armed === 'call' ? `确认全下 ${fmt(me.chips)}？` : `全下 ${fmt(me.chips)}`) : `跟注 ${fmt(b.toCall)}`);
+  callBtn.classList.toggle('allin', callAll && w);
   const canR = w && b.ok;
   $('#bRaise').disabled = !canR;
   [amt, amtNum, ...document.querySelectorAll('.presets button')].forEach(el => el.disabled = !canR);
@@ -2719,8 +2825,13 @@ function renderControls(){
   if (!w) raising = false;
   $('.actions').classList.toggle('raising', raising && canR);
   const rl = v >= b.maxTo ? `全下 ${fmt(v)}` : (G.currentBet === 0 ? `下注 ${fmt(v)}` : `加注到 ${fmt(v)}`);
+  const showPanel = !isPhone() || raising;
   $('#bRaise').firstChild.textContent = !canR ? (G.currentBet === 0 ? '下注' : '加注')
-    : (isPhone() && !raising) ? (G.currentBet === 0 ? '下注 / 全下' : '加注 / 全下') : (isPhone() ? `确认${rl}` : rl);
+    : !showPanel ? (G.currentBet === 0 ? '下注/全下' : '加注/全下')
+    : armed === 'raise' ? `确认全下 ${fmt(v)}？` : (isPhone() ? `确认${rl}` : rl);
+  $('#bRaise').classList.toggle('allin', canR && showPanel && v >= b.maxTo);
+  $('#bCancel').hidden = !(isPhone() && raising && canR);
+  if (armed === 'raise' && v < b.maxTo) armed = '';
 }
 function render(){
   const P = G.players;
@@ -2819,6 +2930,12 @@ function render(){
   eqEl.className = 'num' + (eq != null && odds != null ? (eq >= odds ? ' good' : ' bad') : '');
   $('#myOdds').textContent = odds == null ? '—' : `${Math.round(odds * 100)}%`;
   $('#miniInfo').textContent = `第${G.handNo || 1}手 · ${G.sbAmt}/${G.bbAmt}` + (mode === 'cash' ? ` · ${$('#netInfo').textContent}` : '');
+  $('#hudPot').textContent = $('#pot').textContent;
+  const ht = $('#hudTurn'), you = G.waiting && !G.handOver;
+  ht.textContent = you ? (toCall > 0 ? `轮到你 · 跟 ${fmt(Math.min(toCall, me.chips))}` : '轮到你')
+    : !G.handOver && G.thinking >= 0 && G.players[G.thinking] ? `${G.players[G.thinking].name} 思考中`
+    : G.handOver ? (G.over ? '本局结束' : '本手结束') : `第 ${G.handNo || 1} 手 · ${G.sbAmt}/${G.bbAmt}`;
+  ht.classList.toggle('you', you);
   $('#miniRead').innerHTML = `筹码 <b>${fmt(me.chips)}</b> · <b>${esc($('#myHand').textContent)}</b>`
     + (eq != null ? ` · 胜率 <b>${Math.round(eq * 100)}%</b>` : '') + (odds != null ? ` · 需 <b>${Math.round(odds * 100)}%</b>` : '');
   renderControls();
@@ -3103,11 +3220,14 @@ function cashTableTurnover(){
 }
 
 /* ---------- phone dock ---------- */
-$('#dMore').addEventListener('click', () => {
-  const d = $('.dealer'), open = d.classList.toggle('open');
+function toggleDealer(force){
+  const d = $('.dealer'), open = d.classList.toggle('open', force);
   $('#dMore').setAttribute('aria-expanded', String(open));
   $('#dMore').textContent = open ? '收起' : '换荷官 · 打赏';
-});
+}
+$('#dMore').addEventListener('click', () => toggleDealer());
+$('#dAvatar').addEventListener('click', () => { if (isPhone()) toggleDealer(); });
+$('#bDealerM').addEventListener('click', () => { $('.top').classList.remove('open'); toggleDealer(true); });
 (() => {
   const dock = $('.actions'), app = $('.app');
   const fit = () => app.style.setProperty('--dock-h', dock.offsetHeight + 'px');
