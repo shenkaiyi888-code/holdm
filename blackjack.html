@@ -51,7 +51,8 @@ button{cursor:pointer}
 }
 
 /* header */
-.top{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.top{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px}
+.meta{margin-left:auto}   /* a long room badge drops the buttons to a second line instead of covering the switch */
 .brand{display:flex; align-items:center; gap:8px; min-width:0}
 .gswitch{display:inline-flex; flex:none; align-items:center; padding:2px; border-radius:999px; background:var(--panel); border:1px solid var(--line); font-size:12px; line-height:1}
 .gswitch > *{padding:5px 10px; border-radius:999px; white-space:nowrap; text-decoration:none; color:var(--muted)}
@@ -72,7 +73,9 @@ button{cursor:pointer}
 .ghost:disabled{opacity:.4; cursor:not-allowed}
 .ghost.on{border-color:rgba(127,224,173,.55); color:var(--win)}
 .ghost.lost{border-color:rgba(198,83,83,.6); color:#ff9a90}
-@media (max-width:480px){ .byline{display:none} }
+@media (max-width:560px){ .byline{display:none} }
+/* on a phone the switch already says which game this is */
+@media (max-width:480px){ .brand h1{display:none} .gswitch > *{padding:5px 8px} .chip-info{padding:4px 9px} .ghost{padding:5px 10px} }
 
 /* table */
 .table{
@@ -268,7 +271,7 @@ body.no-dealer .dealer-zone{display:none}
     <div class="brand">
       <h1>21<em>点</em></h1>
       <span class="byline">by Yiiiii</span>
-      <nav class="gswitch" aria-label="切换游戏"><a href="./" id="bBack">德州</a><b aria-current="page">21点</b></nav>
+      <nav class="gswitch" aria-label="切换游戏"><a href="./" id="bBack">德州</a><b aria-current="page">21点</b><a href="baccarat.html" id="goBac">百家乐</a></nav>
     </div>
     <div class="meta">
       <span class="chip-info" title="你的筹码"><span class="coin"></span><b id="myChips" class="num">1,000</b></span>
@@ -373,11 +376,11 @@ const sset = (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else
 const SERVED = /^https?:/.test(location.protocol);
 if (!SERVED) $('#bBack').href = 'index.html';
 /* switching games mid-session: a room closes and a bet on the table is lost, so ask first */
-$('#bBack').addEventListener('click', e => {
+[['#bBack', '德州'], ['#goBac', '百家乐']].forEach(([sel, name]) => $(sel).addEventListener('click', e => {
   const busy = NET.role === 'host' ? '你是房主，离开会关闭房间，朋友也会被请出去。' : NET.role === 'guest' ? '离开会退出这个房间。'
     : T && T.phase !== 'bet' ? '这一手还没打完，离开的话这手下的注就没了。' : '';
-  if (busy && !confirm(busy + '确定回去玩德州吗？')) e.preventDefault();
-});
+  if (busy && !confirm(busy + `确定去玩${name}吗？`)) e.preventDefault();
+}));
 
 /* ---------- cards ---------- */
 const SUIT = ['♠', '♥', '♦', '♣'];
@@ -1073,7 +1076,7 @@ function netBadge(){
   const b = $('#bOnline');
   b.classList.toggle('on', !!NET.role && NET.conn && !NET.hostGone);
   b.classList.toggle('lost', !!NET.role && (!NET.conn || NET.hostGone));
-  b.textContent = !NET.role ? '联机' : `房间 ${NET.room}` + (S ? ` · ${S.seats.length} 人` : '');
+  b.textContent = !NET.role ? '联机' : (innerWidth > 480 ? `房间 ${NET.room}` + (S ? ` · ${S.seats.length} 人` : '') : NET.room);   /* a phone keeps just the room code; the dialog lists who is in */
 }
 function banner(t){ const b = $('#banner'); b.textContent = t; b.hidden = false; clearTimeout(banner.t); banner.t = setTimeout(() => { b.hidden = true; }, 4000); }
 function netOnMessage(m){
@@ -1113,7 +1116,8 @@ function hostJoin(id, name, chips, quiet){
   return s;
 }
 function hostMessage(m){
-  const id = m.from;
+  /* the server's own join/drop/leave notices name the player in id; everything a player sends carries from */
+  const id = m.from || m.id;
   if (m.t === 'join') return;   /* a seat is made when their page says hello, which carries their chips */
   if (m.t === 'hello'){ hostJoin(id, m.name, m.chips); sync(); betCheck(); return; }
   if (m.t === 'drop'){
