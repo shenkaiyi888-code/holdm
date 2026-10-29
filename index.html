@@ -62,6 +62,10 @@ button{cursor:pointer}
 .brand .logo svg{display:block; width:100%; height:auto}
 .brand h1{margin:0; font-family:"Fraunces",var(--f-display); font-style:normal; font-weight:800; font-size:clamp(26px,3.2vw,32px); letter-spacing:-.01em; line-height:1; color:var(--ivory)}
 .brand h1 em{font-style:italic; color:var(--gold)}
+.gswitch{display:inline-flex; flex:none; align-items:center; padding:2px; border-radius:999px; background:var(--panel); border:1px solid var(--line); font-size:12px; line-height:1}
+.gswitch > *{padding:5px 10px; border-radius:999px; white-space:nowrap; text-decoration:none; color:var(--muted)}
+.gswitch > b{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink); font-weight:700}
+.gswitch > a:hover{color:var(--text)}
 .byline{cursor:default; align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
 .suits{font-size:15px; letter-spacing:.25em; color:var(--faint)}
 .suits b{color:var(--card-red); font-weight:400}
@@ -904,7 +908,9 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 @media (orientation:landscape) and (max-height:560px){
   .app{min-height:220px; gap:6px 12px; padding-block:6px; grid-template-columns:minmax(0,1fr) clamp(240px,34vw,330px); grid-template-rows:auto auto auto minmax(0,1fr)}
   .top{grid-column:2; grid-row:1}
-  .brand h1{font-size:17px}
+  .brand h1{display:none}   /* the narrow side column keeps the logo and the game switch */
+  .brand{flex:none}
+  .mini-info{min-width:0; overflow:hidden; text-overflow:ellipsis; display:block!important}
   .stage{grid-row:1 / -1}
   .dealer{grid-row:2; padding:4px 8px}
   .avatar{width:30px; height:30px}
@@ -962,6 +968,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
       <h1 aria-label="bluff?">bluff<em>?</em></h1>
       <span class="byline">by Yiiiii</span>
+      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a href="blackjack.html" id="goBJ">21点</a></nav>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
     <div class="hud" id="hud" aria-live="polite"><span class="hud-pot">底池 <b id="hudPot">0</b></span><span class="hud-turn" id="hudTurn"></span></div>
@@ -4480,6 +4487,12 @@ $('#stResume').addEventListener('click', () => {
 $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; openNew(); });
 /* 21点 is its own page on the same site; dealer, name, sound and mute settings carry over */
 $('#stBJ').addEventListener('click', () => { location.href = 'blackjack.html'; });
+/* switching games mid-session: a room closes and a hand in progress counts as folded, so ask first */
+$('#goBJ').addEventListener('click', e => {
+  const busy = NET.role ? (NET.role === 'host' ? '你是房主，离开会关闭房间，朋友也会被请出去。' : '离开会退出这个房间。')
+    : G.players && G.handNo && !G.handOver && !G.players[0].folded && !G.players[0].out ? '这一手还没打完，离开算弃牌。' : '';
+  if (busy && !confirm(busy + '确定去玩 21 点吗？')) e.preventDefault();
+});
 $('#stOnline').addEventListener('click', () => {
   startWith(lastRules() || defaultRules());
   openNet();
