@@ -67,7 +67,7 @@ button{cursor:pointer}
 .gswitch > b{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink); font-weight:700}
 .gswitch > a:hover{color:var(--text)}
 .welcome .w-games{align-self:center; margin:0 auto; font-size:14px}
-.welcome .w-games > *{padding:8px 16px; min-height:36px; display:flex; align-items:center}
+.welcome .w-games > *{padding:8px 12px; min-height:36px; display:flex; align-items:center}
 .byline{cursor:default; align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
 .suits{font-size:15px; letter-spacing:.25em; color:var(--faint)}
 .suits b{color:var(--card-red); font-weight:400}
@@ -840,7 +840,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   .brand h1{display:none}
   .brand{gap:6px}
   .top{gap:8px}
-  .gswitch > *{padding:5px 7px}   /* three games in the switch: keep room for the pot and whose turn */
+  .gswitch > *{padding:5px 6px}   /* four games in the switch: keep room for the pot and whose turn */
   .hud{justify-content:flex-start}
 }
 /* every phone held upright, big ones (430px Pro Max, WeChat with large text) included */
@@ -973,7 +973,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
       <h1 aria-label="bluff?">bluff<em>?</em></h1>
       <span class="byline">by Yiiiii</span>
-      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a href="blackjack.html" id="goBJ">21点</a><a href="baccarat.html" id="goBac">百家乐</a></nav>
+      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a href="blackjack.html" id="goBJ">21点</a><a href="baccarat.html" id="goBac">百家乐</a><a href="race.html" id="goRace">跑马</a></nav>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
     <div class="hud" id="hud" aria-live="polite"><span class="hud-pot">底池 <b id="hudPot">0</b></span><span class="hud-turn" id="hudTurn"></span></div>
@@ -1204,7 +1204,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <h2 id="stTitle" aria-label="bluff?">bluff<em>?</em></h2>
         <span>by Yiiiii</span>
       </div>
-      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a></nav>
+      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a><a href="race.html" title="押哪匹马跑第一">跑马</a></nav>
       <div class="w-pick">
         <button type="button" class="play" id="stResume" hidden><i>↻</i><div><b>继续上次牌局</b><small id="stResumeTxt"></small></div></button>
         <button type="button" class="play" id="stPlay"><i>▶</i><div><b id="stPlayB">开始游戏</b><small id="stPlayTxt"></small></div></button>
@@ -4490,9 +4490,9 @@ $('#stResume').addEventListener('click', () => {
   resumeGame(sv);
 });
 $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; openNew(); });
-/* 21点 and 百家乐 are their own pages on the same site; dealer, name, sound and mute settings carry over */
+/* 21点, 百家乐 and 跑马 are their own pages on the same site; dealer, name, sound and mute settings carry over */
 /* switching games mid-session: a room closes and a hand in progress counts as folded, so ask first */
-[['#goBJ', '21 点'], ['#goBac', '百家乐']].forEach(([sel, name]) => $(sel).addEventListener('click', e => {
+[['#goBJ', '21 点'], ['#goBac', '百家乐'], ['#goRace', '跑马']].forEach(([sel, name]) => $(sel).addEventListener('click', e => {
   const busy = NET.role ? (NET.role === 'host' ? '你是房主，离开会关闭房间，朋友也会被请出去。' : '离开会退出这个房间。')
     : G.players && G.handNo && !G.handOver && !G.players[0].folded && !G.players[0].out ? '这一手还没打完，离开算弃牌。' : '';
   if (busy && !confirm(busy + `确定去玩${name}吗？`)) e.preventDefault();

@@ -75,7 +75,10 @@ button{cursor:pointer}
 .ghost.lost{border-color:rgba(198,83,83,.6); color:#ff9a90}
 @media (max-width:560px){ .byline{display:none} }
 /* on a phone the switch already says which game this is */
-@media (max-width:480px){ .brand h1{display:none} .gswitch > *{padding:5px 8px} .chip-info{padding:4px 9px} .ghost{padding:5px 10px} }
+@media (max-width:520px){ .brand h1{display:none} .gswitch > *{padding:5px 7px} .chip-info{padding:4px 9px} .ghost{padding:5px 10px} }
+/* four games in the switch: squeeze so the chips and buttons stay on the same line on a phone */
+@media (max-width:420px){ .top{gap:6px} .meta{gap:4px} .gswitch > *{padding:5px 6px} .ghost{padding:5px 8px} .chip-info{padding:4px 8px; gap:4px} .chip-info .coin{width:13px; height:13px} }
+@media (max-width:360px){ .gswitch{font-size:11.5px} .gswitch > *{padding:5px 5px} }
 
 /* table */
 .table{
@@ -271,7 +274,7 @@ body.no-dealer .dealer-zone{display:none}
     <div class="brand">
       <h1>21<em>点</em></h1>
       <span class="byline">by Yiiiii</span>
-      <nav class="gswitch" aria-label="切换游戏"><a href="./" id="bBack">德州</a><b aria-current="page">21点</b><a href="baccarat.html" id="goBac">百家乐</a></nav>
+      <nav class="gswitch" aria-label="切换游戏"><a href="./" id="bBack">德州</a><b aria-current="page">21点</b><a href="baccarat.html" id="goBac">百家乐</a><a href="race.html" id="goRace">跑马</a></nav>
     </div>
     <div class="meta">
       <span class="chip-info" title="你的筹码"><span class="coin"></span><b id="myChips" class="num">1,000</b></span>
@@ -376,7 +379,7 @@ const sset = (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else
 const SERVED = /^https?:/.test(location.protocol);
 if (!SERVED) $('#bBack').href = 'index.html';
 /* switching games mid-session: a room closes and a bet on the table is lost, so ask first */
-[['#bBack', '德州'], ['#goBac', '百家乐']].forEach(([sel, name]) => $(sel).addEventListener('click', e => {
+[['#bBack', '德州'], ['#goBac', '百家乐'], ['#goRace', '跑马']].forEach(([sel, name]) => $(sel).addEventListener('click', e => {
   const busy = NET.role === 'host' ? '你是房主，离开会关闭房间，朋友也会被请出去。' : NET.role === 'guest' ? '离开会退出这个房间。'
     : T && T.phase !== 'bet' ? '这一手还没打完，离开的话这手下的注就没了。' : '';
   if (busy && !confirm(busy + `确定去玩${name}吗？`)) e.preventDefault();

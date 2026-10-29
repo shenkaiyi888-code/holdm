@@ -1,4 +1,4 @@
-/* bluff? 联机服务器：提供德州扑克、21 点和百家乐三个页面，并在同一房间的玩家之间转发消息。
+/* bluff? 联机服务器：提供德州扑克、21 点、百家乐和跑马四个页面，并在同一房间的玩家之间转发消息。
    不依赖任何第三方包，Node 18+ 直接运行：node server.js
    牌局逻辑全部在房主的浏览器里运行，服务器只负责转发。 */
 'use strict';
@@ -13,7 +13,8 @@ const DROP_KEEP_MS = 2 * 60 * 1000;
 const PAGE = path.join(__dirname, 'index.html');
 const BJ_PAGE = path.join(__dirname, 'blackjack.html');
 const BAC_PAGE = path.join(__dirname, 'baccarat.html');
-const GAMES = {holdem:'德州扑克', '21':'21 点', bac:'百家乐'};
+const RACE_PAGE = path.join(__dirname, 'race.html');
+const GAMES = {holdem:'德州扑克', '21':'21 点', bac:'百家乐', race:'跑马'};
 const gameOf = v => Object.prototype.hasOwnProperty.call(GAMES, v) ? v : 'holdem';
 const crypto = require('crypto');
 /* admin password: set ADMIN_PASSWORD on the host to override; otherwise only this salted hash is kept here */
@@ -112,6 +113,11 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'GET' && (p === '/bac' || p === '/baccarat.html' || p === '/baccarat')){
       const html = fs.readFileSync(BAC_PAGE);
+      res.writeHead(200, {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-cache'});
+      return res.end(html);
+    }
+    if (req.method === 'GET' && (p === '/race' || p === '/race.html' || p === '/horse')){
+      const html = fs.readFileSync(RACE_PAGE);
       res.writeHead(200, {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-cache'});
       return res.end(html);
     }
