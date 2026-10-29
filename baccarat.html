@@ -221,7 +221,9 @@ body.no-dealer .dealer-zone{display:none}
 .chipbtn::before{content:""; position:absolute; inset:3px; border-radius:50%; border:3px dashed rgba(255,255,255,.55)}
 .chipbtn[aria-pressed="true"]{transform:translateY(-4px); box-shadow:inset 0 0 0 5px rgba(0,0,0,.18), 0 0 0 2.5px var(--room), 0 0 0 4.5px #f1d08a, 0 8px 14px rgba(0,0,0,.5)}
 .chipbtn:disabled{opacity:.3; cursor:not-allowed}
-.betacts{display:grid; grid-template-columns:1fr 2fr; gap:8px}
+.betacts{display:grid; grid-template-columns:1fr 1.3fr 1.6fr; gap:8px}
+.betacts.duo{grid-template-columns:1fr 1fr}
+.status .clock.hot{color:#ff9a90}
 .lock .spot,.lock .chipbtn{pointer-events:none}
 
 /* dialogs */
@@ -332,7 +334,8 @@ body.no-dealer .dealer-zone{display:none}
       </div>
       <div class="betacts">
         <button class="btn b-back" id="bClear" type="button">清空</button>
-        <button class="btn b-deal" id="bDeal" type="button">发牌</button>
+        <button class="btn b-back" id="bRebet" type="button">重复上一手</button>
+        <button class="btn b-deal" id="bDeal" type="button">马上开</button>
       </div>
     </div>
     <button class="btn b-deal" id="bRefill" type="button" hidden>筹码输光了，领 1,000 再来</button>
@@ -354,7 +357,8 @@ body.no-dealer .dealer-zone{display:none}
     <div>
       <h3>规则</h3>
       <ul class="rules">
-        <li>每手只发两边：闲和庄。你猜哪边赢，下注在「闲」或「庄」上，你自己不用做任何决定。</li>
+        <li>牌桌一直在开：每手有 15 秒下注时间，倒计时结束就开牌，开完马上进入下一手。倒计时里把筹码放到「闲」或「庄」上就算下注，不下也会照常开牌。一个人玩时可以点「马上开」不用等。</li>
+        <li>每手只发两边：闲和庄。你猜哪边赢，你自己不用做任何决定。</li>
         <li>点数只看个位数：A 算 1，2 到 9 按牌面，10、J、Q、K 算 0。比如 7 加 8 是 15，算 5 点。最大是 9 点。</li>
         <li>头两张是 8 或 9 点叫「天牌」，直接比，不再补牌。</li>
         <li>闲 0 到 5 点补一张，6、7 点不补。庄补不补按标准规则看庄的点数和闲补的那张牌，荷官会自动处理。</li>
@@ -601,7 +605,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && act
    everyone renders from pub(T). Nobody makes choices once the cards are out, so a hand is just:
    everyone bets, the cards come out by the rules, everyone gets paid. */
 const MIN_BET = 10, START_CHIPS = 1000, DECKS = 8, MAX_SEATS = 8, ROAD_MAX = 120;
-const BET_WAIT_MS = 15000;
+const BET_MS = 15000;   /* every hand has the same betting window, like a live table */
 const NET = {role:null, room:'', id:'', es:null, conn:false, hostGone:false, roster:[], available:false};
 const navType = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type;
 if (navType !== 'reload'){ sset('bac.netId', null); sset('bac.netRoom', null); sset('bac.netRole', null); sset('bac.netTable', null); }
@@ -610,23 +614,24 @@ let myName = String(store.get('holdem.myName', '') || '').slice(0, 8);
 let myChips = Math.max(0, Math.round(+store.get('bac.chips', START_CHIPS)));
 if (!isFinite(myChips)) myChips = START_CHIPS;
 const cleanBets = b => { const o = {}; SPOTS.forEach(k => { const v = Math.round(+(b && b[k]) / 10) * 10; if (v >= 10 && v <= 1e7) o[k] = v; }); return o; };
-let pend = (() => { try { return cleanBets(JSON.parse(store.get('bac.bets', '{}'))); } catch (e) { return {}; } })();
+let pend = {};          /* my chips on the table this hand */
+let lastBets = (() => { try { return cleanBets(JSON.parse(store.get('bac.last', '{}'))); } catch (e) { return {}; } })();
 let chipV = [10, 50, 100, 500, 1000].includes(+store.get('bac.chip', 50)) ? +store.get('bac.chip', 50) : 50;
 let stats = (() => { try { return Object.assign({hands:0, won:0, best:0, streak:0, ties:0, pairs:0}, JSON.parse(store.get('bac.stats', '{}'))); } catch (e) { return {hands:0, won:0, best:0, streak:0, ties:0, pairs:0}; } })();
 const saveStats = () => store.set('bac.stats', JSON.stringify(stats));
-const savePend = () => store.set('bac.bets', JSON.stringify(pend));
 
 let T = null;          /* full table, only on the page that runs the game */
 let S = null;          /* what this page renders */
 let runId = 0;
-const newSeat = (id, name, chips) => ({id, name, chips, bets:{}, ready:false, staked:null, net:null, online:true});
+const newSeat = (id, name, chips) => ({id, name, chips, bets:{}, staked:null, net:null, online:true});
 function freshTable(){
-  return {phase:'bet', round:0, seats:[], hand:{p:[], b:[]}, result:null, betAt:0, shoe:[], cut:0, shuffled:false, road:[]};
+  return {phase:'bet', round:0, seats:[], hand:{p:[], b:[]}, result:null, betEnd:0, shoe:[], cut:0, shuffled:false, road:[]};
 }
 function soloTable(){
   T = freshTable();
   T.seats.push(newSeat(NET.id, myName || '你', myChips));
   newShoe();
+  openBetting();
 }
 function newShoe(){
   const a = [];
@@ -640,9 +645,9 @@ const seatOf = id => T.seats.find(s => s.id === id);
 function pub(t){
   return {
     phase:t.phase, round:t.round, shuffled:t.shuffled, shoeLeft:t.shoe.length,
-    betLeft:t.betAt ? Math.max(0, t.betAt + BET_WAIT_MS - Date.now()) : 0,
+    betLeft:t.phase === 'bet' && t.betEnd ? Math.max(0, t.betEnd - Date.now()) : 0,
     hand:{p:t.hand.p.slice(), b:t.hand.b.slice()}, result:t.result, road:t.road.slice(-ROAD_MAX),
-    seats:t.seats.map(s => ({id:s.id, name:s.name, chips:s.chips, bets:Object.assign({}, s.bets), ready:s.ready, online:s.online, staked:s.staked, net:s.net}))
+    seats:t.seats.map(s => ({id:s.id, name:s.name, chips:s.chips, bets:Object.assign({}, s.bets), online:s.online, staked:s.staked, net:s.net}))
   };
 }
 
@@ -658,41 +663,37 @@ function sync(){
   }
   render();
 }
-function placeBet(id, bets, ready){
+/* bets go straight onto the table; whatever is there when the clock runs out plays */
+function placeBet(id, bets){
   const s = seatOf(id);
   if (!s || T.phase !== 'bet') return;
   bets = cleanBets(bets);
-  if (ready && (sum(bets) < MIN_BET || sum(bets) > s.chips)) return;
-  s.bets = ready ? bets : {}; s.ready = !!ready;
-  if (ready && !T.betAt) T.betAt = Date.now();
-  if (!T.seats.some(x => x.ready)) T.betAt = 0;
+  if (sum(bets) > s.chips) return;
+  s.bets = bets;
   sync();
-  betCheck();
 }
 let betTimer = 0;
-/* online: deal once everyone who is here has bet, or 15 s after the first bet */
-function betCheck(){
+function openBetting(){
   clearTimeout(betTimer);
-  if (T.phase !== 'bet') return;
-  if (!T.seats.some(s => s.ready)) return;
-  const waiting = T.seats.filter(s => !s.ready && s.online && s.chips >= MIN_BET);
-  if (!waiting.length || !NET.role) return startRound();
-  betTimer = setTimeout(startRound, Math.max(0, T.betAt + BET_WAIT_MS - Date.now()));
+  T.phase = 'bet'; T.betEnd = Date.now() + BET_MS;
+  const my = runId;
+  betTimer = setTimeout(() => { if (my === runId) startRound(); }, BET_MS);
 }
 async function startRound(){
   clearTimeout(betTimer);
   if (T.phase !== 'bet') return;
-  const players = T.seats.filter(s => s.ready && sum(s.bets) >= MIN_BET && sum(s.bets) <= s.chips);
-  if (!players.length) return;
+  /* alone with the page in the background: hold the hand until you are back */
+  if (!NET.role && document.hidden){ const my = runId; betTimer = setTimeout(() => { if (my === runId) startRound(); }, 1000); return; }
+  const players = T.seats.filter(s => sum(s.bets) >= MIN_BET && sum(s.bets) <= s.chips);
   const my = ++runId;
   T.shuffled = false;
   if (T.shoe.length < T.cut) newShoe();
-  T.round++; T.phase = 'deal'; T.betAt = 0; T.result = null;
+  T.round++; T.phase = 'deal'; T.betEnd = 0; T.result = null;
   T.hand = {p:[], b:[]};
   T.seats.forEach(s => {
     s.staked = null; s.net = null;
     if (players.includes(s)){ s.staked = s.bets; s.chips -= sum(s.bets); }
-    s.bets = {}; s.ready = false;
+    s.bets = {};
   });
   sync();
   const gap = NET.role ? 420 : 340;
@@ -721,11 +722,10 @@ function settle(){
     const back = SPOTS.reduce((a, k) => a + payout(k, s.staked[k], r), 0);
     s.chips += back; s.net = back - sum(s.staked);
   });
-  T.phase = 'bet';
   /* people who left during the hand give up their seat now */
   T.seats = T.seats.filter(s => !s.gone);
+  openBetting();
   sync();
-  betCheck();
 }
 
 /* ---------- rendering ---------- */
@@ -795,7 +795,7 @@ function render(){
   if (NET.role){
     $('#others').innerHTML = others.map(s => {
       const desc = s.staked ? SPOTS.filter(k => s.staked[k]).map(k => `${SPOT_NAME[k]} ${fmt(s.staked[k])}`).join(' · ') : '';
-      const st = S.phase === 'bet' ? (s.ready ? `<span>已下注 ${esc(SPOTS.filter(k => s.bets[k]).map(k => SPOT_NAME[k]).join('、'))}</span>` : '<span>下注中…</span>')
+      const st = S.phase === 'bet' ? (sum(s.bets) ? `<span>押 ${SPOTS.filter(k => s.bets[k]).map(k => SPOT_NAME[k]).join('、')}</span>` : '<span>还没下注</span>')
         : desc ? `<span>${desc}</span>` : '<span>这手没下注</span>';
       const net = s.net != null && s.staked ? `<span class="net ${s.net > 0 ? 'pos' : s.net < 0 ? 'neg' : ''}">${s.net > 0 ? '+' : s.net < 0 ? '−' : '±'}${fmt(Math.abs(s.net))}</span>` : '';
       return `<div class="op${s.online ? '' : ' off'}"><span class="nm">${esc(s.name)}${s.online ? '' : ' · 断线'}</span><div class="sub"><span class="coin" style="width:11px;height:11px"></span>${fmt(s.chips)} ${net}</div><div class="sub">${st}</div></div>`;
@@ -803,7 +803,7 @@ function render(){
   }
   const tip = $('#tip');
   tip.hidden = !(me && stats.hands < 3 && S.phase === 'bet' && !r);
-  if (!tip.hidden) tip.innerHTML = '猜<b>闲</b>赢还是<b>庄</b>赢：两边各发两三张牌，点数个位数<b>更接近 9</b> 的一边赢。<br>先选筹码，再点下面的「闲」或「庄」，然后点「发牌」。';
+  if (!tip.hidden) tip.innerHTML = '猜<b>闲</b>赢还是<b>庄</b>赢：两边各发两三张牌，点数个位数<b>更接近 9</b> 的一边赢。<br>每 15 秒开一手，倒计时结束前把筹码放到「闲」或「庄」上就行。';
   if (!me && S.seats.length >= MAX_SEATS) { tip.hidden = false; tip.textContent = `桌子坐满了（最多 ${MAX_SEATS} 人），你在观战，有人离开就能坐下。`; }
   reactions();
   renderConsole();
@@ -819,29 +819,26 @@ function renderConsole(){
     st.textContent = me.staked ? '开牌中…' : '这手你没下注，下一手再来';
     return;
   }
-  /* betting */
-  if (me.chips < MIN_BET && !me.ready){ $('#bRefill').hidden = false; $('#cBet').hidden = true; st.textContent = me.net ? lastLine(me) : ''; return; }
-  if (!me.ready && sum(pend) > me.chips) pend = {};
-  const bets = me.ready ? me.bets : pend;
-  lockBets(me.ready);
-  showStakes(bets, !me.ready && S.result && me.staked && !said.betTouched ? me : null);
-  $$('.chipbtn').forEach(b => { b.setAttribute('aria-pressed', String(+b.dataset.v === chipV)); b.disabled = !me.ready && +b.dataset.v > me.chips; });
-  $('#bClear').disabled = me.ready || !sum(pend);
-  const total = sum(bets);
+  /* betting: chips go down until the clock runs out */
   const bl = S.betLeft ? Math.max(0, Math.ceil((S.betLeft - (Date.now() - S.local)) / 1000)) : 0;
-  if (!NET.role){
-    $('#bDeal').textContent = total ? `发牌 · 共 ${fmt(total)}` : '发牌';
-    $('#bDeal').disabled = total < MIN_BET;
-    st.innerHTML = S.result && me.staked && !said.betTouched ? lastLine(me) + (total ? ' · 点「发牌」按同样的注再来' : '')
-      : total ? '' : `选好筹码，点「闲」或「庄」下注`;
-  } else {
-    $('#bDeal').textContent = me.ready ? '取消下注' : total ? `下好了 · 共 ${fmt(total)}` : '下好了';
-    $('#bDeal').disabled = !me.ready && total < MIN_BET;
-    const waitN = S.seats.filter(s => !s.ready && s.online && s.chips >= MIN_BET).length;
-    st.innerHTML = me.ready ? (waitN ? `等其他人下注<span class="clock">${bl}s</span>` : '马上发牌')
-      : bl ? `有人下好了，<span class="clock">${bl}s</span> 后发牌` : (S.result && me.staked && !said.betTouched ? lastLine(me) + ' · 下好注点「下好了」' : '下好注点「下好了」，大家都下好就发牌');
-  }
-  $('#bDeal').className = 'btn ' + (me.ready ? 'b-back' : 'b-deal');
+  const clock = `<span class="clock${bl <= 3 ? ' hot' : ''}">${bl}s</span>`;
+  if (me.chips < MIN_BET && !sum(pend)){ $('#bRefill').hidden = false; $('#cBet').hidden = true; st.innerHTML = (me.net ? lastLine(me) + ' · ' : '') + '下一手' + clock; return; }
+  if (sum(pend) > me.chips) pend = {};
+  const showLast = S.result && me.staked && !said.betTouched && !sum(pend);
+  lockBets(false);
+  showStakes(showLast ? me.staked : pend, showLast ? me : null);
+  $$('.chipbtn').forEach(b => { b.setAttribute('aria-pressed', String(+b.dataset.v === chipV)); b.disabled = +b.dataset.v > me.chips; });
+  $('#bClear').disabled = !sum(pend);
+  const rebet = cleanBets(lastBets);
+  $('#bRebet').disabled = !!sum(pend) || !sum(rebet) || sum(rebet) > me.chips;
+  const total = sum(pend);
+  $('#bDeal').hidden = !!NET.role;
+  $('#bDeal').disabled = total < MIN_BET;
+  $('#bDeal').textContent = total ? `马上开 · ${fmt(total)}` : '马上开';
+  $('.betacts').classList.toggle('duo', !!NET.role);
+  const head = showLast ? lastLine(me) + ' · ' : '';
+  st.innerHTML = total ? `已下注 <b>${fmt(total)}</b> · 开牌倒计时` + clock
+    : head + (bl ? '下注倒计时' + clock : '马上开牌');
 }
 function lastLine(me){
   const n = me.net;
@@ -861,19 +858,20 @@ function showStakes(bets, paid){
     let tag = b.querySelector('.stake');
     const amt = bets[k] || 0;
     const pay = paid && paid.staked[k] ? payout(k, paid.staked[k], r) - paid.staked[k] : 0;
-    const html = amt ? `<span class="coin"></span>${fmt(amt)}` + (pay > 0 ? ` +${fmt(pay)}` : '') : '';
+    /* last hand's chips are gone from the table; only what they won still shows */
+    const html = amt && (!paid || pay > 0) ? `<span class="coin"></span>${fmt(amt)}` + (pay > 0 ? ` +${fmt(pay)}` : '') : '';
     if (!html){ if (tag) tag.remove(); return; }
     if (!tag){ tag = document.createElement('span'); tag.className = 'stake'; b.appendChild(tag); }
     tag.classList.toggle('pay', pay > 0);
     if (tag.innerHTML !== html) tag.innerHTML = html;
   });
 }
-setInterval(() => { if (S && S.betLeft) renderConsole(); }, 500);
+setInterval(() => { if (S && S.phase === 'bet' && S.betLeft) renderConsole(); }, 250);
 
 /* the dealer reacts to your own results */
 let said = {round:-1, deal:false, done:false, betTouched:false};
 function reactions(){
-  if (said.round !== S.round) said = {round:S.round, deal:false, done:false, betTouched:false};
+  if (said.round !== S.round){ said = {round:S.round, deal:false, done:false, betTouched:false}; pend = {}; }
   const me = mySeat();
   if (!me || !me.staked) return;
   if (S.phase === 'deal' && !said.deal){ said.deal = true; if (Math.random() < .45) say('deal'); }
@@ -881,6 +879,7 @@ function reactions(){
   if (r && me.net != null && !said.done){
     said.done = true;
     const n = me.net, st = me.staked;
+    lastBets = st; store.set('bac.last', JSON.stringify(st));
     stats.hands++;
     if (n > 0){ stats.won++; stats.streak++; stats.best = Math.max(stats.best, stats.streak); } else if (n < 0) stats.streak = 0;
     if (r.w === 'T' && st.t) stats.ties++;
@@ -915,26 +914,36 @@ $('#chips').addEventListener('click', e => {
 });
 $('#spots').addEventListener('click', e => {
   const b = e.target.closest('.spot'); if (!b || b.disabled) return;
-  const me = mySeat(); if (!me || me.ready || S.phase !== 'bet') return;
+  const me = mySeat(); if (!me || S.phase !== 'bet') return;
   ac();
   said.betTouched = true;
   const k = b.dataset.k, room = Math.floor((me.chips - sum(pend)) / 10) * 10;
   if (room < MIN_BET){ banner('筹码不够了，先「清空」再重新下'); return; }
   pend[k] = (pend[k] || 0) + Math.min(chipV, room);
-  savePend(); sfx('chip');
+  sfx('chip'); sendBet();
   renderConsole();
 });
-$('#bClear').addEventListener('click', () => { pend = {}; said.betTouched = true; savePend(); renderConsole(); });
-$('#bDeal').addEventListener('click', () => {
-  const me = mySeat(); if (!me) return;
-  ac();
-  if (me.ready){ sendBet({}, false); return; }
-  if (sum(pend) < MIN_BET || sum(pend) > me.chips) return;
-  sendBet(pend, true);
+$('#bClear').addEventListener('click', () => { pend = {}; said.betTouched = true; sendBet(); renderConsole(); });
+$('#bRebet').addEventListener('click', () => {
+  const me = mySeat(); if (!me || S.phase !== 'bet') return;
+  const b = cleanBets(lastBets);
+  if (!sum(b) || sum(b) > me.chips) return;
+  ac(); pend = b; said.betTouched = true; sfx('chip'); sendBet(); renderConsole();
 });
-function sendBet(bets, ready){
-  if (NET.role === 'guest') netSend({t:'bet', bets, ready});
-  else placeBet(NET.id, bets, ready);
+/* alone there is nobody to wait for, so you can skip the rest of the countdown */
+$('#bDeal').addEventListener('click', () => {
+  if (NET.role || sum(pend) < MIN_BET) return;
+  ac(); startRound();
+});
+function sendBet(){
+  if (NET.role === 'guest') netSendBet();
+  else placeBet(NET.id, pend);
+}
+/* a guest tapping fast sends one message for the burst, not one per chip */
+let betSendT = 0;
+function netSendBet(){
+  clearTimeout(betSendT);
+  betSendT = setTimeout(() => netSend({t:'bet', bets:pend}), 120);
 }
 $('#bRefill').addEventListener('click', () => {
   say('broke');
@@ -943,7 +952,7 @@ $('#bRefill').addEventListener('click', () => {
 });
 function refill(id){
   const s = seatOf(id);
-  if (!s || T.phase !== 'bet' || s.chips >= MIN_BET || s.ready) return;
+  if (!s || T.phase !== 'bet' || s.chips >= MIN_BET || sum(s.bets)) return;
   s.chips = START_CHIPS; sync();
 }
 document.addEventListener('keydown', e => {
@@ -951,7 +960,7 @@ document.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   const map = {p:'p', b:'b', t:'t'};
   if (map[k]){ const b = $(`.spot[data-k="${map[k]}"]`); if (b && !b.disabled){ b.click(); e.preventDefault(); } }
-  else if ((k === 'enter' || k === ' ') && !$('#cBet').hidden && !$('#bDeal').disabled && !e.target.closest('button')){ $('#bDeal').click(); e.preventDefault(); }
+  else if ((k === 'enter' || k === ' ') && !$('#cBet').hidden && !$('#bDeal').hidden && !$('#bDeal').disabled && !e.target.closest('button')){ $('#bDeal').click(); e.preventDefault(); }
 });
 let roadW = 0;
 window.addEventListener('resize', () => { const w = $('#road').clientWidth; if (S && w !== roadW){ roadW = w; renderRoad(); } });
@@ -1034,7 +1043,7 @@ function netOnMessage(m){
       NET.hostGone = !back; if (S) renderConsole();
     } else if (NET.role === 'host'){
       T.seats.forEach(s => { const r = NET.roster.find(x => x.id === s.id); if (s.id !== NET.id) s.online = !!(r && r.online); });
-      sync(); betCheck();
+      sync();
     }
     netBadge(); netRenderDlg(); return;
   }
@@ -1062,15 +1071,15 @@ function hostMessage(m){
   /* the server's own join/drop/leave notices name the player in id; everything a player sends carries from */
   const id = m.from || m.id;
   if (m.t === 'join') return;   /* a seat is made when their page says hello, which carries their chips */
-  if (m.t === 'hello'){ hostJoin(id, m.name, m.chips); sync(); betCheck(); return; }
-  if (m.t === 'drop'){ const s = seatOf(id); if (s) s.online = false; sync(); betCheck(); return; }
+  if (m.t === 'hello'){ hostJoin(id, m.name, m.chips); sync(); return; }
+  if (m.t === 'drop'){ const s = seatOf(id); if (s) s.online = false; sync(); return; }
   if (m.t === 'leave'){
     const s = seatOf(id); if (!s) return;
     if (T.phase === 'bet') T.seats = T.seats.filter(x => x !== s);
     else { s.gone = true; s.online = false; }
-    sync(); betCheck(); return;
+    sync(); return;
   }
-  if (m.t === 'bet') return placeBet(id, m.bets, !!m.ready);
+  if (m.t === 'bet') return placeBet(id, m.bets);
   if (m.t === 'refill') return refill(id);
 }
 function openNet(){ $('#netDlg').hidden = false; netRenderDlg(); }
@@ -1105,8 +1114,8 @@ function netRenderDlg(){
         if (!r.room) throw new Error(r.error || '创建失败');
         NET.notice = '';
         runId++;
-        const me = seatOf(NET.id); if (me){ me.name = myName; me.ready = false; me.bets = {}; }
-        T.betAt = 0;
+        const me = seatOf(NET.id); if (me) me.name = myName;
+        openBetting();   /* a fresh countdown so friends have time to come in */
         netConnect(r.room, 'host'); sync(); netRenderDlg();
       }).catch(e => { $('#nErr').textContent = '创建房间失败：' + (e.message || '网络错误'); $('#nCreate').disabled = false; });
     });
@@ -1159,8 +1168,8 @@ function restoreHost(){
       T.seats.forEach(s => { if (s.staked) s.chips += sum(s.staked); s.staked = null; s.net = null; });
       T.hand = {p:[], b:[]}; T.result = null; T.phase = 'bet';
     }
-    T.seats.forEach(s => { s.ready = false; s.bets = {}; });
-    T.betAt = 0;
+    T.seats.forEach(s => { s.bets = {}; });
+    openBetting();
     return true;
   } catch (e) { return false; }
 }
