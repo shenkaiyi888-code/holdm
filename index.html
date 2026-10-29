@@ -66,6 +66,8 @@ button{cursor:pointer}
 .gswitch > *{padding:5px 10px; border-radius:999px; white-space:nowrap; text-decoration:none; color:var(--muted)}
 .gswitch > b{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink); font-weight:700}
 .gswitch > a:hover{color:var(--text)}
+.welcome .w-games{align-self:center; margin:0 auto; font-size:14px}
+.welcome .w-games > *{padding:8px 16px; min-height:36px; display:flex; align-items:center}
 .byline{cursor:default; align-self:flex-end; margin-bottom:3px; font:500 11px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
 .suits{font-size:15px; letter-spacing:.25em; color:var(--faint)}
 .suits b{color:var(--card-red); font-weight:400}
@@ -1202,12 +1204,11 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <h2 id="stTitle" aria-label="bluff?">bluff<em>?</em></h2>
         <span>by Yiiiii</span>
       </div>
+      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a></nav>
       <div class="w-pick">
         <button type="button" class="play" id="stResume" hidden><i>↻</i><div><b>继续上次牌局</b><small id="stResumeTxt"></small></div></button>
         <button type="button" class="play" id="stPlay"><i>▶</i><div><b id="stPlayB">开始游戏</b><small id="stPlayTxt"></small></div></button>
         <button type="button" id="stOnline"><i>👥</i><div><b>好友联机</b><small>开房间发链接给朋友，或者输入房间号加入。</small></div></button>
-        <button type="button" id="stBJ"><i>🃏</i><div><b>21点</b><small>和荷官比谁更接近 21 点，一手几十秒，也能和朋友同桌。</small></div></button>
-        <button type="button" id="stBac"><i>🎴</i><div><b>百家乐</b><small>猜闲赢还是庄赢，不用做任何决定，一手十几秒，也能和朋友同桌押。</small></div></button>
         <button type="button" id="stSet"><i>⚙️</i><div><b>游戏设置</b><small>换玩法（淘汰赛 / 现金局）、几人桌、带多少筹码。</small></div></button>
       </div>
       <p class="w-tip" id="stTip">第一次玩？直接点「开始游戏」。轮到你时，下方会亮起弃牌、跟注、加注按钮。</p>
@@ -4490,8 +4491,6 @@ $('#stResume').addEventListener('click', () => {
 });
 $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; openNew(); });
 /* 21点 and 百家乐 are their own pages on the same site; dealer, name, sound and mute settings carry over */
-$('#stBJ').addEventListener('click', () => { location.href = 'blackjack.html'; });
-$('#stBac').addEventListener('click', () => { location.href = 'baccarat.html'; });
 /* switching games mid-session: a room closes and a hand in progress counts as folded, so ask first */
 [['#goBJ', '21 点'], ['#goBac', '百家乐']].forEach(([sel, name]) => $(sel).addEventListener('click', e => {
   const busy = NET.role ? (NET.role === 'host' ? '你是房主，离开会关闭房间，朋友也会被请出去。' : '离开会退出这个房间。')
