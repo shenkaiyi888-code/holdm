@@ -1,4 +1,4 @@
-/* 德州扑克联机服务器：提供游戏页面，并在同一房间的玩家之间转发消息。
+/* bluff? 联机服务器：提供德州扑克和 21 点两个页面，并在同一房间的玩家之间转发消息。
    不依赖任何第三方包，Node 18+ 直接运行：node server.js
    牌局逻辑全部在房主的浏览器里运行，服务器只负责转发。 */
 'use strict';
@@ -11,6 +11,7 @@ const MAX_PLAYERS = 8;
 const ROOM_IDLE_MS = 10 * 60 * 1000;
 const DROP_KEEP_MS = 2 * 60 * 1000;
 const PAGE = path.join(__dirname, 'index.html');
+const BJ_PAGE = path.join(__dirname, 'blackjack.html');
 const crypto = require('crypto');
 /* admin password: set ADMIN_PASSWORD on the host to override; otherwise only this salted hash is kept here */
 const ADMIN_SALT = '135cc77c600ba6a5c4ba45e065bbf2a5', ADMIN_HASH = 'f10b44b1f139ea9e43ddde1d49479ecb46f2ea8e6792e5374718c15b8da8bcfa';
@@ -68,6 +69,8 @@ function openStream(req, res, q){
   const fail = msg => { res.write(`data: ${JSON.stringify({t:'error', msg})}\n\n`); res.end(); };
   if (!id) return fail('缺少玩家编号');
   if (!room) return fail('房间不存在，可能已经关闭了');
+  const game = q.get('game') === '21' ? '21' : 'holdem';
+  if (room.game !== game) return fail(room.game === '21' ? '这是 21 点的房间，请在 21 点页面加入' : '这是德州扑克的房间，请在德州页面加入');
   let c = room.clients.get(id);
   if (!c){
     /* people who dropped and never came back stop holding a place */
@@ -99,6 +102,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-cache'});
       return res.end(html);
     }
+    if (req.method === 'GET' && (p === '/21' || p === '/blackjack.html' || p === '/blackjack')){
+      const html = fs.readFileSync(BJ_PAGE);
+      res.writeHead(200, {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-cache'});
+      return res.end(html);
+    }
     const art = /^\/assets\/dealers\/(Sally|Nemo|Xiao_Nuo|Nai_Wa|Yi)\.png$/.exec(p);
     if ((req.method === 'GET' || req.method === 'HEAD') && art){
       res.writeHead(200, {'Content-Type':'image/png', 'Cache-Control':'public, max-age=604800'});
@@ -110,7 +118,7 @@ const server = http.createServer(async (req, res) => {
       const b = await readBody(req), id = cleanId(b.id);
       if (!id) return json(res, 400, {error:'缺少玩家编号'});
       const code = newCode();
-      rooms.set(code, {code, host:id, clients:new Map(), touched:Date.now()});
+      rooms.set(code, {code, host:id, clients:new Map(), touched:Date.now(), game:b.game === '21' ? '21' : 'holdem'});
       return json(res, 200, {room:code});
     }
     if (req.method === 'POST' && p === '/api/send'){
