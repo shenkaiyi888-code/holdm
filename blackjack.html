@@ -53,8 +53,10 @@ button{cursor:pointer}
 /* header */
 .top{display:flex; align-items:center; justify-content:space-between; gap:8px}
 .brand{display:flex; align-items:center; gap:8px; min-width:0}
-.back{display:inline-flex; align-items:center; gap:4px; color:var(--muted); text-decoration:none; font-size:12.5px; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px 11px 4px 9px; white-space:nowrap}
-.back:hover{border-color:var(--line-2); color:var(--text)}
+.gswitch{display:inline-flex; flex:none; align-items:center; padding:2px; border-radius:999px; background:var(--panel); border:1px solid var(--line); font-size:12px; line-height:1}
+.gswitch > *{padding:5px 10px; border-radius:999px; white-space:nowrap; text-decoration:none; color:var(--muted)}
+.gswitch > b{background:linear-gradient(180deg, #e2c68e, #c9a463); color:var(--gold-ink); font-weight:700}
+.gswitch > a:hover{color:var(--text)}
 .brand h1{margin:0; font-family:"Fraunces",var(--f-display); font-weight:800; font-size:26px; line-height:1; color:var(--ivory); white-space:nowrap}
 .brand h1 em{font-style:normal; font-family:var(--f-display); font-size:.8em; color:var(--gold); margin-left:2px}
 .byline{cursor:default; align-self:flex-end; margin-bottom:2px; font:500 10.5px var(--f-num); letter-spacing:.08em; color:var(--faint); white-space:nowrap}
@@ -71,7 +73,6 @@ button{cursor:pointer}
 .ghost.on{border-color:rgba(127,224,173,.55); color:var(--win)}
 .ghost.lost{border-color:rgba(198,83,83,.6); color:#ff9a90}
 @media (max-width:480px){ .byline{display:none} }
-@media (max-width:400px){ .back span{display:none} }
 
 /* table */
 .table{
@@ -265,9 +266,9 @@ body.no-dealer .dealer-zone{display:none}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <a class="back" id="bBack" href="./" title="回到 bluff? 德州扑克">‹ <span>德州</span></a>
       <h1>21<em>点</em></h1>
       <span class="byline">by Yiiiii</span>
+      <nav class="gswitch" aria-label="切换游戏"><a href="./" id="bBack">德州</a><b aria-current="page">21点</b></nav>
     </div>
     <div class="meta">
       <span class="chip-info" title="你的筹码"><span class="coin"></span><b id="myChips" class="num">1,000</b></span>
@@ -371,6 +372,12 @@ const sget = k => { try { return sessionStorage.getItem(k); } catch (e) { return
 const sset = (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} };
 const SERVED = /^https?:/.test(location.protocol);
 if (!SERVED) $('#bBack').href = 'index.html';
+/* switching games mid-session: a room closes and a bet on the table is lost, so ask first */
+$('#bBack').addEventListener('click', e => {
+  const busy = NET.role === 'host' ? '你是房主，离开会关闭房间，朋友也会被请出去。' : NET.role === 'guest' ? '离开会退出这个房间。'
+    : T && T.phase !== 'bet' ? '这一手还没打完，离开的话这手下的注就没了。' : '';
+  if (busy && !confirm(busy + '确定回去玩德州吗？')) e.preventDefault();
+});
 
 /* ---------- cards ---------- */
 const SUIT = ['♠', '♥', '♦', '♣'];
