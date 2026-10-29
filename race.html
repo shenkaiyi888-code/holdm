@@ -716,6 +716,8 @@ function schedule(){
 async function startRace(){
   clearTimeout(loopT);
   if (T.phase !== 'bet') return;
+  /* alone with the page in the background: hold the gates until you come back */
+  if (!NET.role && document.hidden){ loopT = setTimeout(startRace, 1000); return; }
   const my = ++runId;
   T.round++; T.phase = 'race'; T.result = null;
   T.seats.forEach(s => {
