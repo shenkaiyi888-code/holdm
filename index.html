@@ -1280,7 +1280,13 @@ const STYLES = [
   {style:'职业·高压', tight:-.06, aggr:.84, bluff:.18, pro:{pos:1, cbet:.8, barrel:.5, iters:500}},
   {style:'职业·均衡', tight:.02, aggr:.62, bluff:.12, pro:{pos:1, cbet:.6, balance:1, iters:600}},
   {style:'职业·读牌', tight:.03, aggr:.60, bluff:.10, pro:{pos:1, cbet:.6, exploit:1, iters:600}},
+  /* named characters: they sit down under their own name */
+  {style:'千变万化', tight:.02, aggr:.6, bluff:.14, char:'戎沈楷轶', shift:1},
+  {style:'永远坚果', tight:-.1, aggr:.68, bluff:.04, char:'傅楠童', nuts:1},
+  {style:'诚实大牌', tight:.12, aggr:.82, bluff:0, char:'周俪澎', honest:1},
+  {style:'复盘狂', tight:.16, aggr:.5, bluff:.05, char:'虞子辰', review:1},
 ];
+const styleDef = p => STYLES.find(x => x.style === p.style) || {};
 const PRO = x => x.startsWith('职业');
 /* ---------- table personalities ----------
    Each style has a voice (preset lines only: moods, never cards), a temper (how easily a bad hand gets to it),
@@ -1306,6 +1312,22 @@ const VOICE = {
   '紧弱':{hi:['我、我小心点玩。','大家手下留情。'], win:['终于赢了一把……','呼，吓死我了。'], bigWin:['我、我真的赢了？','太紧张了……'],
     lose:['我就知道……','又输了。'], badBeat:['为什么总是我……','我不玩了……开玩笑的。'], tilt:['我真的生气了！','这次我不怕了！'],
     allIn:['我、我全下了！','拼了！'], tank:['好可怕……','要不要弃呢……'], caught:['你骗我！','早知道就跟了……'], needle:['你别老加注吓我啊。','又加？我怕了。']},
+  '千变万化':{hi:['今天你们猜不到我怎么打。','来吧，看谁先被我绕晕。'], win:['就这？','谢谢送钱～','我闭着眼都能赢你。'], bigWin:['服不服？','这池子写我名字的。'],
+    lose:['让你一把，别太得意。','运气好而已，下把还回来。'], badBeat:['这也能中？你家发牌员亲戚吧。','行，你命好。'], tilt:['好，我认真了。','接下来你们别哭。'],
+    allIn:['敢跟吗？不敢就弃吧～','全下，吓到没？'], tank:['你猜我在想什么？','演一下，别急。'], caught:['哟，偷鸡啊，下次我照着偷回来。','有点东西嘛。'],
+    needle:['你这注下得好心虚哦。','又加？手抖了？','我看穿你了，你信吗？'], shift:['换个打法，猜猜我现在是什么风格？','刚才那个我是装的。','今天换个人格。']},
+  '永远坚果':{hi:['今天我手里每把都是坚果。','坐稳了，我要开始赢了。'], win:['我就说我是坚果！','早告诉你们了。'], bigWin:['坚果就是坚果！','看吧，我从来不会错。'],
+    lose:['啊？？你怎么领先我这么多！','等等，我不是坚果吗？'], badBeat:['不可能！我明明是坚果！','这牌有问题！'], tilt:['下一把我肯定是坚果。','不服，再来！'],
+    allIn:['坚果！全下！','我不可能输！'], tank:['这把我肯定是坚果……对吧？','让我确认一下我有多坚果。'], caught:['你居然在诈？我还以为你有坚果。','好吧，这次不算。'],
+    needle:['你加注？可我是坚果哦。','加吧加吧，反正我最大。'], shocked:['啊？？你怎么领先我这么多！','我……我还以为我是坚果……','翻开才发现我是第二名……','怎么又是你领先我？！']},
+  '诚实大牌':{hi:['嘻嘻，大家好～','我只玩好牌的，嘻嘻。'], win:['嘻嘻，谢谢～','嘻嘻嘻，我就说我有。'], bigWin:['哈哈哈好开心！','嘻嘻，今天运气好～'],
+    lose:['嘻嘻，没关系～','你好厉害呀，嘻嘻。'], badBeat:['哎呀，嘻嘻，算你的～','差一点点嘛，嘻嘻。'], tilt:['嘻嘻……有一点点不开心。','不笑了，认真了。'],
+    allIn:['嘻嘻，我有大牌哦～','真的有，嘻嘻，信我。'], tank:['嘻嘻，让我想想～','嗯……嘻嘻。'], caught:['你骗人！嘻嘻，下次不信你了。','嘻嘻，被你骗了。'],
+    needle:['你加注好凶呀，嘻嘻。','嘻嘻，你是不是真有？']},
+  '复盘狂':{hi:['今天每手都记下来，回去复盘。','打完一起复盘吗？'], win:['嗯，跟复盘里想的一样。','这条线是对的。'], bigWin:['这一手可以写进复盘笔记。','标准的价值线，记下来。'],
+    lose:['回去要复盘一下这手。','我刚才哪一街打错了……'], badBeat:['数学上我是对的，结果不重要。','这手复盘我没错。'], tilt:['不行，这手得复盘三遍。','连续几手打得不好，我先冷静。'],
+    allIn:['全下，按计划来。','这是复盘过的打法。'], tank:['我算一下底池赔率。','按我复盘的结论……'], caught:['原来是诈唬，你的下注尺度我记下了。','这手回去要重点复盘。'],
+    needle:['你的加注频率我在统计。','你这一手的尺度很有意思。'], review:['这手打完了，大家可以点上面的「复盘」看看。','刚才那手转牌，其实可以更好。','这手值得复盘：每一街的尺度都有讲究。','记下来，回去复盘。','有空一起复盘这手吧。']},
   pro:{hi:['GL。','开始吧。'], win:['nh。','谢谢。'], bigWin:['这个池子打得很标准。'], lose:['nh，打得好。','方差。'],
     badBeat:['方差，没事。','长期会回来的。'], tilt:['……深呼吸。'], allIn:['全下。'], tank:['我算一下范围。','用一下时间。'],
     caught:['有意思的诈唬线。','记下了。'], needle:['你的加注频率有点高。']}
@@ -1319,6 +1341,10 @@ const PERSONA = {
   '疯子':{v:'疯子', talk:.75, tiltK:1.4, speed:.6, trap:.05, size:1.4},
   '均衡':{v:'均衡', talk:.35, tiltK:.6, speed:1, trap:.2, size:1},
   '紧弱':{v:'紧弱', talk:.3, tiltK:.9, speed:1.3, trap:.25, size:.55},
+  '千变万化':{v:'千变万化', talk:.8, tiltK:.8, speed:.9, trap:.25, size:1},
+  '永远坚果':{v:'永远坚果', talk:.6, tiltK:.7, speed:.8, trap:.05, size:1.2},
+  '诚实大牌':{v:'诚实大牌', talk:.55, tiltK:.4, speed:1, trap:0, size:1.2},
+  '复盘狂':{v:'复盘狂', talk:.5, tiltK:.5, speed:1.25, trap:.15, size:.9},
   pro:{v:'pro', talk:.2, tiltK:.25, speed:1.05, trap:.25, size:1}
 };
 const persona = p => PERSONA[p.style] || (p.pro ? PERSONA.pro : PERSONA['均衡']);
@@ -1336,6 +1362,14 @@ function addTilt(p, x){
 }
 function coolDown(){
   G.players.forEach(p => { if (!p.human){ p.tilt = (p.tilt || 0) * .85; p.heat = (p.heat || 0) * .7; } });
+  /* 千变万化: every few hands they quietly switch to another way of playing */
+  G.players.forEach(p => {
+    if (p.human || p.out || p.vacant || !styleDef(p).shift || (p.mask && Math.random() > .35)) return;
+    const pool = STYLES.filter(x => !x.char && x.style !== p.mask), b = pool[Math.floor(Math.random() * pool.length)];
+    const first = !p.mask;
+    Object.assign(p, {tight:b.tight, aggr:b.aggr, bluff:b.bluff, mask:b.style});
+    if (!first) later(() => botSay(p, 'shift', .5), 2200);
+  });
 }
 /* a bot says one of its preset lines over its seat; friends see it too */
 let talkAt = 0;
@@ -1387,6 +1421,9 @@ function moodAfterHand(){
     if (net >= Math.max(bb * 20, p.startChips * .3)){ p.heat = Math.min(1, (p.heat || 0) + .45); p.tilt = (p.tilt || 0) * .5; want(p, 'bigWin', 2); }
     else if (p.won > 0 && net > bb * 6) want(p, 'win', 1);
     if (tilted){ log(`${p.name}看起来有点上头了`, 'sys'); want(p, 'tilt', 4); }
+    const d = styleDef(p);
+    if (d.nuts && H.showdown && !p.folded && p.won === 0) want(p, 'shocked', 5);
+    if (d.review && (H.showdown || Math.abs(net) > bb * 6) && Math.random() < .6) want(p, 'review', .9);
   });
   if (say) wait(() => botSay(say.p, say.key, say.key === 'win' ? .8 : 1.8), 900 + Math.random() * 600);
 }
@@ -1841,9 +1878,19 @@ let botPrefs = pad7([], 'random');
 try { const v = JSON.parse(store.get('holdem.botPrefs', 'null')); if (Array.isArray(v) && (v.length === 5 || v.length === 7)) botPrefs = pad7(v, 'random'); } catch (e) {}
 /* avoid: a style not to draw again, so a newcomer on a random seat never plays like the player who just left */
 function applyPref(p, pref, avoid){
-  const pool = STYLES.filter(x => x.style !== avoid);
-  const st = pref === 'random' ? pool[Math.floor(Math.random() * pool.length)] : (STYLES.find(x => x.style === pref) || STYLES[5]);
-  Object.assign(p, {style:st.style, tight:st.tight, aggr:st.aggr, bluff:st.bluff, pro:st.pro || null, hidden:pref === 'random'});
+  const taken = new Set(G.players.filter(q => q !== p && !q.vacant).map(q => q.name).concat([myName]));
+  const pool = STYLES.filter(x => x.style !== avoid && !(x.char && taken.has(x.char)));
+  let st;
+  if (pref === 'random'){
+    /* a seat left on random is sometimes taken by one of the named characters (not when you named that seat yourself) */
+    const chars = botNames.includes(p.name) ? [] : pool.filter(x => x.char), plain = pool.filter(x => !x.char);
+    const from = chars.length && Math.random() < .4 ? chars : plain;
+    st = from[Math.floor(Math.random() * from.length)];
+  } else st = STYLES.find(x => x.style === pref) || STYLES[5];
+  const wasChar = STYLES.some(x => x.char && x.char === p.name);
+  Object.assign(p, {style:st.style, tight:st.tight, aggr:st.aggr, bluff:st.bluff, pro:st.pro || null, hidden:pref === 'random' && !st.char, mask:''});
+  if (st.char && !taken.has(st.char)) p.name = st.char;
+  else if (wasChar && p.name !== st.char) p.name = freshName([...taken]);
 }
 const styleLabel = p => p.hidden ? '？' : p.style;
 function initPlayers(){
@@ -2503,6 +2550,7 @@ function boardTexture(b){
 /* decide whether this is a good spot to bluff, and with what story */
 function bluffPlan(p, i, c){
   const M = eff(p);
+  if (styleDef(p).honest) return null;
   const {eq, opps, toCall, pot, canRaise} = c;
   if (!canRaise) return null;
   const share = 1 / (opps + 1);
@@ -2551,7 +2599,10 @@ function botAct(i){
   G.bluffFlag = null;
   const pro = p.pro, M = eff(p), pr = persona(p);
   const opps = G.players.filter(q => q !== p && !q.out && !q.folded).length;
-  const eq = equity(p.hand, G.board, opps, pro ? pro.iters : 260);
+  const def = styleDef(p);
+  let eq = equity(p.hand, G.board, opps, pro ? pro.iters : 260);
+  /* 傅楠童 always believes she holds the nuts */
+  if (def.nuts) eq = Math.min(.97, eq + (G.street ? .22 : .12));
   let posAdj = 0;
   const late = i === G.dealer || nextIdx(i, q => !q.out) === G.dealer;
   if (pro && pro.pos) posAdj = late ? -.12 : (i === G.sbIdx || i === G.bbIdx) ? 0 : .05;
@@ -2607,7 +2658,7 @@ function botAct(i){
       return doAction(i, 'raise', Math.min(Math.max(blindTop * (pro ? 2 + Math.round(Math.random()) : 2 + Math.floor(Math.random() * 3)), minTo), p.bet + p.chips));
     }
     const unopened = G.players.every((q, j) => j === G.sbIdx || j === G.bbIdx || j === G.straddleIdx || q.bet === 0);
-    if (canRaise && unopened && (late || i === G.sbIdx) && toCall <= blindTop){
+    if (canRaise && unopened && !def.honest && (late || i === G.sbIdx) && toCall <= blindTop){
       const K = Math.max(.2, Math.min(2.4, M.bluff * 10));
       if (Math.random() < Math.min(.8, (.15 + M.aggr * .3) * K)){
         G.bluffFlag = eq <= medT ? 'steal' : null;
@@ -3617,7 +3668,8 @@ $('#tabGuide').addEventListener('click', () => showTab(true));
 renderGuide();
 function renderBots(){
   const opts = '<option value="random">随机（隐藏）</option>'
-    + `<optgroup label="普通玩家">${STYLES.filter(x => !PRO(x.style)).map(x => `<option value="${x.style}">${x.style}</option>`).join('')}</optgroup>`
+    + `<optgroup label="角色">${STYLES.filter(x => x.char).map(x => `<option value="${x.style}">${x.char}（${x.style}）</option>`).join('')}</optgroup>`
+    + `<optgroup label="普通玩家">${STYLES.filter(x => !PRO(x.style) && !x.char).map(x => `<option value="${x.style}">${x.style}</option>`).join('')}</optgroup>`
     + `<optgroup label="职业模板">${STYLES.filter(x => PRO(x.style)).map(x => `<option value="${x.style}">${x.style}</option>`).join('')}</optgroup>`;
   const avaBtn = (p, key, h) => `<label class="ava ava-up${p.ava ? ' pic' : ' chip'}" style="--h:${h};${p.ava ? `background-image:url(${p.ava})` : ''}" title="上传头像">${p.ava ? '' : chipAva(p.name, key === 'me', key === 'me' ? undefined : key)}<input type="file" accept="image/*" data-ava="${key}" aria-label="上传${esc(p.name)}的头像"></label>`;
   const me = G.players[0];
@@ -3672,7 +3724,9 @@ function renderBots(){
   $('#bxRows').querySelectorAll('select').forEach(sel => sel.addEventListener('change', () => {
     const k = +sel.dataset.k, v = sel.value, p = G.players[k + 1];
     botPrefs[k] = v; store.set('holdem.botPrefs', JSON.stringify(botPrefs));
+    const was = p.name;
     applyPref(p, v);
+    if (p.name !== was) log(`${was}的座位换成了${p.name}`, 'sys');
     log(v === 'random' ? `${p.name}的打法已重新随机（隐藏）` : `${p.name}的打法改为${v}`, 'sys');
     renderBots(); render();
   }));
