@@ -664,6 +664,9 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .say::after{content:""; position:absolute; left:50%; top:100%; margin-left:-5px; border:5px solid transparent; border-top-color:var(--ivory)}
 .say.big::after{display:none}
 .say.bye{opacity:0; transition:opacity .4s}
+/* seats along the top edge talk downwards, so the dealer's bubble never covers them */
+.say.down{bottom:auto; top:calc(100% - 4px)}
+.say.down::after{top:auto; bottom:100%; border-top-color:transparent; border-bottom-color:var(--ivory)}
 @keyframes sayin{from{transform:translateX(-50%) translateY(6px) scale(.85); opacity:0}}
 .seat.away .pod{border-style:dashed; opacity:.75}
 .tag.away{color:#ff9a90}
@@ -1279,6 +1282,114 @@ const STYLES = [
   {style:'职业·读牌', tight:.03, aggr:.60, bluff:.10, pro:{pos:1, cbet:.6, exploit:1, iters:600}},
 ];
 const PRO = x => x.startsWith('职业');
+/* ---------- table personalities ----------
+   Each style has a voice (preset lines only: moods, never cards), a temper (how easily a bad hand gets to it),
+   a pace, a taste for slow-playing big hands and a betting size habit. */
+const VOICE = {
+  '紧凶':{hi:['来吧，认真打。','今天手感不错。'], win:['该是我的。','稳。','谢了。'], bigWin:['这一手等很久了。','耐心有回报。'],
+    lose:['行，这把算你的。','下手讨回来。'], badBeat:['……这也能中？','算你运气好。'], tilt:['好，我记住了。','别让我再碰到你。'],
+    allIn:['全下，你看着办。','我推了。'], tank:['让我想想。','嗯……'], caught:['原来是偷鸡，下次不让了。','行，你有种。'], needle:['你今天下注有点多啊。','又加？']},
+  '松凶':{hi:['今晚玩大点！','来来来，别磨叽。'], win:['哈，拿来吧。','就喜欢这种池子。','爽！'], bigWin:['今天手热，挡不住！','全场最佳就是我。'],
+    lose:['小意思，再来。','送你的，别客气。'], badBeat:['这河牌太离谱了吧！','发牌员针对我？'], tilt:['好，接下来我每手都打！','不信邪，再来！'],
+    allIn:['推了推了！','敢跟吗？'], tank:['嗯……有点意思。','你想骗我？'], caught:['哈！原来你也会偷。','行啊，学我是吧。'], needle:['加这么多，吓唬谁呢？','你这下注我不太信。']},
+  '跟注站':{hi:['我就看看牌。','随便玩玩～'], win:['哎，跟着跟着就赢了。','还是跟注好。'], bigWin:['我就说要跟到底！','早知道你在诈！'],
+    lose:['我就想看看你什么牌。','好奇心害死猫。'], badBeat:['唉，差一点。','就差一张。'], tilt:['下一把我还是要跟的。','不看到牌我睡不着。'],
+    allIn:['那……我也全下吧。','反正都投这么多了。'], tank:['跟还是不跟呢……','我再看看。'], caught:['我就知道！下次我一定跟。','你骗得了别人骗不了我。'], needle:['你下注我就想跟。','这么大？我好奇。']},
+  '岩石':{hi:['……'], win:['嗯。','……'], bigWin:['等的就是这一手。'], lose:['……'], badBeat:['……算了。'], tilt:['……'],
+    allIn:['全下。'], tank:['……'], caught:['……记下了。'], needle:['……']},
+  '疯子':{hi:['今晚谁也别想安静！','我来了！筹码准备好！'], win:['哈哈哈哈！','又是我！','谁还敢跟我打？'], bigWin:['我是牌神！！','这就是勇气的回报！'],
+    lose:['没事没事，下一把加倍！','哎呀，手滑。'], badBeat:['这都能输？？？','我要换副牌！'], tilt:['好！我现在超级上头！','接下来每把都全下！'],
+    allIn:['全下！谁怕谁！','梭了！！','冲冲冲！'], tank:['嗯？你在想什么？','我数到三……'], caught:['哈！你比我还疯！','高手，佩服佩服。'], needle:['你加注？我也加！','来啊，互相伤害啊！']},
+  '均衡':{hi:['祝大家好运。','开始吧。'], win:['不错。','收下了。'], bigWin:['这一手打得漂亮。'], lose:['正常，扑克就是这样。','你这把打得好。'],
+    badBeat:['这就是扑克。','概率而已。'], tilt:['冷静，冷静……','好吧，有点烦了。'], allIn:['全下。','我来决定这一手。'],
+    tank:['这个不好决定。','算一下……'], caught:['原来是这样，学到了。','好一个偷鸡。'], needle:['你很主动嘛。','你一直在加。']},
+  '紧弱':{hi:['我、我小心点玩。','大家手下留情。'], win:['终于赢了一把……','呼，吓死我了。'], bigWin:['我、我真的赢了？','太紧张了……'],
+    lose:['我就知道……','又输了。'], badBeat:['为什么总是我……','我不玩了……开玩笑的。'], tilt:['我真的生气了！','这次我不怕了！'],
+    allIn:['我、我全下了！','拼了！'], tank:['好可怕……','要不要弃呢……'], caught:['你骗我！','早知道就跟了……'], needle:['你别老加注吓我啊。','又加？我怕了。']},
+  pro:{hi:['GL。','开始吧。'], win:['nh。','谢谢。'], bigWin:['这个池子打得很标准。'], lose:['nh，打得好。','方差。'],
+    badBeat:['方差，没事。','长期会回来的。'], tilt:['……深呼吸。'], allIn:['全下。'], tank:['我算一下范围。','用一下时间。'],
+    caught:['有意思的诈唬线。','记下了。'], needle:['你的加注频率有点高。']}
+};
+/* talk: how chatty; tiltK: how easily it tilts; speed: think-time factor; trap: chance to slow-play a big hand; size: bet size habit */
+const PERSONA = {
+  '紧凶':{v:'紧凶', talk:.35, tiltK:.6, speed:1, trap:.2, size:1},
+  '松凶':{v:'松凶', talk:.55, tiltK:1, speed:.8, trap:.12, size:1.15},
+  '跟注站':{v:'跟注站', talk:.45, tiltK:.7, speed:1.1, trap:.1, size:.65},
+  '岩石':{v:'岩石', talk:.15, tiltK:.3, speed:1.2, trap:.35, size:.9},
+  '疯子':{v:'疯子', talk:.75, tiltK:1.4, speed:.6, trap:.05, size:1.4},
+  '均衡':{v:'均衡', talk:.35, tiltK:.6, speed:1, trap:.2, size:1},
+  '紧弱':{v:'紧弱', talk:.3, tiltK:.9, speed:1.3, trap:.25, size:.55},
+  pro:{v:'pro', talk:.2, tiltK:.25, speed:1.05, trap:.25, size:1}
+};
+const persona = p => PERSONA[p.style] || (p.pro ? PERSONA.pro : PERSONA['均衡']);
+/* mood shifts the style: on tilt (lost a big pot, got bluffed, got rivered) looser, more aggressive and bluffier;
+   on a heater (just won big) a little bolder. Both fade over a few hands. */
+function eff(p){
+  const t = p.tilt || 0, h = p.heat || 0;
+  return {tight:p.tight - t * .14 - h * .03, aggr:Math.min(.97, p.aggr + t * .3 + h * .08), bluff:p.bluff + t * .14 + h * .03};
+}
+function addTilt(p, x){
+  if (!p || p.human) return false;
+  const before = p.tilt || 0;
+  p.tilt = Math.min(1, before + x * persona(p).tiltK);
+  return before < .45 && p.tilt >= .45;
+}
+function coolDown(){
+  G.players.forEach(p => { if (!p.human){ p.tilt = (p.tilt || 0) * .85; p.heat = (p.heat || 0) * .7; } });
+}
+/* a bot says one of its preset lines over its seat; friends see it too */
+let talkAt = 0;
+function botSay(p, key, chance = 1){
+  if (!p || p.human || p.out || p.vacant || NET.role === 'guest') return false;
+  const pr = persona(p), lines = (VOICE[pr.v] || {})[key];
+  if (!lines || !lines.length) return false;
+  const now = Date.now();
+  if (now - talkAt < 2200 || now - (p.talkAt || 0) < 9000) return false;
+  if (Math.random() >= Math.min(1, pr.talk * chance)) return false;
+  talkAt = p.talkAt = now;
+  const text = lines[Math.floor(Math.random() * lines.length)], k = G.players.indexOf(p);
+  seatSay(k, p.name, text);
+  if (NET.role === 'host'){ NET.out.talk.push([k, text]); netQueueSync(); }
+  return true;
+}
+/* how long a bot sits on a decision: easy folds are quick, close spots and big bets take longer, a big hand is
+   sometimes snapped and sometimes slow-rolled into a long think */
+function botThink(p){
+  const pr = persona(p), toCall = Math.max(0, G.currentBet - p.bet), pot = potTotal();
+  const opps = G.players.filter(q => q !== p && !q.out && !q.folded).length;
+  const eq = equity(p.hand, G.board, opps, 120);
+  const odds = toCall > 0 ? toCall / (pot + toCall) : 0;
+  let ms;
+  if (toCall > 0 && eq < odds * .6) ms = 380 + Math.random() * 420;
+  else {
+    const close = Math.max(0, 1 - Math.abs(eq - Math.max(odds, 1 / (opps + 1))) * 4);
+    const big = toCall > 0 ? Math.min(1, toCall / Math.max(1, p.chips) * 1.5) : 0;
+    ms = 550 + Math.random() * 650 + close * 1300 + big * 1300 + (G.street === 3 ? 300 : 0);
+  }
+  if (eq > .85 && Math.random() < .3) ms = Math.random() < .5 ? 420 + Math.random() * 300 : ms + 1200;
+  ms *= pr.speed * (1 - (p.tilt || 0) * .35);
+  ms = Math.max(380, Math.min(4200, ms));
+  if (ms > 2500) botSay(p, 'tank', .7);
+  return ms;
+}
+/* after the hand: moods move, and the player with the most to say says it */
+function moodAfterHand(){
+  const bb = G.bbAmt;
+  let say = null;
+  const want = (p, key, w) => { if (!say || w > say.w) say = {p, key, w}; };
+  G.players.forEach(p => {
+    if (p.human || p.out || p.vacant || !p.hand.length) return;
+    const net = p.chips - p.startChips;
+    let tilted = false;
+    if (H.showdown && !p.folded && p.won === 0 && beatOnRiver(p)){ tilted = addTilt(p, .35) || tilted; want(p, 'badBeat', 3); }
+    if (net <= -Math.max(bb * 20, p.startChips * .35)){ tilted = addTilt(p, .35) || tilted; want(p, 'lose', 1.5); }
+    else if (net < -bb * 8 && H.showdown && !p.folded) tilted = addTilt(p, .15) || tilted;
+    if (net >= Math.max(bb * 20, p.startChips * .3)){ p.heat = Math.min(1, (p.heat || 0) + .45); p.tilt = (p.tilt || 0) * .5; want(p, 'bigWin', 2); }
+    else if (p.won > 0 && net > bb * 6) want(p, 'win', 1);
+    if (tilted){ log(`${p.name}看起来有点上头了`, 'sys'); want(p, 'tilt', 4); }
+  });
+  if (say) wait(() => botSay(say.p, say.key, say.key === 'win' ? .8 : 1.8), 900 + Math.random() * 600);
+}
 const NAMES = ['老K','阿梅','大熊','小林','阿杰','豆豆','老周','莉莉','阿飞','小鹿','老陈','七七',
   '阿彪','小雨','老吴','糖糖','阿龙','小美','老赵','胖胖','阿宁','小白','老黄','可可','阿强','小雪','老钱','乐乐','阿明','小米'];
 const pickN = (arr, n) => arr.slice().sort(() => Math.random() - .5).slice(0, n);
@@ -1366,7 +1477,7 @@ let H = null; const HISTORY = [];
 G.handTips = 0;
 /* online play: role is null (offline), 'host' (runs the game) or 'guest' (mirrors the host) */
 let SEATS = (() => { try { return localStorage.getItem('holdem.seats') === '8' ? 8 : 6; } catch (e) { return 6; } })();
-const NET = {role:null, room:'', id:'', peers:new Map(), out:{logs:[], says:[]}, seq:0};
+const NET = {role:null, room:'', id:'', peers:new Map(), out:{logs:[], says:[], talk:[]}, seq:0};
 const PERSONAL_SAY = new Set(['heroRebuy', 'heroAllIn', 'heroFold', 'heroCheck', 'heroCall', 'heroRaise', 'idle', 'bluffWin', 'badBeat', 'royal', 'youLose', 'badCall', 'loseStreak', 'unlockFind', 'unlockChamp', 'lazyFold', 'youWin', 'youWinBig', 'youLoseBig', 'otherWin', 'champion', 'bust', 'imgBluffy', 'imgHonest',
   'showBluff', 'showValue', 'showOther', 'smoke', 'tipS', 'tipM', 'tipL', 'ritAsk', 'ritBotAsk', 'botShowFold']);
 const online = () => NET.role === 'host' && [...NET.peers.values()].some(x => x.seat > 0);
@@ -1749,7 +1860,7 @@ function initPlayers(){
 }
 function resetPlayer(p){
   p.hand = []; p.folded = false; p.allIn = false; p.bet = 0; p.total = 0; p.acted = false; p.actedAt = null;
-  p.lastAction = ''; p.showCards = false; p.won = 0; p.score = 0; p.fv = false; p.fp = false; p.checked = false; p.hadDraw = false; p.bluffedHand = false; p.shown = false; p.mucked = false; p.foldSt = -1; p.foldedToMe = false;
+  p.lastAction = ''; p.showCards = false; p.won = 0; p.score = 0; p.fv = false; p.fp = false; p.checked = false; p.hadDraw = false; p.bluffedHand = false; p.shown = false; p.mucked = false; p.foldSt = -1; p.foldedToMe = false; p.trapping = false;
 }
 /* Fair dealing: the deck is shuffled with the browser's cryptographic random generator
    (crypto.getRandomValues) using an unbiased Fisher-Yates shuffle with rejection sampling,
@@ -1877,6 +1988,8 @@ function startHand(){
   }
   if (G.sayNext){ dealerSay(...G.sayNext); G.sayNext = null; }
   else dealerSay(G.handNo === 1 && !G.resumed ? 'hello' : 'newHand');
+  coolDown();
+  if (G.handNo === 1 && !G.resumed){ const bots = G.players.filter(q => !q.human && !q.out && !q.vacant); if (bots.length) later(() => botSay(bots[Math.floor(Math.random() * bots.length)], 'hi', 1.5), 1600); }
   G.resumed = false;
   saveGame();
   G.currentBet = G.straddleIdx >= 0 ? G.bbAmt * 2 : G.bbAmt; G.minRaise = G.currentBet;
@@ -1915,7 +2028,7 @@ function proceed(){
     return;
   }
   G.thinking = i; render();
-  later(() => botAct(i), 650 + Math.random() * 650);
+  later(() => botAct(i), botThink(p));
 }
 function doAction(i, type, to){
   if (NET.role === 'guest'){ if (i === 0 && G.waiting) netGuestAct(type, to); return; }
@@ -1961,6 +2074,11 @@ function doAction(i, type, to){
   H.streets[H.streets.length - 1].acts.push({i, text, pot:potTotal(), bluff:p.human ? null : (G.bluffFlag || null)});
   if (G.bluffFlag && !p.human) p.bluffedHand = true;
   G.bluffFlag = null;
+  if (!p.human && p.allIn && type !== 'fold') botSay(p, 'allIn', 1.1);
+  else if (p.human && type === 'raise' && (G.streetRaises >= 2 || (p.st && p.st.hands >= 6 && p.st.raises > p.st.hands))){
+    const lb = G.players.filter(q => !q.human && !q.folded && !q.out);
+    if (lb.length) botSay(lb[Math.floor(Math.random() * lb.length)], 'needle', .45);
+  }
   if (pre){ pre.type = type; pre.text = text; Object.assign(pre, judge(pre)); pre.fix = fixFor(pre); H.decisions.push(pre); }
   if (p.allIn && type !== 'fold') dealerSay(i === 0 && hasLine('heroAllIn') ? 'heroAllIn' : 'allIn', {name:p.name});
   else if (i === 0 && pre && type === 'call' && pre.grade === 'bad' && hasLine('badCall') && Math.random() < .75) dealerSay('badCall');
@@ -2089,6 +2207,7 @@ function endHand(){
   H.players.forEach((hp, i) => { hp.won = G.players[i].won; hp.end = G.players[i].chips; });
   H.net = me.chips + G.handTips - me.startChips;
   netHandDone();
+  moodAfterHand();
   const top = G.players.filter(p => p.won > 0).sort((a, b) => b.won - a.won)[0];
   if (H.net > 0) G.loseRun = 0; else if (H.net < 0) G.loseRun = (G.loseRun || 0) + 1;
   clearTimeout(G.idleT);
@@ -2383,6 +2502,7 @@ function boardTexture(b){
 }
 /* decide whether this is a good spot to bluff, and with what story */
 function bluffPlan(p, i, c){
+  const M = eff(p);
   const {eq, opps, toCall, pot, canRaise} = c;
   if (!canRaise) return null;
   const share = 1 / (opps + 1);
@@ -2390,7 +2510,7 @@ function bluffPlan(p, i, c){
   const dr = drawInfo(p.hand, b);
   if (st >= 1 && st <= 2 && (dr.flush || dr.oesd)) p.hadDraw = true;
   if (eq > share * 1.4) return null;
-  const K = Math.max(.2, Math.min(2.4, p.bluff * 10));
+  const K = Math.max(.2, Math.min(2.4, M.bluff * 10));
   const oppF = [1, 1, .6, .3, .15, .1][Math.min(5, opps)];
   let fr = 1;
   const me = G.players[0];
@@ -2407,21 +2527,21 @@ function bluffPlan(p, i, c){
   const size = (lo, hi) => p.pro && p.pro.balance ? .66 : lo + Math.random() * (hi - lo);
   if (toCall === 0){
     if (st === 0) return null;
-    if ((dr.flush || dr.oesd) && st < 3) return pick('semi', .35 + p.aggr * .3, size(.5, .75));
-    if (st === 1 && G.lastAgg === i && opps <= 2) return pick('cbet', (tex.dry ? .45 : .25) + p.aggr * .2, size(.33, .55));
-    if (st >= 2 && G.lastAgg === i && tex.scare && opps <= 2) return pick('barrel', .3 + p.aggr * .25, size(.6, .8));
-    if (st === 3 && p.hadDraw && opps === 1) return pick('river', .35 + p.aggr * .25, size(.65, p.aggr > .8 ? 1.2 : .85));
-    if (inPos && checkedTo && opps <= 2) return pick('float', .18 + p.aggr * .2, size(.45, .65));
-    if (dr.gut && st < 3) return pick('semi', .12 + p.aggr * .15, size(.5, .7));
+    if ((dr.flush || dr.oesd) && st < 3) return pick('semi', .35 + M.aggr * .3, size(.5, .75));
+    if (st === 1 && G.lastAgg === i && opps <= 2) return pick('cbet', (tex.dry ? .45 : .25) + M.aggr * .2, size(.33, .55));
+    if (st >= 2 && G.lastAgg === i && tex.scare && opps <= 2) return pick('barrel', .3 + M.aggr * .25, size(.6, .8));
+    if (st === 3 && p.hadDraw && opps === 1) return pick('river', .35 + M.aggr * .25, size(.65, M.aggr > .8 ? 1.2 : .85));
+    if (inPos && checkedTo && opps <= 2) return pick('float', .18 + M.aggr * .2, size(.45, .65));
+    if (dr.gut && st < 3) return pick('semi', .12 + M.aggr * .15, size(.5, .7));
     return null;
   }
   if (st === 0){
     const [h1, h2] = p.hand, suited = cs(h1) === cs(h2), gap = Math.abs(cr(h1) - cr(h2)), hasA = cr(h1) === 14 || cr(h2) === 14;
-    if (G.streetRaises === 1 && inPos && suited && (hasA || gap <= 1) && toCall <= G.bbAmt * 5) return pick('three', .12 + p.aggr * .15, 0);
+    if (G.streetRaises === 1 && inPos && suited && (hasA || gap <= 1) && toCall <= G.bbAmt * 5) return pick('three', .12 + M.aggr * .15, 0);
     return null;
   }
-  if ((dr.flush || dr.oesd) && st < 3 && toCall <= pot * .7) return pick('semi', .12 + p.aggr * .22, size(.8, 1));
-  if (p.checked && opps === 1 && tex.wet && st < 3 && toCall <= pot * .6) return pick('xr', .06 + p.aggr * .1, size(.9, 1.1));
+  if ((dr.flush || dr.oesd) && st < 3 && toCall <= pot * .7) return pick('semi', .12 + M.aggr * .22, size(.8, 1));
+  if (p.checked && opps === 1 && tex.wet && st < 3 && toCall <= pot * .6) return pick('xr', .06 + M.aggr * .1, size(.9, 1.1));
   return null;
 }
 
@@ -2429,7 +2549,7 @@ function botAct(i){
   const p = G.players[i];
   if (G.toAct !== i || G.handOver) return;
   G.bluffFlag = null;
-  const pro = p.pro;
+  const pro = p.pro, M = eff(p), pr = persona(p);
   const opps = G.players.filter(q => q !== p && !q.out && !q.folded).length;
   const eq = equity(p.hand, G.board, opps, pro ? pro.iters : 260);
   let posAdj = 0;
@@ -2438,22 +2558,41 @@ function botAct(i){
   let valueK = 1;
   const me = G.players[0];
   if (pro && pro.exploit && !me.folded && !me.out && me.st.faced >= 4 && me.st.foldFaced / me.st.faced < .3) valueK = .82;
-  const share = 1 / (opps + 1), k = 1 + p.tight + posAdj;
+  const share = 1 / (opps + 1), k = 1 + M.tight + posAdj;
   const strongT = Math.min(.78, share * 2.2) * k;
   const medT = Math.min(.56, share * 1.5) * k * valueK;
   const pot = potTotal(), toCall = G.currentBet - p.bet, r = Math.random();
   const canRaise = p.chips > toCall && G.players.some(q => q !== p && canAct(q)) && G.streetRaises < 4 && mayRaise(p);
+  /* each style sizes its bets its own way; tilt makes every bet bigger */
+  const sizeK = (pro ? 1 : pr.size) * (1 + (p.tilt || 0) * .3);
   const sizeTo = frac => {
     const minTo = G.currentBet === 0 ? G.bbAmt : G.currentBet + G.minRaise;
-    const to = G.currentBet + Math.round((pot + toCall) * frac / 5) * 5;
+    const to = G.currentBet + Math.round((pot + toCall) * frac * sizeK / 5) * 5;
     return Math.min(Math.max(to, minTo), p.bet + p.chips);
   };
-  const valueSize = () => pro ? (pro.balance ? .66 : pro.value ? .75 + Math.random() * .25 : .55 + Math.random() * .4) : .45 + Math.random() * .5 * (.5 + p.aggr);
+  const valueSize = () => pro ? (pro.balance ? .66 : pro.value ? .75 + Math.random() * .25 : .55 + Math.random() * .4) : .45 + Math.random() * .5 * (.5 + M.aggr);
   const plan = () => bluffPlan(p, i, {eq, opps, toCall, pot, canRaise});
   const bluffRaise = bl => { G.bluffFlag = bl.kind; return doAction(i, 'raise', bl.size ? sizeTo(bl.size) : Math.min(Math.max(G.currentBet * 3, G.currentBet + G.minRaise), p.bet + p.chips)); };
+  /* stack depth in big blinds against the deepest opponent still in */
+  const deepest = Math.max(0, ...G.players.filter(q => q !== p && !q.out && !q.folded).map(q => q.chips + q.bet));
+  const effBB = Math.min(p.chips + p.bet, deepest) / G.bbAmt;
+  /* short stacked: before the flop it is all-in or fold, like a real short stack */
+  if (G.street === 0 && canRaise && effBB <= 12){
+    const c = chenScore(p.hand);
+    const T = 8 + M.tight * 12 - (12 - effBB) * .3 - M.aggr * 1.5 + (G.streetRaises >= 1 ? 2 : 0) + (opps >= 4 ? 1 : 0);
+    if (c >= T){ G.bluffFlag = eq < share ? 'steal' : null; return doAction(i, 'raise', p.bet + p.chips); }
+    if (toCall === 0) return doAction(i, 'check');
+    if (eq > toCall / (pot + toCall) && toCall <= pot * .25) return doAction(i, 'call');
+    return doAction(i, 'fold');
+  }
+  /* slow-play: with a monster on the flop or turn, some players check and wait for you to bet */
+  if (toCall === 0 && G.street >= 1 && G.street <= 2 && eq > .82 && opps <= 2 && !p.trapping && Math.random() < pr.trap * (1 - (p.tilt || 0))){
+    p.trapping = true;
+    return doAction(i, 'check');
+  }
 
   if (toCall === 0){
-    if (canRaise && ((eq > strongT && r < .55 + p.aggr * .45) || (eq > medT && r < p.aggr * .5)))
+    if (canRaise && ((eq > strongT && r < .55 + M.aggr * .45) || (eq > medT && r < M.aggr * .5)))
       return doAction(i, 'raise', sizeTo(valueSize()));
     if (pro && canRaise && G.street === 1 && G.lastAgg === i && eq > share && r < pro.cbet) return doAction(i, 'raise', sizeTo(.33 + Math.random() * .25));
     if (pro && pro.barrel && canRaise && G.street >= 2 && G.lastAgg === i && eq > share && r < pro.barrel) return doAction(i, 'raise', sizeTo(.66));
@@ -2463,14 +2602,14 @@ function botAct(i){
   }
   if (G.street === 0){
     const blindTop = G.straddleIdx >= 0 ? G.bbAmt * 2 : G.bbAmt;
-    if (canRaise && G.streetRaises < 2 && toCall <= blindTop && eq > medT && r < .2 + p.aggr * .65){
+    if (canRaise && G.streetRaises < 2 && toCall <= blindTop && eq > medT && r < .2 + M.aggr * .65){
       const minTo = G.currentBet + G.minRaise;
       return doAction(i, 'raise', Math.min(Math.max(blindTop * (pro ? 2 + Math.round(Math.random()) : 2 + Math.floor(Math.random() * 3)), minTo), p.bet + p.chips));
     }
     const unopened = G.players.every((q, j) => j === G.sbIdx || j === G.bbIdx || j === G.straddleIdx || q.bet === 0);
     if (canRaise && unopened && (late || i === G.sbIdx) && toCall <= blindTop){
-      const K = Math.max(.2, Math.min(2.4, p.bluff * 10));
-      if (Math.random() < Math.min(.8, (.15 + p.aggr * .3) * K)){
+      const K = Math.max(.2, Math.min(2.4, M.bluff * 10));
+      if (Math.random() < Math.min(.8, (.15 + M.aggr * .3) * K)){
         G.bluffFlag = eq <= medT ? 'steal' : null;
         return doAction(i, 'raise', Math.min(Math.max(Math.round(blindTop * 2.5), G.currentBet + G.minRaise), p.bet + p.chips));
       }
@@ -2483,28 +2622,33 @@ function botAct(i){
     const r2 = Math.random(), inPos = seatOrder(i) > seatOrder(G.streetAgg);
     const shoveOr = to => to >= (p.bet + p.chips) * .45 ? p.bet + p.chips : Math.min(to, p.bet + p.chips);
     if (G.street === 0){
-      let need = (G.streetRaises === 1 ? 10 : G.streetRaises === 2 ? 12 : 15) + Math.round(p.tight * 10);
+      let need = (G.streetRaises === 1 ? 10 : G.streetRaises === 2 ? 12 : 15) + Math.round(M.tight * 10);
       /* someone who raises every hand gets played back at lighter */
       const ag = G.players[G.streetAgg];
-      if (ag && ag.st && ag.st.hands >= 8 && ag.st.pfr / ag.st.hands > .35 && (pro || p.aggr > .6)) need -= 2;
-      if (chenScore(p.hand) >= need && r2 < .55 + p.aggr * .45)
+      if (ag && ag.st && ag.st.hands >= 8 && ag.st.pfr / ag.st.hands > .35 && (pro || M.aggr > .6)) need -= 2;
+      if (chenScore(p.hand) >= need && r2 < .55 + M.aggr * .45)
         return doAction(i, 'raise', shoveOr(Math.round(G.currentBet * (G.streetRaises === 1 ? (inPos ? 3 : 3.6) : 2.3) / 5) * 5));
     } else {
-      const raiseT = (opps === 1 ? .8 : Math.min(.86, share * 2.4)) + p.tight * .4 + (G.streetRaises >= 2 ? .1 : 0);
+      const raiseT = (opps === 1 ? .8 : Math.min(.86, share * 2.4)) + M.tight * .4 + (G.streetRaises >= 2 ? .1 : 0);
       /* a monster sometimes just calls to keep you betting */
-      if (eq > raiseT && !(eq > .95 && r2 < .25) && r2 < .5 + p.aggr * .45) return doAction(i, 'raise', shoveOr(sizeTo(pro ? valueSize() + .2 : .7 + Math.random() * .5)));
+      if (eq > raiseT && !(eq > .95 && r2 < .25) && r2 < .5 + M.aggr * .45) return doAction(i, 'raise', shoveOr(sizeTo(pro ? valueSize() + .2 : .7 + Math.random() * .5)));
     }
   }
   const potOdds = toCall / (pot + toCall);
-  if (pro && canRaise && G.street > 0 && p.checked && eq > strongT && r < .55) return doAction(i, 'raise', sizeTo(.9));
-  if (canRaise && eq > strongT && r < .35 + p.aggr * .6) return doAction(i, 'raise', sizeTo(pro ? valueSize() + .1 : .6 + Math.random() * .6));
+  if (canRaise && G.street > 0 && p.checked && eq > strongT && (p.trapping ? r < .75 : pro && r < .55)) return doAction(i, 'raise', sizeTo(.9));
+  if (canRaise && eq > strongT && r < .35 + M.aggr * .6) return doAction(i, 'raise', sizeTo(pro ? valueSize() + .1 : .6 + Math.random() * .6));
   if (G.street > 0){ const bl = plan(); if (bl) return bluffRaise(bl); }
-  let need = potOdds + p.tight * .4 + (toCall >= p.chips ? .05 : 0);
+  let need = potOdds + M.tight * .4 + (toCall >= p.chips ? .05 : 0);
   if (G.streetAgg === 0){
     const sens = p.pro ? (p.pro.exploit ? 1.6 : 1.2) : p.style === '跟注站' ? .3 : p.style === '岩石' ? .6 : 1;
     need = Math.max(.04, need - (bluffiness() - .5) * .3 * sens);
   }
   if (eq >= need || (toCall <= G.bbAmt && eq > potOdds * .8)) return doAction(i, 'call');
+  /* deep stacks: small pairs and suited connectors call a small raise to try to hit big */
+  if (G.street === 0 && effBB >= 80 && toCall <= p.chips * .05 && M.tight < .12){
+    const [h1, h2] = p.hand, gap = Math.abs(cr(h1) - cr(h2));
+    if (cr(h1) === cr(h2) || (cs(h1) === cs(h2) && gap <= 2)) return doAction(i, 'call');
+  }
   return doAction(i, 'fold');
 }
 
@@ -2674,10 +2818,15 @@ const REACT = {
   value:['好牌，佩服。', '行，你下注我信了。', '还好我弃了。'],
   other:['嗯……', '原来是这手。']
 };
-function botReact(kind){
-  const others = G.players.filter(q => !q.human && !q.out);
+function botReact(kind, seat = 0){
+  const others = G.players.filter(q => !q.human && !q.out && !q.vacant);
   if (!others.length) return;
-  const q = others[Math.floor(Math.random() * others.length)], pool = REACT[kind || 'other'];
+  /* the players you just bluffed out of the pot take it personally */
+  const victims = seat === 0 ? others.filter(q => q.folded && q.foldedToMe) : [];
+  if (kind === 'bluff') victims.forEach(q => { if (addTilt(q, .3)) log(`${q.name}看起来有点上头了`, 'sys'); });
+  const from = kind === 'bluff' && victims.length ? victims : others;
+  const q = from[Math.floor(Math.random() * from.length)], pool = REACT[kind || 'other'];
+  if (kind === 'bluff' && botSay(q, 'caught', 3)) return;
   log(`${q.name}：${pool[Math.floor(Math.random() * pool.length)]}`);
 }
 /* the hand ended before the river: the players who were dealt in may peek at the cards that never came.
@@ -2737,7 +2886,7 @@ function showHand(i){
   log(`${who}秀牌：${cards}`, 'sys');
   if (H){ (H.shows = H.shows || []).push(`${who}秀牌 ${cards}`); if (H.players[i]) H.players[i].shown = true; }
   if (i === 0) dealerSay(kind === 'bluff' ? 'showBluff' : kind === 'value' ? 'showValue' : 'showOther');
-  botReact(kind);
+  botReact(kind, i);
   if (i === 0) noteImage(kind, '秀牌');
   sfx('flip');
   render();
@@ -4146,12 +4295,13 @@ let syncT = 0;
 function netQueueSync(){ if (!syncT) syncT = setTimeout(netFlush, 40); }
 function netFlush(){
   syncT = 0;
-  const logs = NET.out.logs.splice(0), says = NET.out.says.splice(0), hist = NET.out.hist;
+  const logs = NET.out.logs.splice(0), says = NET.out.says.splice(0), talk = NET.out.talk.splice(0), hist = NET.out.hist;
   NET.out.hist = null;
   const batch = [];
   NET.peers.forEach(x => {
     if (!x.online) return;
     const msg = {t:'sync', seq:++NET.seq, s:snapFor(x), logs, says};
+    if (talk.length){ const N = G.players.length, s0 = x.seat || 0; msg.talk = talk.map(([k, t]) => [(k - s0 + N) % N, t]); }
     if (hist && x.seat && G.players[x.seat].remote === x.id && hist.players[x.seat] && !hist.players[x.seat].out) msg.hist = histFor(hist, x.seat);
     batch.push({to:x.id, msg});
   });
@@ -4209,6 +4359,7 @@ function netApply(m){
   if (G.waiting && !wasWaiting) setRaiseDefaults();
   (m.logs || []).forEach(([t, c]) => log(t, c || undefined));
   render();
+  (m.talk || []).forEach(([k, t]) => { if (typeof t === 'string' && G.players[k]) seatSay(k, G.players[k].name, t.slice(0, 40)); });
   if (newHand && G.handNo && !G.handOver) animateDeal();
   if (G.waiting && !wasWaiting) sfx('turn');
   (m.says || []).forEach(([k, v]) => {
@@ -4268,15 +4419,21 @@ function netShowChat(from, name, q){
   if (typeof q !== 'number' || !text) return;
   name = String(name || '玩家').slice(0, 8);
   const k = G.players.findIndex((p, i) => NET.role === 'host' ? (p.remote === from || (from === NET.id && i === 0)) : p.pid === from);
+  seatSay(k, name, text);
+}
+/* a chat line in the log and a speech bubble over seat k (k < 0: log only) */
+function seatSay(k, name, text){
   const li = document.createElement('li'); li.className = 'chat';
   const b = document.createElement('b'); b.textContent = (k >= 0 ? G.players[k].name : name) + '：';
   li.append(b, document.createTextNode(text));
   logEl.appendChild(li); logEl.scrollTop = logEl.scrollHeight;
-  if (k < 0) return;
   const seat = seats[k];
+  if (!seat) return;
   seat.querySelectorAll('.say').forEach(x => x.remove());
   const say = document.createElement('div');
   say.className = 'say' + (/^\p{Extended_Pictographic}+$/u.test(text) ? ' big' : '');
+  const felt = $('.felt');
+  if (felt && seat.getBoundingClientRect().top < felt.getBoundingClientRect().top + 10) say.classList.add('down');
   say.textContent = text;
   seat.appendChild(say);
   setTimeout(() => say.classList.add('bye'), 3600);
