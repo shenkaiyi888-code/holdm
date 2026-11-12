@@ -1019,6 +1019,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <button class="ghost" id="bOnline" type="button">联机</button>
       <button class="ghost" id="bBots" type="button">玩家与风格</button>
       <button class="ghost" id="bLedger" type="button" hidden>盈亏 / 结算</button>
+      <button class="ghost" id="bPauseTop" type="button" hidden>暂停牌局</button>
       <button class="ghost" id="bAdmin" type="button">管理</button>
       <button class="ghost" id="bReviewTop" type="button">复盘</button>
       <button class="ghost" id="bNew" type="button">新开一局</button>
@@ -1126,6 +1127,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <button class="btn b-show" id="bRabbit" type="button" hidden>看没发的牌</button>
         <button class="btn b-show" id="bRabbitNo" type="button" hidden>不看</button>
         <button class="btn b-call" id="bRebuy" type="button" hidden>补码</button>
+        <button class="btn b-show" id="bPause" type="button" hidden>暂停牌局</button>
         <button class="btn b-show" id="bSettle" type="button" hidden>盈亏 / 结算</button>
         <button class="btn b-review" id="bReview" type="button">复盘这手</button>
         <button class="btn b-next" id="bNext" type="button">下一手<kbd>空格</kbd></button>
@@ -1964,7 +1966,7 @@ function newGame(){
   runId++;
   if (!(privPref && NET.role === 'host')) saveRules();   /* the fixed private rules are not "last time's rules" for playing alone */
   G.priv = privPref && NET.role === 'host';
-  G.endAfter = false; G.waitSeat = false;
+  G.endAfter = false; G.waitSeat = false; G.paused = false;
   if (G.priv){ mode = 'cash'; buyIn = PRIV.unit; }
   initPlayers();
   G.ledger = {};
@@ -3057,7 +3059,7 @@ $('#bRaise').addEventListener('click', () => {
   if (v >= bounds().maxTo) return armOr('raise', go);
   go();
 });
-$('#bNext').addEventListener('click', () => { if (NET.role === 'guest') return; if (G.waitSeat && NET.role === 'host' && !G.over) return openNet(); if (G.over) newGame(); else if (G.handOver) startHand(); });
+$('#bNext').addEventListener('click', () => { if (NET.role === 'guest') return; if (G.paused && NET.role === 'host' && !G.over) return setPause(false); if (G.waitSeat && NET.role === 'host' && !G.over) return openNet(); if (G.over) newGame(); else if (G.handOver) startHand(); });
 $('#bNew').addEventListener('click', () => openNew());
 $('#optSpeed').addEventListener('change', e => { G.speed = +e.target.value; });
 $('#optEq').addEventListener('change', () => { eqKey = ''; render(); });
@@ -3399,7 +3401,7 @@ function renderControls(){
     else { $('#ritMsg').innerHTML = `你提议发两次，<b>${esc(bot.name)}</b>正在考虑…`; }
     $('#ritYes').disabled = $('#ritNo').disabled = G.rit === 'wait';
   }
-  $('#bNext').firstChild.textContent = G.over ? '再来一局' : G.waitSeat && NET.role === 'host' ? '邀请朋友' : '下一手';
+  $('#bNext').firstChild.textContent = G.over ? '再来一局' : G.paused && NET.role === 'host' ? '继续牌局' : G.waitSeat && NET.role === 'host' ? '邀请朋友' : '下一手';
   $('#bReview').disabled = !HISTORY.some(h => h.done);
   $('#bShow').hidden = !canShow();
   const rb = rabbitMine(), R = G.rabbit;
@@ -3418,6 +3420,7 @@ function renderControls(){
   $('#tipSum').textContent = fmt(tipTotal);
   st.classList.toggle('you', G.waiting);
   if (G.over) st.textContent = G.msg[0];
+  else if (G.handOver && G.paused) st.textContent = NET.role === 'host' ? '已暂停 · 点「继续牌局」接着打' : '房主暂停了牌局，等一下';
   else if (G.handOver && G.waitSeat) st.textContent = G.msg[0] || '等朋友入座';
   else if (G.handOver) st.textContent = me.won > 0 ? `这手你赢了 ${fmt(me.won)}` : '本手结束';
   else if (G.waiting) st.textContent = b.toCall > 0 ? `轮到你：需要跟注 ${fmt(Math.min(b.toCall, me.chips))}` : '轮到你：可以过牌或下注';
@@ -3432,6 +3435,7 @@ function renderControls(){
   if (NET.role === 'guest' && !NET.seated && !G.over) st.textContent = NET.status || '你已进房间 · 这手打完就给你发牌';
   const left = G.deadline ? Math.max(0, Math.ceil((G.deadline - Date.now()) / 1000)) : 0;
   if (left && !G.handOver && (G.waiting || G.thinking >= 0) && left <= 20) st.textContent += `（${left} 秒）`;
+  if (G.paused && !G.handOver && !G.over) st.textContent += ' · 这手打完暂停';
   if (G.handOver && !G.over && G.nextAt){
     const n = Math.max(0, Math.ceil((G.nextAt - Date.now()) / 1000));
     if (n) st.textContent += ` · ${n} 秒后下一手`;
@@ -3446,6 +3450,10 @@ function renderControls(){
   $('#bRebuy').textContent = G.priv ? (NET.rebuyAsked ? '这手打完加 ' + fmt(buyIn) : `再买一手 ${fmt(buyIn)}（还能买 ${PRIV.max - buysOf(me)} 手）`)
     : NET.rebuyAsked ? '下一手补码' : `补码 ${fmt(buyIn)}`;
   $('#bSettle').hidden = !G.priv;
+  const canPause = NET.role === 'host' && !G.over;
+  $('#bPauseTop').hidden = !canPause;
+  $('#bPause').hidden = !canPause || !!G.paused;   /* while paused the big 下一手 button turns into 继续牌局 */
+  $('#bPauseTop').textContent = G.paused ? '继续牌局' : '暂停牌局';
   $('#bSettle').textContent = G.over ? '看结算' : '盈亏 / 结算';
 
   const w = G.waiting;
@@ -3977,7 +3985,7 @@ function ledgerRows(){
     return {name:r.name, buy:r.buy, buys:r.buys || 0, chips, net:chips - r.buy, here:!!p};
   }).sort((a, b) => b.net - a.net);
 }
-function privKick(){ if (G.waitSeat && NET.role === 'host') setTimeout(() => { if (G.waitSeat) startHand(); }, 1200); }
+function privKick(){ if (G.waitSeat && NET.role === 'host' && !G.paused) setTimeout(() => { if (G.waitSeat && !G.paused) startHand(); }, 1200); }
 function endSession(){
   if (NET.role === 'guest' || G.over) return;
   if (!G.handOver){ G.endAfter = true; log('房主要结束牌局，这一手打完后结算', 'sys'); render(); renderLedger(); return; }
@@ -4179,7 +4187,7 @@ function netLeave(why, keep){
   if (NET.room && !keep) netPost('api/leave', {room:NET.room, id:NET.id}).catch(() => {});
   if (NET.es) NET.es.close();
   NET.es = null; NET.role = null; NET.room = ''; NET.conn = false; NET.peers.clear(); NET.roster = [];
-  NET.seated = false; NET.hostGone = false; NET.rebuyAsked = false;
+  NET.seated = false; NET.hostGone = false; NET.rebuyAsked = false; G.paused = false;
   clearTimeout(NET.clockT); G.deadline = 0; G.nextAt = 0;
   sset('holdem.netRoom', null); sset('holdem.netRole', null); netSetUrl('');
   const wasPriv = G.priv;
@@ -4408,10 +4416,12 @@ function netHandDone(){
   if (online()) NET.out.hist = H;
   G.nextAt = 0;
   if (G.endAfter && NET.role === 'host'){ wait(endSession, 2500); return; }
+  if (G.paused && NET.role === 'host'){ if (!G.over) log('牌局已暂停，房主点「继续牌局」再发下一手', 'sys'); render(); return; }
   if (NET.role === 'guest' || G.over || !(autoNext || online())) return;
   G.nextAt = Date.now() + NEXT_MS;
   const tick = () => {
     if (!G.handOver || G.over || NET.role === 'guest') return;
+    if (G.paused){ G.nextAt = 0; renderControls(); return; }
     if (!autoNext && !online()){ G.nextAt = 0; renderControls(); return; }
     /* playing alone: wait while a dialog such as the review is open */
     const R = G.rabbit;
@@ -4441,7 +4451,7 @@ function snapFor(x){
   const actor = G.handOver ? -1 : G.waiting ? 0 : G.thinking;
   let thinking = -1, waiting = false;
   if (actor >= 0){ if (seated && actor === s) waiting = true; else thinking = rot(actor); }
-  return {seated, mode, buyIn, players, priv:!!G.priv, ledger:G.priv ? ledgerRows() : null, endAfter:!!G.endAfter, waitSeat:!!G.waitSeat, key:G.salt || '', handNo:G.handNo, dealer:rot(G.dealer), sbIdx:rot(G.sbIdx), bbIdx:rot(G.bbIdx),
+  return {seated, mode, buyIn, players, priv:!!G.priv, paused:!!G.paused, ledger:G.priv ? ledgerRows() : null, endAfter:!!G.endAfter, waitSeat:!!G.waitSeat, key:G.salt || '', handNo:G.handNo, dealer:rot(G.dealer), sbIdx:rot(G.sbIdx), bbIdx:rot(G.bbIdx),
     board:G.board, board2:G.board2 || null, ritBase:G.ritBase || 0, street:G.street, currentBet:G.currentBet, minRaise:G.minRaise,
     sbAmt:G.sbAmt, bbAmt:G.bbAmt, toAct:rot(G.toAct), thinking, waiting, handOver:G.handOver, over:G.over, showdown:G.showdown,
     msg:G.msg, rit:G.rit === 2 ? 2 : ['bot', 'me', 'wait'].includes(G.rit) ? 'talk' : G.rit,
@@ -4508,7 +4518,7 @@ function netApply(m){
   const wasWaiting = G.waiting, wasOver = G.handOver;
   mode = s.mode === 'cash' ? 'cash' : 'tourney'; buyIn = s.buyIn;
   const wasEnded = G.over && G.priv;
-  G.priv = !!s.priv; G.ledgerView = s.ledger; G.endAfter = s.endAfter; G.waitSeat = s.waitSeat;
+  G.priv = !!s.priv; G.paused = !!s.paused; G.ledgerView = s.ledger; G.endAfter = s.endAfter; G.waitSeat = s.waitSeat;
   NET.seated = s.seated;
   s.players.forEach((o, k) => {
     const p = G.players[k] || (G.players[k] = {ava:''});
@@ -4753,6 +4763,21 @@ function netRenderDlg(){
   if (r2) r2.addEventListener('click', () => { NET.backToNet = true; $('#netDlg').hidden = true; openNew(); });
   $('#ntLeave').addEventListener('click', () => netLeave(''));
 }
+/* one-tap pause for the host: the hand in play finishes, then no new hand is dealt until 继续 (e.g. while a friend joins and buys in) */
+function setPause(on){
+  if (NET.role !== 'host' || G.over) return;
+  G.paused = !!on;
+  if (on){
+    G.nextAt = 0;
+    log(G.handOver ? '房主暂停了牌局' : '房主暂停了牌局，这一手打完后停下', 'sys');
+  } else {
+    log('房主继续了牌局', 'sys');
+    if (G.handOver) wait(() => { if (!G.paused && G.handOver && !G.over) startHand(); }, 800);
+  }
+  render();
+}
+$('#bPause').addEventListener('click', () => setPause(!G.paused));
+$('#bPauseTop').addEventListener('click', () => setPause(!G.paused));
 /* the host asks someone to leave: first tap asks, second tap does it. Their chips stay in the settlement. */
 function netKick(id){
   const x = NET.peers.get(id);
