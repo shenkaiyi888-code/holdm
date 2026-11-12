@@ -11,6 +11,7 @@ const MAX_PLAYERS = 8;
 const ROOM_IDLE_MS = 10 * 60 * 1000;
 const DROP_KEEP_MS = 2 * 60 * 1000;
 const PAGE = path.join(__dirname, 'index.html');
+const SHELL_PAGE = path.join(__dirname, 'play.html');
 const BJ_PAGE = path.join(__dirname, 'blackjack.html');
 const BAC_PAGE = path.join(__dirname, 'baccarat.html');
 const RACE_PAGE = path.join(__dirname, 'race.html');
@@ -104,9 +105,21 @@ const server = http.createServer(async (req, res) => {
   const p = u.pathname;
   try {
     if (req.method === 'GET' && (p === '/' || p === '/index.html')){
-      const html = fs.readFileSync(PAGE);
+      const html = fs.readFileSync(SHELL_PAGE);
       res.writeHead(200, {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-cache'});
       return res.end(html);
+    }
+    if (req.method === 'GET' && p === '/game.html'){
+      res.writeHead(200, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
+      return res.end(fs.readFileSync(PAGE));
+    }
+    const uiFile = ['/orientation-shell.js','/ui-v2.js','/ui-v2.css'].includes(p) ? path.join(__dirname,p.slice(1))
+      : /^\/assets\/table-v2\/(?:icons\/)?[a-z0-9-]+\.(?:png|webp|svg|ttf)$/.test(p) ? path.join(__dirname,'public',p) : null;
+    if ((req.method === 'GET' || req.method === 'HEAD') && uiFile){
+      if (!fs.existsSync(uiFile)){ res.writeHead(404); return res.end(); }
+      const mime={'.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.ttf':'font/ttf','.webp':'image/webp'}[path.extname(uiFile)];
+      res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-cache'});
+      return res.end(req.method === 'HEAD' ? undefined : fs.readFileSync(uiFile));
     }
     if (req.method === 'GET' && (p === '/21' || p === '/blackjack.html' || p === '/blackjack')){
       const html = fs.readFileSync(BJ_PAGE);

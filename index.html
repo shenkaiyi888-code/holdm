@@ -13,9 +13,6 @@
 <meta name="author" content="Yiiiii">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2064%2064%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22%23e3b352%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22none%22%20stroke%3D%22%231d1406%22%20stroke-width%3D%227%22%20stroke-dasharray%3D%229.4%206.3%22%20opacity%3D%22.55%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2221%22%20fill%3D%22%230e1320%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2221%22%20fill%3D%22none%22%20stroke%3D%22%23e3b352%22%20stroke-width%3D%221.5%22%20opacity%3D%22.7%22/%3E%3Cpath%20d%3D%22M32%2017c4%206%2012%2010.5%2012%2017a6.5%206.5%200%200%201-10.6%205.1c.4%203%201.6%205.5%203.6%207.4H27c2-1.9%203.2-4.4%203.6-7.4A6.5%206.5%200%200%201%2020%2034c0-6.5%208-11%2012-17Z%22%20fill%3D%22%23fbf8f1%22/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,800;1,9..144,800&family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
 <style>
 /* Layout: card-room table on the left that always fits the window, dealer + your console in a side column; stacked on phones */
 :root{
@@ -989,8 +986,9 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 }
 </style>
 
+<link rel="stylesheet" href="/ui-v2.css">
 </head>
-<body>
+<body class="no-dealer">
 <div class="app">
   <header class="top">
     <div class="brand">
@@ -1286,6 +1284,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
   </div>
 </div>
 
+<script src="/ui-v2.js"></script>
 <script>
 (() => {
 'use strict';
@@ -1403,6 +1402,7 @@ function coolDown(){
 /* a bot says one of its preset lines over its seat; friends see it too */
 let talkAt = 0;
 function botSay(p, key, chance = 1){
+  return false; // Automatic character chatter is retired in the quiet table UI.
   if (!p || p.human || p.out || p.vacant || NET.role === 'guest') return false;
   const pr = persona(p), lines = (VOICE[pr.v] || {})[key];
   if (!lines || !lines.length) return false;
@@ -1624,8 +1624,9 @@ function setMute(on){
 }
 setTimeout(() => setMute(dealerMuted));
 /* hiding the dealer is separate from muting: hidden means no avatar, no panel, no lines at all */
-let dealerHidden = store.get('holdem.noDealer', '') === '1';
+let dealerHidden = true;
 function setDealerHidden(on){
+  on = true;
   dealerHidden = on; store.set('holdem.noDealer', on ? '1' : '');
   document.body.classList.toggle('no-dealer', on);
   $('#optDealer').checked = !on;
@@ -1676,7 +1677,7 @@ function warmDealerArt(){
 }
 function setDealer(k, greet){
   dealerKey = k; store.set('holdem.dealer4', k);
-  sinTheme(k === 'yi');
+  sinTheme(false);
   $('#dRole').textContent = DEALERS[k].role || '荷官';
   $('#dAvatar').innerHTML = dealerArt(k);
   $('#dName').textContent = dealerName(k);
@@ -1731,6 +1732,7 @@ function lightSin(key){
 }
 const REACT_SAY = new Set(['allIn', 'heroAllIn', 'badCall', 'youWinBig', 'youLoseBig', 'loseStreak', 'champion', 'bust', 'unlockFind', 'unlockChamp', 'showBluff', 'botShowBluff']);
 function dealerSay(key, vars = {}){
+  return; // The former dealer characters and narration are retired.
   const COMMON = {
     newcomer:['欢迎{name}入座，带了 {n}。','{name}坐下了，带了 {n}，欢迎。'],
     newcomerDeep:['{name}带了 {n} 坐下，底很深，大家小心。','深码上桌：{name}，{n}。'],
@@ -2115,11 +2117,14 @@ function proceed(){
   G.thinking = i; render();
   later(() => botAct(i), botThink(p));
 }
+let feedbackSequence = 0;
+const actionFeedback = [];
 function doAction(i, type, to){
   if (NET.role === 'guest'){ if (i === 0 && G.waiting) netGuestAct(type, to); return; }
   const p = G.players[i];
   if (G.toAct !== i || G.handOver) return;
   G.deadline = 0;
+  const wasOpening = G.currentBet === 0;
   const toCall = G.currentBet - p.bet;
   if (type === 'check' && toCall > 0) type = 'call';
   if (type === 'raise' && (p.chips <= toCall || Math.min(to, p.bet + p.chips) <= G.currentBet || !mayRaise(p))) type = 'call';
@@ -2136,7 +2141,7 @@ function doAction(i, type, to){
   }
   let text = '';
   if (type === 'fold'){ G.lastFolder = i; p.folded = true; p.foldSt = G.street; p.foldedToMe = G.streetAgg === 0; text = '弃牌'; H.players[i].foldAt = STREET[G.street]; if (i !== 0) muck(i); else sfx('fold'); }
-  else if (type === 'check'){ text = '过牌'; p.checked = true; sfx('check'); }
+  else if (type === 'check'){ text = '过牌'; p.checked = true; }
   else if (type === 'call'){
     const a = Math.min(toCall, p.chips); pay(p, a); if (a > 0) queueChips(i);
     text = p.allIn ? `全下 ${p.bet}` : `跟注 ${a}`;
@@ -2151,6 +2156,9 @@ function doAction(i, type, to){
     text = p.allIn ? `全下 ${to}` : (opening ? `下注 ${to}` : `加注到 ${to}`);
   }
   p.acted = true; p.actedAt = G.currentBet; p.lastAction = text;
+  const feedback = {id:G.salt + ':' + (++feedbackSequence), i, kind:type === 'raise' ? (wasOpening ? 'bet' : 'raise') : type, text};
+  window.HoldmUI?.action(i, feedback.kind, feedback, sfx);
+  if (NET.role === 'host') actionFeedback.push(feedback);
   if (p.st){
     if (type === 'raise') p.st.raises++; else if (type === 'call') p.st.calls++;
     if (G.street === 0 && (type === 'call' || type === 'raise')){ p.fv = true; if (type === 'raise') p.fp = true; }
@@ -3107,8 +3115,8 @@ function fly(html, from, to, ms, o = {}){
   const a = el.animate(frames, {duration:ms, delay:o.delay || 0, easing:o.ease || 'cubic-bezier(.2,.75,.3,1)', fill:'both'});
   return a.finished.then(() => el.remove(), () => el.remove());
 }
-const coinsHTML = n => `<div class="coins">${'<i></i>'.repeat(n)}</div>`;
-const dealerPoint = () => centerOf($('#dAvatar'));
+const coinsHTML = n => `<div class="coins">${window.HoldmUI.stack(5,n)}</div>`;
+const dealerPoint = () => centerOf($('.deal-origin'));
 
 /* sounds: synthesized, start after the first click/tap */
 let actx = null, soundOn = store.get('holdem.sound', '1') === '1';
@@ -3116,6 +3124,7 @@ let actx = null, soundOn = store.get('holdem.sound', '1') === '1';
    says "running". So after the page was hidden, the next tap throws the old sound channel away and opens a new one. */
 let audioStale = false;
 function ac(fresh){
+  if (!soundOn) return null;
   if (actx && (fresh || audioStale)){ try { actx.close(); } catch (e) {} actx = null; }
   if (!actx){
     try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
@@ -3136,12 +3145,15 @@ function sfx(kind){
   if (soundOn && actx && actx.state !== 'running') actx.resume().catch(() => {});
   if (!soundOn || !actx || actx.state !== 'running') return;
   const a = actx, t = a.currentTime;
+  if (!a._holdmOutput){ a._holdmOutput = a.createGain(); a._holdmOutput.gain.value = .55; a._holdmOutput.connect(a.destination); }
+  const output = a._holdmOutput;
+  document.dispatchEvent(new CustomEvent('holdm:sound',{detail:{kind}}));
   const tone = (f, d, type = 'sine', v = .08, at = 0) => {
     const o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(f, t + at);
     g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(v, t + at + .006);
     g.gain.exponentialRampToValueAtTime(.0001, t + at + d);
-    o.connect(g).connect(a.destination); o.start(t + at); o.stop(t + at + d + .03);
+    o.connect(g).connect(output); o.start(t + at); o.stop(t + at + d + .03);
   };
   const noise = (d, v = .12, fq = 3000, at = 0) => {
     const b = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * d)), a.sampleRate), ch = b.getChannelData(0);
@@ -3149,14 +3161,14 @@ function sfx(kind){
     const s = a.createBufferSource(); s.buffer = b;
     const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fq; f.Q.value = .8;
     const g = a.createGain(); g.gain.value = v;
-    s.connect(f).connect(g).connect(a.destination); s.start(t + at);
+    s.connect(f).connect(g).connect(output); s.start(t + at);
   };
   /* a knuckle on a thick wooden table: deep thump that sinks in pitch, a dull woody body, a soft click */
   const knock = (at, v) => {
     const o = a.createOscillator(), g = a.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(115, t + at); o.frequency.exponentialRampToValueAtTime(42, t + at + .16);
     g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(.6 * v, t + at + .004); g.gain.exponentialRampToValueAtTime(.0001, t + at + .26);
-    o.connect(g).connect(a.destination); o.start(t + at); o.stop(t + at + .28);
+    o.connect(g).connect(output); o.start(t + at); o.stop(t + at + .28);
     tone(230, .09, 'triangle', .09 * v, at);
     noise(.06, .32 * v, 380, at);
     noise(.018, .08 * v, 1100, at);
@@ -3164,10 +3176,12 @@ function sfx(kind){
   if (kind === 'deal') noise(.05, .16, 2800);
   else if (kind === 'flip') noise(.07, .13, 1900);
   else if (kind === 'chips'){ tone(2500, .05, 'triangle', .045); tone(3200, .05, 'triangle', .035, .04); tone(2800, .06, 'triangle', .03, .085); }
-  else if (kind === 'check') [0, .3].forEach((at, k) => knock(at, k ? .9 : 1));
+  else if (kind === 'check') [0, .14].forEach((at, k) => knock(at, k ? .16 : .18));
+  else if (kind === 'bet'){ noise(.045,.06,1500); tone(1700,.06,'triangle',.025,.035); }
+  else if (kind === 'raise'){ noise(.055,.075,1600); tone(1900,.055,'triangle',.03,.035); tone(2600,.07,'triangle',.025,.09); }
   else if (kind === 'fold') noise(.12, .05, 900);
   else if (kind === 'turn'){ tone(880, .12, 'sine', .045); tone(1320, .16, 'sine', .035, .08); }
-  else if (kind === 'win') [523, 659, 784, 1047].forEach((f, i) => tone(f, .28, 'triangle', .055, i * .09));
+  else if (kind === 'win'){ noise(.08,.055,1700); tone(2200,.08,'triangle',.025,.07); }
 }
 $('#optSound').checked = soundOn;
 $('#optSound').addEventListener('change', e => { soundOn = e.target.checked; store.set('holdem.sound', soundOn ? '1' : '0'); if (soundOn) ac(); });
@@ -3342,6 +3356,7 @@ function placeDealerButton(){
     const r = e.getBoundingClientRect();
     if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:Math.max(r.right, r.left + 64) + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
   }));
+  ['#board', '.pot-chips', '.pot', '#street'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push(r); } });
   const hits = (x, y) => keep.filter(r => x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom).length;
   let best = null;
   const tries = [];
@@ -3383,7 +3398,7 @@ function rebuildSeats(n){
 rebuildSeats(SEATS);
 function cardHTML(c, cls = ''){
   const s = cs(c), red = s === 1 || s === 2 ? ' red' : '';
-  return `<div class="card${red} ${cls}" aria-label="${cardText(c)}"><span class="r">${rname(cr(c))}</span><span class="ss">${SUIT[s]}</span><span class="s">${SUIT[s]}</span></div>`;
+  return `<div class="card${red} ${cls}" data-suit="${s}" aria-label="${cardText(c)}"><span class="r">${rname(cr(c))}</span><span class="ss">${SUIT[s]}</span><span class="s">${SUIT[s]}</span></div>`;
 }
 const backHTML = () => '<div class="card back" aria-label="暗牌"></div>';
 function setIfChanged(el, sig, html){ if (el.dataset.sig !== sig){ el.dataset.sig = sig; el.innerHTML = html; } }
@@ -3503,19 +3518,9 @@ function renderControls(){
 // eight lacquer tones that sit with the felt and gold, one per seat; the player's own seat is always ivory and gold
 const CHIP_TONES = [['#173F32','#0c241c'],['#6b2430','#3a1219'],['#1f3358','#101b31'],['#4a2a5c','#28163a'],['#7a5528','#432d12'],['#2f4a4f','#172a2d'],['#5c1f1f','#2e0e0e'],['#33363f','#1a1c22']];
 function chipAva(name, human, seat){
-  name = String(name || '?');
-  const ch = [...name][0].toUpperCase();
-  const hsh = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
-  const [a, b] = human ? ['#e8d3a2','#b8924f'] : CHIP_TONES[Math.abs(seat ?? hsh) % CHIP_TONES.length];
-  const ink = human ? '#2a1d08' : '#f1e3bf', rim = human ? '#fff3d6' : '#d5b678';
-  const id = 'c' + hsh.toString(36) + (seat ?? '');
-  return `<svg viewBox="0 0 48 48" aria-hidden="true"><defs><radialGradient id="${id}" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient></defs>`
-    + `<circle cx="24" cy="24" r="23" fill="url(#${id})"/>`
-    + `<circle cx="24" cy="24" r="21" fill="none" stroke="${rim}" stroke-width="3.2" stroke-dasharray="5.5 5.5" opacity=".85"/>`
-    + `<circle cx="24" cy="24" r="23" fill="none" stroke="${rim}" stroke-width="1" opacity=".9"/>`
-    + `<circle cx="24" cy="24" r="15.5" fill="none" stroke="${rim}" stroke-width=".8" opacity=".55"/>`
-    + `<text x="24" y="25" text-anchor="middle" dominant-baseline="central" font-size="${/[\u4e00-\u9fff]/.test(ch) ? 17 : 19}" fill="${ink}">${esc(ch)}</text></svg>`;
+  return `<span aria-hidden="true">${esc([...String(name || '?')][0].toUpperCase())}</span>`;
 }
+
 function render(){
   const P = G.players;
   P.forEach((p, i) => {
@@ -3625,6 +3630,7 @@ function render(){
     + (eq != null ? ` · 胜率 <b>${Math.round(eq * 100)}%</b>` : '') + (odds != null ? ` · 需 <b>${Math.round(odds * 100)}%</b>` : '');
   renderControls();
   renderImage();
+  window.HoldmUI?.sync(G, seats);
   $('#bLedger').hidden = !G.priv;
   if (NET.role === 'host') netQueueSync();
 }
@@ -4510,10 +4516,12 @@ function netFlush(){
   syncT = 0;
   const logs = NET.out.logs.splice(0), says = NET.out.says.splice(0), talk = NET.out.talk.splice(0), hist = NET.out.hist;
   NET.out.hist = null;
+  const feedback = actionFeedback.splice(0);
   const batch = [];
   NET.peers.forEach(x => {
     if (!x.online) return;
     const msg = {t:'sync', seq:++NET.seq, s:snapFor(x), logs, says};
+    if (feedback.length){ const N=G.players.length, base=x.seat||0; msg.feedback=feedback.map(f=>({...f,i:(f.i-base+N)%N})); }
     if (talk.length){ const N = G.players.length, s0 = x.seat || 0; msg.talk = talk.map(([k, t]) => [(k - s0 + N) % N, t]); }
     if (hist && x.seat && G.players[x.seat].remote === x.id && hist.players[x.seat] && !hist.players[x.seat].out) msg.hist = histFor(hist, x.seat);
     batch.push({to:x.id, msg});
@@ -4534,7 +4542,7 @@ function netGuestMessage(m){
 function netGuestAct(type, to){
   netSend({t:'act', type, to, key:G.salt});
   G.waiting = false; G.deadline = 0;
-  if (type === 'fold') sfx('fold'); else if (type === 'check') sfx('check');
+  if (type === 'fold') sfx('fold');
   render();
 }
 function netApply(m){
@@ -4573,6 +4581,7 @@ function netApply(m){
   if (G.waiting && !wasWaiting) setRaiseDefaults();
   (m.logs || []).forEach(([t, c]) => log(t, c || undefined));
   render();
+  (m.feedback || []).forEach(f => { if (Number.isInteger(f.i) && f.i>=0 && f.i<seats.length && ['check','bet','raise','call','fold'].includes(f.kind)) window.HoldmUI?.action(f.i,f.kind,f,sfx); });
   (m.talk || []).forEach(([k, t]) => { if (typeof t === 'string' && G.players[k]) seatSay(k, G.players[k].name, t.slice(0, 40)); });
   if (newHand && G.handNo && !G.handOver) animateDeal();
   if (G.waiting && !wasWaiting) sfx('turn');
@@ -4832,7 +4841,7 @@ function copyOld(text){
   t.remove(); return ok;
 }
 const netInviteCode = () => { const c = (new URLSearchParams(location.search).get('room') || '').trim().toUpperCase(); return /^[A-Z0-9]{4}$/.test(c) ? c : ''; };
-const netLink = () => `${location.origin}${location.pathname}?room=${NET.room}`;
+const netLink = () => `${location.origin}/?room=${NET.room}`;
 /* keep the room in the address bar, so sharing the page from WeChat's ··· menu shares the invite */
 function netSetUrl(room){
   try {
@@ -4996,7 +5005,7 @@ $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; open
 $('#stOnline').addEventListener('click', () => { $('#startDlg').hidden = true; openNet(); });
 
 /* automated rule checks open the page with ?selftest */
-if (/[?&]selftest/.test(location.search)) window.__holdm = {G, HISTORY, mayRaise, bounds, doAction, get H(){ return H; }};
+if (/[?&]selftest/.test(location.search)) window.__holdm = {G, NET, HISTORY, mayRaise, bounds, doAction, render, sfx, animateDeal, setRaiseDefaults, freeze(){runId++;clearTimeout(G.idleT);}, get H(){ return H; }};
 
 /* ---------- boot ---------- */
 function snapshot(){
