@@ -709,6 +709,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .net-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
 .net-list li{display:flex; justify-content:space-between; gap:10px; background:var(--well); border:1px solid var(--line); border-radius:10px; padding:7px 11px; font-size:13px}
 .net-list li small{color:var(--muted)}
+.net-list .net-kick{padding:2px 10px; font-size:12px; margin-left:8px; min-height:0}
 .net-list li .ok{color:var(--win)} .net-list li .off{color:#ff9a90}
 .net-err{color:#ff9a90; font-size:12.5px; min-height:1em}
 .ledger{width:100%; border-collapse:collapse; font-size:14px}
@@ -1017,7 +1018,9 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       </select>
       <button class="ghost" id="bOnline" type="button">联机</button>
       <button class="ghost" id="bBots" type="button">玩家与风格</button>
-      <button class="ghost" id="bLedger" type="button" hidden>盈亏 / 结算</button>
+      <button class="ghost" id="bLedger" type="button" hidden>看盈亏</button>
+      <button class="ghost" id="bPauseTop" type="button" hidden>暂停牌局</button>
+      <button class="ghost" id="bEndTop" type="button" hidden>结算</button>
       <button class="ghost" id="bAdmin" type="button">管理</button>
       <button class="ghost" id="bReviewTop" type="button">复盘</button>
       <button class="ghost" id="bNew" type="button">新开一局</button>
@@ -1125,7 +1128,10 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <button class="btn b-show" id="bRabbit" type="button" hidden>看没发的牌</button>
         <button class="btn b-show" id="bRabbitNo" type="button" hidden>不看</button>
         <button class="btn b-call" id="bRebuy" type="button" hidden>补码</button>
-        <button class="btn b-show" id="bSettle" type="button" hidden>盈亏 / 结算</button>
+        <select class="btn b-show" id="rebuyAmt" hidden aria-label="补多少"></select>
+        <button class="btn b-show" id="bPause" type="button" hidden>暂停牌局</button>
+        <button class="btn b-show" id="bSettle" type="button" hidden>看盈亏</button>
+        <button class="btn b-fold" id="bEnd" type="button" hidden>结算</button>
         <button class="btn b-review" id="bReview" type="button">复盘这手</button>
         <button class="btn b-next" id="bNext" type="button">下一手<kbd>空格</kbd></button>
       </div>
@@ -1963,17 +1969,25 @@ function newGame(){
   runId++;
   if (!(privPref && NET.role === 'host')) saveRules();   /* the fixed private rules are not "last time's rules" for playing alone */
   G.priv = privPref && NET.role === 'host';
-  G.endAfter = false; G.waitSeat = false;
+  G.endAfter = false; G.waitSeat = false; G.paused = false;
   if (G.priv){ mode = 'cash'; buyIn = PRIV.unit; }
   initPlayers();
   G.ledger = {};
-  G.players.forEach(p => { if (p.human) ledgerBuy(p, p.chips, true); });
-  G.handNo = 0; G.over = false; G.img = {bluff:0, value:0};
+  /* the host reloaded mid-session: everyone's buys and last stacks come back, and each player sits down with their stack */
+  const back = G.priv ? privLoad() : null;
+  if (back) back.rows.forEach(r => { if (r && r.name) G.ledger[r.name] = {name:String(r.name), buy:+r.buy || 0, buys:+r.buys || 0, cash:Math.max(0, +r.cash || 0)}; });
+  G.players.forEach(p => {
+    if (!p.human) return;
+    const b = back && G.ledger[p.name];
+    if (b && b.cash > 0){ p.chips = p.startChips = b.cash; b.cash = 0; }
+    else ledgerBuy(p, p.chips, true);
+  });
+  G.handNo = back ? Math.max(0, +back.hand || 0) : 0; G.over = false; G.img = {bluff:0, value:0};
   if (!NET.role) clearSave();
   G.dealer = Math.floor(Math.random() * G.players.length);
   logEl.innerHTML = '';
   HISTORY.length = 0;
-  if (G.priv) log(`私人局开始：只有真人，不补电脑；${privText()}`, 'sys');
+  if (G.priv) log(back ? '接着刚才的私人局账本，朋友回来会带着原来的筹码入座' : `私人局开始：只有真人，不补电脑；${privText()}`, 'sys');
   else log(`本局对手：${G.players.slice(1).filter(p => !p.vacant).map(p => p.human ? `${p.name}（真人）` : `${p.name}（${p.hidden ? '风格未知' : p.style}）`).join('、')}`, 'sys');
   startHand();
 }
@@ -1985,7 +1999,7 @@ function startHand(){
   G.players.forEach(p => {
     if (p.isNew) p.isNew--;
     if (p.chips <= 0 && !p.out){
-      if (p.human){ p.out = true; if (p !== G.players[0] || G.priv) log(`${p.name}筹码输光了${G.priv ? (canRebuy(p) ? `，还能再买 ${PRIV.max - buysOf(p)} 手` : `，${PRIV.max} 手都买完了，只能观战`) : mode === 'cash' ? '，可以补码再战' : '，出局'}`, 'sys'); }
+      if (p.human){ p.out = true; if (p !== G.players[0] || G.priv) log(`${p.name}筹码输光了${G.priv ? '，补一手就能接着打' : mode === 'cash' ? '，可以补码再战' : '，出局'}`, 'sys'); }
       else if (mode === 'cash') vacate(p, 'bust');
       else { p.out = true; log(`${p.name}筹码输光，离桌（不补码）`, 'sys'); }
     }
@@ -3047,7 +3061,7 @@ $('#bRaise').addEventListener('click', () => {
   if (v >= bounds().maxTo) return armOr('raise', go);
   go();
 });
-$('#bNext').addEventListener('click', () => { if (NET.role === 'guest') return; if (G.waitSeat && NET.role === 'host' && !G.over) return openNet(); if (G.over) newGame(); else if (G.handOver) startHand(); });
+$('#bNext').addEventListener('click', () => { if (NET.role === 'guest') return; if (G.paused && NET.role === 'host' && !G.over) return setPause(false); if (G.waitSeat && NET.role === 'host' && !G.over) return openNet(); if (G.over) newGame(); else if (G.handOver) startHand(); });
 $('#bNew').addEventListener('click', () => openNew());
 $('#optSpeed').addEventListener('change', e => { G.speed = +e.target.value; });
 $('#optEq').addEventListener('change', () => { eqKey = ''; render(); });
@@ -3389,7 +3403,7 @@ function renderControls(){
     else { $('#ritMsg').innerHTML = `你提议发两次，<b>${esc(bot.name)}</b>正在考虑…`; }
     $('#ritYes').disabled = $('#ritNo').disabled = G.rit === 'wait';
   }
-  $('#bNext').firstChild.textContent = G.over ? '再来一局' : G.waitSeat && NET.role === 'host' ? '邀请朋友' : '下一手';
+  $('#bNext').firstChild.textContent = G.over ? '再来一局' : G.paused && NET.role === 'host' ? '继续牌局' : G.waitSeat && NET.role === 'host' ? '邀请朋友' : '下一手';
   $('#bReview').disabled = !HISTORY.some(h => h.done);
   $('#bShow').hidden = !canShow();
   const rb = rabbitMine(), R = G.rabbit;
@@ -3408,6 +3422,7 @@ function renderControls(){
   $('#tipSum').textContent = fmt(tipTotal);
   st.classList.toggle('you', G.waiting);
   if (G.over) st.textContent = G.msg[0];
+  else if (G.handOver && G.paused) st.textContent = NET.role === 'host' ? '已暂停 · 点「继续牌局」接着打' : '房主暂停了牌局，等一下';
   else if (G.handOver && G.waitSeat) st.textContent = G.msg[0] || '等朋友入座';
   else if (G.handOver) st.textContent = me.won > 0 ? `这手你赢了 ${fmt(me.won)}` : '本手结束';
   else if (G.waiting) st.textContent = b.toCall > 0 ? `轮到你：需要跟注 ${fmt(Math.min(b.toCall, me.chips))}` : '轮到你：可以过牌或下注';
@@ -3422,6 +3437,7 @@ function renderControls(){
   if (NET.role === 'guest' && !NET.seated && !G.over) st.textContent = NET.status || '你已进房间 · 这手打完就给你发牌';
   const left = G.deadline ? Math.max(0, Math.ceil((G.deadline - Date.now()) / 1000)) : 0;
   if (left && !G.handOver && (G.waiting || G.thinking >= 0) && left <= 20) st.textContent += `（${left} 秒）`;
+  if (G.paused && !G.handOver && !G.over) st.textContent += ' · 这手打完暂停';
   if (G.handOver && !G.over && G.nextAt){
     const n = Math.max(0, Math.ceil((G.nextAt - Date.now()) / 1000));
     if (n) st.textContent += ` · ${n} 秒后下一手`;
@@ -3433,10 +3449,21 @@ function renderControls(){
   $('#bRebuy').hidden = !(canRebuy(me) && (guest ? NET.seated : online() || G.priv));
   $('#bRebuy').disabled = !!NET.rebuyAsked;
   $('#bRebuy').className = 'btn ' + (me.out || !G.priv ? 'b-call' : 'b-show');   /* topping up is optional; buying back in after busting is the main thing */
-  $('#bRebuy').textContent = G.priv ? (NET.rebuyAsked ? '这手打完加 ' + fmt(buyIn) : `再买一手 ${fmt(buyIn)}（还能买 ${PRIV.max - buysOf(me)} 手）`)
+  const ra = $('#rebuyAmt');
+  ra.hidden = $('#bRebuy').hidden || !G.priv || !!NET.rebuyAsked;
+  if (!ra.hidden && ra.options.length !== PRIV.most) ra.innerHTML = Array.from({length:PRIV.most}, (_, k) => `<option value="${k + 1}">${fmt(PRIV.unit * (k + 1))}</option>`).join('');
+  $('#bRebuy').textContent = G.priv ? (NET.rebuyAsked ? '已申请，这手打完到账' : `补码 ${fmt(buyIn * (+ra.value || 1))}`)
     : NET.rebuyAsked ? '下一手补码' : `补码 ${fmt(buyIn)}`;
   $('#bSettle').hidden = !G.priv;
-  $('#bSettle').textContent = G.over ? '看结算' : '盈亏 / 结算';
+  const canPause = NET.role === 'host' && !G.over;
+  $('#bPauseTop').hidden = !canPause;
+  $('#bPause').hidden = !canPause || !!G.paused;   /* while paused the big 下一手 button turns into 继续牌局 */
+  $('#bPauseTop').textContent = G.paused ? '继续牌局' : '暂停牌局';
+  $('#bSettle').textContent = G.over ? '看结算' : '看盈亏';
+  const canEnd = G.priv && NET.role === 'host' && !G.over;
+  $('#bEnd').hidden = $('#bEndTop').hidden = !canEnd;
+  $('#bEnd').textContent = $('#bEndTop').textContent = G.endAfter ? '这手打完结算' : endAsk ? '再按一次：结束并结算' : '结算';
+  $('#bEnd').disabled = $('#bEndTop').disabled = !!G.endAfter;
 
   const w = G.waiting;
   $('#bFold').disabled = !w;
@@ -3788,7 +3815,7 @@ function renderNew(){
   const pv = pendingPriv && NET.role === 'host';
   $('#modes').parentElement.hidden = pv;
   $('#buyins').parentElement.hidden = pv; $('#buyCustom').closest('.buy-custom').hidden = pv;
-  if (pv){ $('#nwRules').innerHTML = [`只有真人，不补电脑，至少 2 人自动开打。`, `${privText()}。`, `再买一手要等这一手打完才加到桌上。`, `随时点「盈亏 / 结算」看每个人输赢；房主结束牌局后给出谁该给谁多少。`].map(x => `<li>${x}</li>`).join(''); return; }
+  if (pv){ $('#nwRules').innerHTML = [`只有真人，不补电脑，至少 2 人自动开打。`, `${privText()}。`, `补码在两手之间点，一次 200 到 1000，这一手打完才到账。`, `随时点「看盈亏」看每个人买了几手、输赢多少；房主点「结算」结束牌局，列出谁该给谁多少。`].map(x => `<li>${x}</li>`).join(''); return; }
   $('#buyTitle').textContent = pendingMode === 'cash' ? '你带多少筹码进场（也决定盲注大小）' : '每人带多少筹码进场';
   $('#buyins').innerHTML = BUYINS.map(v => `<button type="button" role="radio" aria-checked="${v === pendingBuy}" data-v="${v}">${fmt(v)}<small>盲注 ${levelsFor(v)[0].join('/')}</small></button>`).join('');
   $('#buyins').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { pendingBuy = +b.dataset.v; $('#buyCustom').value = pendingBuy; renderNew(); }));
@@ -3926,20 +3953,36 @@ $('#bLogClose').addEventListener('click', e => { e.preventDefault(); document.bo
 
 /* ---------- private games: only real players, with a running profit and loss ---------- */
 let privPref = store.get('holdem.priv', '0') === '1';
-/* private game rules: every buy is one 手 of 200, at most 2 per player, blinds fixed at 1/2 */
-const PRIV = {unit:200, max:2, sb:1, bb:2};
-const privText = () => `每手 ${fmt(PRIV.unit)}，每人最多买 ${PRIV.max} 手，盲注 ${PRIV.sb}/${PRIV.bb} 不涨`;
+/* private game rules (a cash game): one 手 is 200, everyone sits down with 200;
+   between hands anyone can buy more, 200 to 1000 at a time, as often as they like. Blinds fixed at 1/2. */
+const PRIV = {unit:200, most:5, sb:1, bb:2};
+const privText = () => `入座 ${fmt(PRIV.unit)}，补码每次 ${fmt(PRIV.unit)}–${fmt(PRIV.unit * PRIV.most)}，次数不限，盲注 ${PRIV.sb}/${PRIV.bb} 不涨`;
 const buysOf = p => NET.role === 'guest' ? (p.buys || 0) : ((G.ledger && G.ledger[p.name]) || {}).buys || 0;
 /* can this player buy (another) 手? in a private game: until the limit; otherwise only a busted player in a cash game */
-const canRebuy = p => !!p && p.human && !p.vacant && !G.over && (G.priv ? buysOf(p) < PRIV.max : mode === 'cash' && p.out);
+const canRebuy = p => !!p && p.human && !p.vacant && !G.over && (G.priv || (mode === 'cash' && p.out));
 function emptySeat(){
   const p = {name:'空位', chips:0, ava:'', out:true, vacant:true, vacantFor:1e9, st:{hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0}};
   resetPlayer(p); p.startChips = 0; return p;
 }
+/* the host's page keeps the private ledger, so a reload of that page does not wipe who bought what */
+const PRIV_SAVE = 'holdem.privSave';
+function privSave(){
+  if (NET.role !== 'host' || !G.priv || G.over || !G.ledger) return;
+  const rows = ledgerRows().map(r => ({name:r.name, buy:r.buy, buys:r.buys, cash:r.chips}));
+  try { localStorage.setItem(PRIV_SAVE, JSON.stringify({room:NET.room, t:Date.now(), hand:G.handNo, rows})); } catch (e) {}
+}
+function privSaveClear(){ try { localStorage.removeItem(PRIV_SAVE); } catch (e) {} }
+function privLoad(){
+  try {
+    const v = JSON.parse(localStorage.getItem(PRIV_SAVE) || 'null');
+    if (v && v.room === NET.room && Date.now() - v.t < 12 * 3600000 && Array.isArray(v.rows)) return v;
+  } catch (e) {}
+  return null;
+}
 function ledgerBuy(p, n, count){
   if (!G.ledger || !n) return;
   const r = G.ledger[p.name] || (G.ledger[p.name] = {name:p.name, buy:0, cash:0, buys:0});
-  r.buy += n; if (count) r.buys = (r.buys || 0) + 1;
+  r.buy += n; if (count) r.buys = (r.buys || 0) + (+count || 1);
 }
 function ledgerLeave(p){
   const r = G.ledger && G.ledger[p.name];
@@ -3952,7 +3995,7 @@ function ledgerRows(){
     return {name:r.name, buy:r.buy, buys:r.buys || 0, chips, net:chips - r.buy, here:!!p};
   }).sort((a, b) => b.net - a.net);
 }
-function privKick(){ if (G.waitSeat && NET.role === 'host') setTimeout(() => { if (G.waitSeat) startHand(); }, 1200); }
+function privKick(){ if (G.waitSeat && NET.role === 'host' && !G.paused) setTimeout(() => { if (G.waitSeat && !G.paused) startHand(); }, 1200); }
 function endSession(){
   if (NET.role === 'guest' || G.over) return;
   if (!G.handOver){ G.endAfter = true; log('房主要结束牌局，这一手打完后结算', 'sys'); render(); renderLedger(); return; }
@@ -3960,6 +4003,7 @@ function endSession(){
   G.endAfter = false; G.waitSeat = false;
   G.over = true; G.handOver = true; G.waiting = false; G.thinking = -1; G.deadline = 0; G.nextAt = 0;
   const rows = ledgerRows();
+  privSaveClear();
   G.msg = ['牌局结束，请看最终结算'];
   log('私人局结束 · 最终结算：' + rows.map(r => `${r.name} ${r.net > 0 ? '+' : r.net < 0 ? '−' : '±'}${fmt(Math.abs(r.net))}`).join('，'), 'res');
   render(); openLedger();
@@ -3971,8 +4015,8 @@ function renderLedger(){
   $('#ldTitle').textContent = done ? '最终结算' : '盈亏表';
   $('#ldNote').textContent = done ? '牌局已结束，下面是每个人的最终输赢。'
     : G.endAfter ? '这一手打完后结束牌局并结算。' : `${privText()}。筹码按当前桌上的数算，打到一半的这手按开局时的数算。`;
-  $('#ldBody').innerHTML = rows.length ? `<table class="ledger"><thead><tr><th>玩家</th><th>买入</th><th>筹码</th><th>盈亏</th></tr></thead><tbody>${rows.map((r, k) =>
-    `<tr${done && k === 0 && r.net > 0 ? ' class="lead"' : ''}><td>${esc(r.name)}${r.here ? '' : ' <small>已离开</small>'}</td><td>${fmt(r.buy)}${G.priv && r.buys ? ` <small>${r.buys} 手</small>` : ''}</td><td>${fmt(r.chips)}</td><td class="${r.net > 0 ? 'pos' : r.net < 0 ? 'neg' : ''}">${fmtNet(r.net)}</td></tr>`).join('')}</tbody></table>`
+  $('#ldBody').innerHTML = rows.length ? `<table class="ledger"><thead><tr><th>玩家</th>${G.priv ? '<th>买了</th>' : ''}<th>买入</th><th>剩余</th><th>盈亏</th></tr></thead><tbody>${rows.map((r, k) =>
+    `<tr${done && k === 0 && r.net > 0 ? ' class="lead"' : ''}><td>${esc(r.name)}${r.here ? '' : ' <small>已离开</small>'}</td>${G.priv ? `<td>${r.buys || 0} 手</td>` : ''}<td>${fmt(r.buy)}</td><td>${fmt(r.chips)}</td><td class="${r.net > 0 ? 'pos' : r.net < 0 ? 'neg' : ''}">${fmtNet(r.net)}</td></tr>`).join('')}</tbody></table>`
     : '<p class="rv-note">还没有人入座。</p>';
   const pay = ledgerPay(rows);
   $('#ldPay').innerHTML = pay.length ? `<h3 class="rv-h" style="margin:12px 0 0">${done ? '怎么结账' : '如果现在结账'}</h3><ul class="xfer">${pay.map(t =>
@@ -4002,7 +4046,7 @@ function ledgerText(){
   const rows = NET.role === 'guest' ? (G.ledgerView || []) : ledgerRows();
   const pay = ledgerPay(rows);
   return [`bluff? 德州私人局${NET.room ? ' · 房间 ' + NET.room : ''} · 打了 ${G.handNo} 手${G.over ? '' : '（未结束）'}`]
-    .concat(rows.map(r => `${r.name}：买入 ${fmt(r.buy)}，剩 ${fmt(r.chips)}，${fmtNet(r.net)}`))
+    .concat(rows.map(r => `${r.name}：买了 ${r.buys || 0} 手（${fmt(r.buy)}），剩 ${fmt(r.chips)}，盈亏 ${fmtNet(r.net)}`))
     .concat(pay.length ? ['结账：'].concat(pay.map(t => `${t.from} 给 ${t.to} ${fmt(t.n)}`)) : [])
     .join('\n');
 }
@@ -4015,6 +4059,16 @@ $('#ldCopy').addEventListener('click', () => {
 function openLedger(){ renderLedger(); $('#ledDlg').hidden = false; }
 $('#bLedger').addEventListener('click', openLedger);
 $('#bSettle').addEventListener('click', openLedger);
+/* host: 结算 ends the private game and shows everyone the settlement. A second tap confirms, so a stray tap can't end the night. */
+var endAsk = 0;   /* var: renderControls can read it before this line runs */
+function endTap(){
+  if (!G.priv || NET.role !== 'host' || G.over || G.endAfter) return;
+  if (!endAsk){ endAsk = setTimeout(() => { endAsk = 0; renderControls(); }, 3000); renderControls(); return; }
+  clearTimeout(endAsk); endAsk = 0;
+  endSession();
+}
+$('#bEnd').addEventListener('click', endTap);
+$('#bEndTop').addEventListener('click', endTap);
 $('#ldClose').addEventListener('click', () => { $('#ledDlg').hidden = true; });
 $('#ledDlg').addEventListener('click', e => { if (e.target.id === 'ledDlg') $('#ledDlg').hidden = true; });
 $('#ldEnd').addEventListener('click', () => endSession());
@@ -4146,13 +4200,14 @@ function netConnect(room, role){
   netBadge();
 }
 /* leave the room; the page goes back to a normal single-player game */
-function netLeave(why){
+function netLeave(why, keep){
   if (!NET.role) return;
   const wasGuest = NET.role === 'guest';
-  if (NET.room) netPost('api/leave', {room:NET.room, id:NET.id}).catch(() => {});
+  if (NET.role === 'host' && !keep) privSaveClear();
+  if (NET.room && !keep) netPost('api/leave', {room:NET.room, id:NET.id}).catch(() => {});
   if (NET.es) NET.es.close();
   NET.es = null; NET.role = null; NET.room = ''; NET.conn = false; NET.peers.clear(); NET.roster = [];
-  NET.seated = false; NET.hostGone = false; NET.rebuyAsked = false;
+  NET.seated = false; NET.hostGone = false; NET.rebuyAsked = false; G.paused = false;
   clearTimeout(NET.clockT); G.deadline = 0; G.nextAt = 0;
   sset('holdem.netRoom', null); sset('holdem.netRole', null); netSetUrl('');
   const wasPriv = G.priv;
@@ -4186,6 +4241,9 @@ function netBadge(){
 function netOnMessage(m){
   if (m.t === 'error'){ if (NET.es) NET.es.close(); netLeave(m.msg); openNet(); return; }
   if (m.t === 'closed'){ netLeave('房主关闭了房间'); return; }
+  if (m.t === 'kicked'){ netLeave('你被房主请出了房间'); openNet(); return; }
+  /* this player opened the same room in another window: that one keeps the seat, this one stops quietly */
+  if (m.t === 'replaced'){ netLeave('你在另一个窗口打开了这个房间，这里已经断开。要回到这里，刷新页面就行。', true); openNet(); return; }
   if (m.t === 'chat') return netShowChat(m.from, m.name, m.q);
   if (m.t === 'roster'){
     NET.roster = m.list || [];
@@ -4259,7 +4317,7 @@ function netPeerDrop(id, left){
     if (G.thinking === x.seat && !G.handOver) netStartClock(x.seat);
   }
   clearTimeout(x.dropT);
-  if (left){ x.gone = true; log(`${x.name}离开了房间`, 'sys'); }
+  if (left){ x.gone = true; if (!x.kicked) log(`${x.name}离开了房间`, 'sys'); }
   else { log(`${x.name}断线了，${GONE_MS / 60000} 分钟内回来还能接着打`, 'sys'); x.dropT = setTimeout(() => { x.gone = true; netRenderDlg(); }, GONE_MS); }
   if (!(p && p.remote === id)) { if (x.gone) NET.peers.delete(id); }
   render(); netBadge(); netRenderDlg();
@@ -4267,9 +4325,11 @@ function netPeerDrop(id, left){
 function netHostMessage(m){
   if (m.t === 'welcome'){ NET.peers.forEach(x => x.avas = []); render(); return; }
   if (m.t === 'admin'){ if (m.sys === true) adminApply(m.edits); return; }
-  if (m.t === 'join') return netPeerJoin(m.id, m.name);
-  if (m.t === 'drop') return netPeerDrop(m.id, false);
-  if (m.t === 'leave') return netPeerDrop(m.id, true);
+  if (m.t === 'join' || m.t === 'drop' || m.t === 'leave'){
+    if (m.from) return;   /* only the server can say who joined or left; a guest's fake "leave" is ignored */
+    if (m.t === 'join') return netPeerJoin(m.id, m.name);
+    return netPeerDrop(m.id, m.t === 'leave');
+  }
   const x = NET.peers.get(m.from); if (!x) return;
   const i = x.seat, p = G.players[i], mine = p && p.remote === x.id;
   if (m.t === 'hello'){
@@ -4303,7 +4363,8 @@ function netHostMessage(m){
   if (m.t === 'rabbit'){ if (m.key === G.salt) rabbitAct(i, !!m.yes); return; }
   if (m.t === 'straddle'){ p.straddleNext = !!m.on && G.handOver; return; }
   if (m.t === 'rebuy'){
-    if (canRebuy(p) && !p.wantRebuy){ p.wantRebuy = true; log(`${p.name}要再买一手，这手打完生效`, 'sys'); privKick(); render(); }
+    const k = G.priv ? Math.min(PRIV.most, Math.max(1, Math.round(+m.n) || 1)) : 1;
+    if (canRebuy(p) && !p.wantRebuy){ p.wantRebuy = k; log(`${p.name}要补 ${fmt(buyIn * k)}，这手打完生效`, 'sys'); privKick(); render(); }
   }
 }
 function remotePlayer(x, chips){
@@ -4336,23 +4397,24 @@ function netApplySeats(){
     np.st = newStats(); resetPlayer(np); np.out = false; np.isNew = 2;
     const back = G.priv && G.ledger && G.ledger[np.name];
     if (back && back.cash > 0){ np.chips = back.cash; back.cash = 0; }
-    else if (back && (back.buys || 0) >= PRIV.max){ np.chips = 0; np.out = true; }
     else ledgerBuy(np, buyIn, true);
     np.startChips = np.chips;
     G.players[i] = np;
-    log(np.out ? `${x.name}入座观战（${PRIV.max} 手都买完了）` : `${x.name}带着 ${fmt(np.chips)} 入座`, 'sys');
+    log(`${x.name}带着 ${fmt(np.chips)} 入座`, 'sys');
     dealerSay('newcomer', {name:x.name, n:fmt(np.chips)});
     const el = seats[i]; el.classList.remove('arrive'); void el.offsetWidth; el.classList.add('arrive');
   });
   G.players.forEach(p => {
     if (p.wantRebuy && canRebuy(p)){
-      p.out = false; p.chips += buyIn; p.rebuys = (p.rebuys || 0) + 1; ledgerBuy(p, buyIn, true);
-      log(G.priv ? `${p.name}又买了一手 ${fmt(buyIn)}（第 ${buysOf(p)} 手），现在 ${fmt(p.chips)}` : `${p.name}补码 ${fmt(buyIn)}`, 'sys');
-      G.sayNext = [p === G.players[0] && hasLine('heroRebuy') ? 'heroRebuy' : 'rebuy', {name:p.name, n:fmt(buyIn)}];
+      const k = G.priv ? Math.min(PRIV.most, Math.max(1, +p.wantRebuy || 1)) : 1, n = buyIn * k;
+      p.out = false; p.chips += n; p.rebuys = (p.rebuys || 0) + k; ledgerBuy(p, n, k);
+      log(G.priv ? `${p.name}补码 ${fmt(n)}（累计买入 ${fmt(G.ledger[p.name] ? G.ledger[p.name].buy : n)}），现在 ${fmt(p.chips)}` : `${p.name}补码 ${fmt(buyIn)}`, 'sys');
+      G.sayNext = [p === G.players[0] && hasLine('heroRebuy') ? 'heroRebuy' : 'rebuy', {name:p.name, n:fmt(n)}];
     }
     p.wantRebuy = false;
   });
   NET.rebuyAsked = false;
+  privSave();
   netBadge();
 }
 /* the thinking clock: only while friends are seated */
@@ -4371,13 +4433,16 @@ function netStartClock(i){
 }
 function netHandDone(){
   clearTimeout(NET.clockT); G.deadline = 0;
+  privSave();
   if (online()) NET.out.hist = H;
   G.nextAt = 0;
   if (G.endAfter && NET.role === 'host'){ wait(endSession, 2500); return; }
+  if (G.paused && NET.role === 'host'){ if (!G.over) log('牌局已暂停，房主点「继续牌局」再发下一手', 'sys'); render(); return; }
   if (NET.role === 'guest' || G.over || !(autoNext || online())) return;
   G.nextAt = Date.now() + NEXT_MS;
   const tick = () => {
     if (!G.handOver || G.over || NET.role === 'guest') return;
+    if (G.paused){ G.nextAt = 0; renderControls(); return; }
     if (!autoNext && !online()){ G.nextAt = 0; renderControls(); return; }
     /* playing alone: wait while a dialog such as the review is open */
     const R = G.rabbit;
@@ -4407,7 +4472,7 @@ function snapFor(x){
   const actor = G.handOver ? -1 : G.waiting ? 0 : G.thinking;
   let thinking = -1, waiting = false;
   if (actor >= 0){ if (seated && actor === s) waiting = true; else thinking = rot(actor); }
-  return {seated, mode, buyIn, players, priv:!!G.priv, ledger:G.priv ? ledgerRows() : null, endAfter:!!G.endAfter, waitSeat:!!G.waitSeat, key:G.salt || '', handNo:G.handNo, dealer:rot(G.dealer), sbIdx:rot(G.sbIdx), bbIdx:rot(G.bbIdx),
+  return {seated, mode, buyIn, players, priv:!!G.priv, paused:!!G.paused, ledger:G.priv ? ledgerRows() : null, endAfter:!!G.endAfter, waitSeat:!!G.waitSeat, key:G.salt || '', handNo:G.handNo, dealer:rot(G.dealer), sbIdx:rot(G.sbIdx), bbIdx:rot(G.bbIdx),
     board:G.board, board2:G.board2 || null, ritBase:G.ritBase || 0, street:G.street, currentBet:G.currentBet, minRaise:G.minRaise,
     sbAmt:G.sbAmt, bbAmt:G.bbAmt, toAct:rot(G.toAct), thinking, waiting, handOver:G.handOver, over:G.over, showdown:G.showdown,
     msg:G.msg, rit:G.rit === 2 ? 2 : ['bot', 'me', 'wait'].includes(G.rit) ? 'talk' : G.rit,
@@ -4474,7 +4539,7 @@ function netApply(m){
   const wasWaiting = G.waiting, wasOver = G.handOver;
   mode = s.mode === 'cash' ? 'cash' : 'tourney'; buyIn = s.buyIn;
   const wasEnded = G.over && G.priv;
-  G.priv = !!s.priv; G.ledgerView = s.ledger; G.endAfter = s.endAfter; G.waitSeat = s.waitSeat;
+  G.priv = !!s.priv; G.paused = !!s.paused; G.ledgerView = s.ledger; G.endAfter = s.endAfter; G.waitSeat = s.waitSeat;
   NET.seated = s.seated;
   s.players.forEach((o, k) => {
     const p = G.players[k] || (G.players[k] = {ava:''});
@@ -4521,6 +4586,13 @@ function netApply(m){
   }
 }
 /* switch this page into a friend's view of someone else's table */
+/* the same browser always joins a given room as the same player, even from a new tab or after WeChat reopens the link */
+function guestId(room){
+  const k = 'holdem.gid.' + room;
+  let v = store.get(k, '');
+  if (!/^[a-f0-9]{16}$/.test(v)){ v = randHex(8); store.set(k, v); }
+  return v;
+}
 function netBecomeGuest(room){
   runId++;
   clearTimeout(NET.clockT);
@@ -4528,6 +4600,7 @@ function netBecomeGuest(room){
   NET.blank = true; NET.seated = false;
   logEl.innerHTML = ''; HISTORY.length = 0; H = null;
   closeNew(); closeBots(); closeReview();
+  NET.id = guestId(room); sset('holdem.netId', NET.id);
   netConnect(room, 'guest');
   render();
 }
@@ -4612,7 +4685,7 @@ function netRenderDlg(){
         ${nameRow}
         <div class="net-sub" style="border:0; padding:0"><h3 class="rv-h">我来开房间</h3>
           <div class="net-kind" role="radiogroup" aria-label="房间类型">
-            <button type="button" role="radio" data-k="1" aria-checked="${priv}"><b>只和朋友打</b><small>私人局：不补电脑，至少 2 人开打，每手 200 最多买 2 手，最后一键结算。</small></button>
+            <button type="button" role="radio" data-k="1" aria-checked="${priv}"><b>只和朋友打</b><small>私人局：不补电脑，至少 2 人开打，入座 200，补码每次最多 1000，不限次数，最后一键结算。</small></button>
             <button type="button" role="radio" data-k="0" aria-checked="${!priv}"><b>朋友 + 电脑</b><small>空位电脑补上，人少也能马上打，朋友进来顶替电脑。</small></button>
           </div>
           <small class="rv-note">${priv ? `${SEATS} 人桌 · ${privText()}` : rulesText({mode, seats:SEATS, buy:buyIn}).replace(' 起', '')} · <a href="#" id="ntRules">改规则</a></small>
@@ -4671,7 +4744,8 @@ function netRenderDlg(){
     NET.peers.forEach(x => {
       const p = G.players[x.seat], seated = p && p.remote === x.id;
       const st = x.gone ? '<small class="off">已离开</small>' : x.online ? '<small class="ok">在线</small>' : '<small class="off">断线中</small>';
-      list += `<li><span>${esc(x.name)} <small>${!x.seat ? '观战' : seated ? '已入座' : '下一手入座'}</small></span>${st}</li>`;
+      const kick = x.gone ? '' : ` <button class="ghost net-kick" type="button" data-id="${esc(x.id)}">${NET.kickAsk === x.id ? '确定请出？' : '请出'}</button>`;
+      list += `<li><span>${esc(x.name)} <small>${!x.seat ? '观战' : seated ? '已入座' : '下一手入座'}</small></span><span>${st}${kick}</span></li>`;
     });
   } else {
     NET.roster.forEach(x => {
@@ -4705,9 +4779,37 @@ function netRenderDlg(){
   });
   const sh = $('#ntShare');
   if (sh) sh.addEventListener('click', () => navigator.share({title:'bluff? 德州房间 ' + NET.room, text:`来 bluff? 一起打德州，房间号 ${NET.room}`, url:link}).catch(() => {}));
+  body.querySelectorAll('.net-kick').forEach(b => b.addEventListener('click', () => netKick(b.dataset.id)));
   const r2 = $('#ntRules2');
   if (r2) r2.addEventListener('click', () => { NET.backToNet = true; $('#netDlg').hidden = true; openNew(); });
   $('#ntLeave').addEventListener('click', () => netLeave(''));
+}
+/* one-tap pause for the host: the hand in play finishes, then no new hand is dealt until 继续 (e.g. while a friend joins and buys in) */
+function setPause(on){
+  if (NET.role !== 'host' || G.over) return;
+  G.paused = !!on;
+  if (on){
+    G.nextAt = 0;
+    log(G.handOver ? '房主暂停了牌局' : '房主暂停了牌局，这一手打完后停下', 'sys');
+  } else {
+    log('房主继续了牌局', 'sys');
+    if (G.handOver) wait(() => { if (!G.paused && G.handOver && !G.over) startHand(); }, 800);
+  }
+  render();
+}
+$('#bPause').addEventListener('click', () => setPause(!G.paused));
+$('#bPauseTop').addEventListener('click', () => setPause(!G.paused));
+/* the host asks someone to leave: first tap asks, second tap does it. Their chips stay in the settlement. */
+function netKick(id){
+  const x = NET.peers.get(id);
+  if (!x || NET.role !== 'host') return;
+  if (NET.kickAsk !== id){ NET.kickAsk = id; netRenderDlg(); setTimeout(() => { if (NET.kickAsk === id){ NET.kickAsk = ''; netRenderDlg(); } }, 4000); return; }
+  NET.kickAsk = ''; x.kicked = true;
+  netPost('api/kick', {room:NET.room, id:NET.id, target:id}).then(r => {
+    if (!r.ok) throw new Error(r.error || '');
+    const p = G.players[x.seat], chips = p && p.remote === id ? p.chips + (G.handOver ? 0 : p.total) : 0;
+    log(`房主把${x.name}请出了房间${G.priv && chips ? `，${fmt(chips)} 筹码记入结算` : ''}`, 'sys');
+  }).catch(e => { x.kicked = false; NET.notice = '请出失败：' + (e.message || '网络错误'); netRenderDlg(); NET.notice = ''; });
 }
 /* older phone browsers (and some in-app browsers) have no clipboard API */
 function copyOld(text){
@@ -4740,14 +4842,16 @@ function closeNet(){ $('#netDlg').hidden = true; if (welcoming && !NET.role && $
 $('#bOnline').addEventListener('click', openNet);
 $('#ntClose').addEventListener('click', closeNet);
 $('#netDlg').addEventListener('click', e => { if (e.target.id === 'netDlg') closeNet(); });
-$('#bRebuy').addEventListener('click', () => {
+function askRebuy(k){
   const me = G.players[0];
   if (!canRebuy(me) || NET.rebuyAsked) return;
   NET.rebuyAsked = true;
-  if (NET.role === 'guest') netSend({t:'rebuy'});
-  else { me.wantRebuy = true; log(`${me.name}要再买一手，这手打完生效`, 'sys'); privKick(); }
+  if (NET.role === 'guest') netSend({t:'rebuy', n:k});
+  else { me.wantRebuy = k; log(`${me.name}要补 ${fmt(buyIn * k)}，这手打完生效`, 'sys'); privKick(); }
   renderControls();
-});
+}
+$('#bRebuy').addEventListener('click', () => askRebuy(G.priv ? Math.min(PRIV.most, Math.max(1, +$('#rebuyAmt').value || 1)) : 1));
+$('#rebuyAmt').addEventListener('change', () => renderControls());
 setInterval(() => { if (G.deadline || G.nextAt) renderControls(); }, 1000);
 /* reconnect after a reload, or open the join form from an invite link */
 function netBoot(){

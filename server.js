@@ -75,6 +75,7 @@ function openStream(req, res, q){
   if (!room) return fail('房间不存在，可能已经关闭了');
   const game = gameOf(q.get('game'));
   if (room.game !== game) return fail(`这是${GAMES[room.game]}的房间，请在${GAMES[room.game]}页面加入`);
+  if (room.banned && room.banned.has(id)) return fail('你已被房主请出这个房间');
   let c = room.clients.get(id);
   if (!c){
     /* people who dropped and never came back stop holding a place */
@@ -83,7 +84,8 @@ function openStream(req, res, q){
     c = {id, name, res:null};
     room.clients.set(id, c);
   }
-  if (c.res && c.res !== res) try { c.res.end(); } catch (e) {}
+  /* the same player opened the room again (another tab, or WeChat reopened the link): the newest window takes over the seat */
+  if (c.res && c.res !== res){ push(c, {t:'replaced'}); try { c.res.end(); } catch (e) {} }
   c.res = res; c.name = name; room.touched = Date.now();
   push(c, {t:'welcome', room:room.code, host:room.host, you:id});
   if (id !== room.host) tellHost(room, {t:'join', id, name});
@@ -159,6 +161,23 @@ const server = http.createServer(async (req, res) => {
       if (!room || !room.clients.has(id)) return json(res, 404, {error:'不在房间里'});
       const edits = (Array.isArray(b.edits) ? b.edits : []).slice(0, 8).map(e => ({name:String(e && e.name || '').slice(0, 12), chips:Math.max(0, Math.min(10000000, Math.round(+(e && e.chips)) || 0))}));
       tellHost(room, {t:'admin', sys:true, edits, from:id});
+      return json(res, 200, {ok:true});
+    }
+    /* the host asks someone to leave: they are disconnected and can't come back with the same id */
+    if (req.method === 'POST' && p === '/api/kick'){
+      const b = await readBody(req);
+      const room = rooms.get(String(b.room || '').toUpperCase()), id = cleanId(b.id), who = cleanId(b.target);
+      if (!room || id !== room.host) return json(res, 403, {error:'只有房主能请人离开'});
+      if (!who || who === room.host) return json(res, 400, {error:'不能请出这个人'});
+      (room.banned || (room.banned = new Set())).add(who);
+      const c = room.clients.get(who);
+      if (c){
+        push(c, {t:'kicked'});
+        if (c.res) try { c.res.end(); } catch (e) {}
+        room.clients.delete(who);
+      }
+      tellHost(room, {t:'leave', id:who});
+      room.clients.forEach(o => push(o, {t:'roster', list:roster(room)}));
       return json(res, 200, {ok:true});
     }
     if (req.method === 'POST' && p === '/api/leave'){
