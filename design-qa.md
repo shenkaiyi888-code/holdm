@@ -8,6 +8,7 @@ Reference: the selected portrait poker image in the conversation, with the reque
 
 - `artifacts/390x844-6seats.webp`: primary phone portrait composition.
 - `artifacts/390x740-8seats.webp`: eight-seat phone with restored helper information.
+- `artifacts/mobile-simplified.webp`: representative folded-player phone state with a single pot texture and quieter inactive seats.
 - `artifacts/844x390-8seats.webp`: phone landscape and side action console.
 - `artifacts/768x1024-8seats.webp`: iPad portrait with all eight seats.
 - `artifacts/1440x900-6seats.webp`: desktop table and controls.
@@ -23,13 +24,13 @@ Reference: the selected portrait poker image in the conversation, with the reque
 | P1 | Eight-seat small phones could overlap community cards with player cards or bets. | Dedicated compact center layout, outward middle card backs and compact action labels; browser checks assert no board overlap with plates or opponent cards. |
 | P1 | iOS pinch zoom could shrink the game iframe, stacking seats and clipping its controls. | Use the stable document layout viewport, anchor the frame to the document, and skip redundant visual viewport resize events. |
 | P1 | The simplified phone UI hid equity, hand type, stack and call odds. | Restore the helper strip above actions, keep it visible during raising, and wrap whole fields without truncating values. |
-| P2 | Pot chip stacks intruded into community cards in landscape. | Shared chip geometry and responsive stack size/spacing. |
+| P2 | Chip piles and repeated information made the phone table feel crowded. | Replace the piles with one small texture next to the pot amount; keep balances on seat plates and three useful helper fields above actions. |
 | P2 | Dealer button could land on pot chips. | Extended the existing placement collision checks to the board, street and pot. |
 | P2 | Original faces and trims were warm yellow and heavily gold. | Neutral white DOM cards, midnight backs, charcoal rail and muted champagne seam. |
 
 The real check/bet/raise buttons were exercised against the existing engine. Each triggered one matching sound event and WebAudio oscillators. Muting produced no sound events or oscillators while preserving visual feedback. Reduced motion skips deal flights. The action buttons meet a 44-pixel minimum height in every tested viewport. No page errors or horizontal/body overflow were observed. No unresolved P0/P1/P2 findings remain in the tested scope.
 
-Eight viewport cases now assert visible helper fields inside the console, real percentage values and no community-card overlap with opponent cards, player plates or the dealer marker. A known royal flush displays 100% equity and the correct hand type; calling 40 into a 240 pot displays 14% required equity. The strip remains visible while choosing a raise, respects the equity toggle and clears the percentage after folding. The existing equity and odds algorithms are unchanged.
+Eight viewport cases now assert three visible helper fields inside the console, real percentage values and no community-card overlap with opponent cards, player plates or the dealer marker. A known royal flush displays 100% equity and the correct hand type; calling 40 into a 240 pot displays 14% required equity. The player's balance remains visible on their seat, the pot contains one texture, and transfer animations contain one image per packet. No stacked-chip renderer remains. The helper strip stays visible while choosing a raise, respects the equity toggle and clears the percentage after folding. The existing equity and odds algorithms are unchanged.
 
 The interface now requests the native Apple system font stack for headings, controls, player names and numerical readouts. On non-Apple systems it falls back to the platform system font. Printed playing-card ranks keep their dedicated card font. Layout checks cover the new metrics in the test environment; SF Pro and PingFang rendering require an Apple device.
 

@@ -24,21 +24,10 @@
   $('.brand .logo').innerHTML='<img src="'+asset('icons/suit-spade-fill.svg')+'" alt="">';
   $('.brand .byline').textContent='德州扑克';
   const note=document.createElement('span');note.className='table-note';note.textContent='A GOOD HAND. A GOOD EVENING.';$('.felt').append(note);
-  const potChips=document.createElement('div');potChips.className='pot-chips';potChips.setAttribute('aria-hidden','true');$('.pot').before(potChips);
-  const chipProfiles={};
-  [5].forEach(n=>{
-    const img=new Image();img.onload=()=>{
-      // Only sample alpha bounds. Every denomination uses the master's shared display geometry.
-      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);
-      const data=ctx.getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=0,y1=0;
-      for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(data[(y*c.width+x)*4+3]>200){x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);}
-      if(x1>x0){chipProfiles[n]={x:x0/img.width,y:y0/img.height,w:(x1-x0+1)/img.width,h:(y1-y0+1)/img.height};document.querySelectorAll('.chip-image').forEach(el=>profile(el,5));}
-    };img.src=asset(`chip-${n}.webp`);
-  });
-  function profile(el,n){const p=chipProfiles[5];if(!p)return;const im=el.firstElementChild;im.style.cssText=`width:${100/p.w}%;height:${100/p.h}%;left:${-p.x/p.w*100}%;top:${-p.y/p.h*100}%`;el.style.maskSize=`${100/p.w}% ${100/p.h}%`;el.style.maskPosition=`${p.x/(1-p.w)*100}% ${p.y/(1-p.h)*100}%`;}
-  function stack(n,count=3){const html=`<span class="chip-stack" style="--layers:${count}" aria-hidden="true">${Array.from({length:count},(_,i)=>`<span class="chip-image" data-value="${n}" style="--layer:${i}"><img src="${asset(`chip-${n}.webp`)}" alt=""></span>`).join('')}</span>`;if(!chipProfiles[5])return html;const tmp=document.createElement('div');tmp.innerHTML=html;decorate(tmp);return tmp.innerHTML;}
-  function decorate(root){root.querySelectorAll('.chip-image').forEach(el=>profile(el,+el.dataset.value));}
-  let lastPot=-1;
+  const chipImage=()=>`<img src="${asset('chip-5.webp')}" alt="">`;
+  const coin=$('.pot .coin');coin.classList.add('chip-token');coin.setAttribute('aria-hidden','true');coin.innerHTML=chipImage();
+  // Keep the existing transfer-animation hook, with one texture instead of a chip pile.
+  const stack=()=>`<span class="chip-token" aria-hidden="true">${chipImage()}</span>`;
   const seen=new Set();
   function action(i,kind,g,sound){
     const signature=g.id || `${g.hand}|${g.street}|${i}|${g.text}`;
@@ -57,10 +46,7 @@
     stack,
     action,
     sync(G,seats){
-      const total=G.potCleared?0:G.players.reduce((sum,p)=>sum+(p.total||0),0);
-      if(total!==lastPot){lastPot=total;potChips.innerHTML=total>0?stack(total>=100?100:total>=25?25:5,Math.min(5,Math.max(2,Math.ceil(total/70))))+stack(5,2):'';decorate(potChips);}
       seats.forEach((el,i)=>{el.setAttribute('aria-label',`${G.players[i].name}，筹码 ${G.players[i].chips}${el.classList.contains('turn')?'，正在行动':''}`);});
-      decorate(document.getElementById('fx'));
       $('#bOrientation').disabled=false;
     }
   };

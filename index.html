@@ -3356,7 +3356,7 @@ function placeDealerButton(){
     const r = e.getBoundingClientRect();
     if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:Math.max(r.right, r.left + 64) + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
   }));
-  ['#board', '.pot-chips', '.pot', '#street'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,weight:10}); } });
+  ['#board', '.pot', '#street'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,weight:10}); } });
   const hits = (x, y) => keep.reduce((n, r) => n + (x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom ? (r.weight || 1) : 0), 0);
   let best = null;
   const tries = [];
@@ -3628,8 +3628,7 @@ function render(){
     : G.handOver ? (G.over ? '本局结束' : '本手结束') : `第 ${G.handNo || 1} 手 · ${G.sbAmt}/${G.bbAmt}`;
   ht.classList.toggle('you', you);
   const readStat = (key, label, value, cls = '') => `<span class="mini-stat" data-stat="${key}"><span>${label}</span><b class="${cls}">${esc(value)}</b></span>`;
-  $('#miniRead').innerHTML = readStat('stack', '筹码', fmt(me.chips))
-    + readStat('hand', '牌型', $('#myHand').textContent)
+  $('#miniRead').innerHTML = readStat('hand', '牌型', $('#myHand').textContent)
     + (showEq ? readStat('equity', '胜率', eqEl.textContent, eqEl.className) : '')
     + readStat('odds', '跟注需', $('#myOdds').textContent);
   renderControls();
