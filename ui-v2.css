@@ -99,3 +99,58 @@ body::before{content:"";position:fixed;inset:-15%;pointer-events:none;background
   .t8 .seat:not(.you){--cw:clamp(20px,6.5cqw,30px)}
 }
 @media (orientation:portrait) and (max-width:380px) and (max-height:650px){.s8-2,.s8-6{top:53%}}
+
+/* Player identities sit around the outside of the rail. The bridge sizes the
+   ellipse from the space left by the actual player plates and their hands. */
+.arena{width:100cqw;height:100cqh;aspect-ratio:auto;max-height:none;--cw:var(--board-cw,40px)}
+.arena .felt{inset:auto;left:var(--table-x,20%);top:var(--table-y,20%);width:var(--table-w,60%);height:var(--table-h,60%);border-width:var(--rail-w,14px)}
+.arena .center,.arena.t8 .center{position:relative;inset:auto;display:flex;flex-direction:column;gap:var(--center-gap,10px);padding:0 5px;transform:translateY(calc(-1 * var(--center-shift,0px)));width:100%}
+.arena .street,.arena.t8 .street,.arena .board,.arena.t8 .board,.arena .pot,.arena.t8 .pot{position:relative;inset:auto;transform:none;--cw:var(--board-cw,40px)}
+.arena .board{gap:var(--board-gap,5px)}
+.arena .msg{max-width:100%;font-size:11px;min-height:0}
+.arena .msg:empty{display:none}
+.arena .seat{left:var(--seat-x,50%);top:var(--seat-y,50%);right:auto;bottom:auto;transform:translate(-50%,-50%);width:var(--player-w,128px);display:flex;flex-direction:column;align-items:center}
+.arena .seat,.arena.t8 .seat:not(.you){--cw:var(--opponent-cw,28px)}
+.arena .seat.you{--cw:var(--hero-cw,48px)}
+.arena .pod,.arena.t8 .pod{width:100%;min-width:0;padding:5px;gap:6px;justify-content:center;background:#18201ee6;border-color:#a99c7d30;box-shadow:0 3px 10px #0003}
+.arena .info{min-width:0;flex:1}.arena .nm{font-size:12px}.arena .stk{font-size:12px;margin-top:2px}
+.arena .ava{width:30px;font-size:15px}
+.arena .tag{height:17px;min-height:17px;max-width:calc(100% + 12px);margin:3px 0 0;padding:2px 4px;overflow:hidden;text-overflow:ellipsis;font-size:10px;background:none;border-color:transparent}
+.arena .seat .bet,.arena.t8 .seat:not(.you) .bet,.arena.t8 .seat.you .bet{position:relative;inset:auto;transform:none;display:flex;margin-top:2px;min-height:16px;padding:1px 4px;gap:3px;max-width:calc(100% + 12px);font-size:10px;white-space:nowrap;background:none;border:0}
+.arena .seat .bet::before{width:13px;height:10px;flex:none}
+.arena .seat .hole{position:absolute;left:50%;top:-5px;right:auto;bottom:auto;transform:translate(-50%,-100%);align-self:auto;margin:0;pointer-events:none}
+.arena .seat[data-edge=top] .hole{top:calc(100% + 5px);transform:translate(-50%,0)}
+.arena .seat[data-edge=left] .hole{left:43%}.arena .seat[data-edge=right] .hole{left:57%}
+.arena .seat .badges{top:-5px;right:-5px}.arena .bd{height:17px;min-width:17px;padding:0 4px;font-size:9px}
+.arena .seat.folded:not(.you) .pod{background:none;border-color:transparent;box-shadow:none}
+.arena .table-note{display:none}
+@media (orientation:portrait){
+  .arena{--player-w:clamp(58px,17cqw,84px);--opponent-cw:clamp(18px,5.7cqw,34px);--hero-cw:clamp(34px,11.4cqw,70px)}
+  .arena .pod,.arena.t8 .pod{flex-direction:column;gap:3px;border-radius:14px;padding:4px 2px;background:none;border-color:transparent;box-shadow:none}
+  .arena .ava{width:28px;font-size:14px}.arena .info{width:100%;text-align:center}
+  .arena .nm,.arena .stk{font-size:11px;line-height:1.2}.arena .stk{margin-top:2px}
+  .arena .seat.turn .pod,.arena .seat.you .pod{background:#18201e99;border-color:#b7a88b45}
+  .arena .seat.turn .pod{border-color:#d5c3a6}
+  .arena .street{font-size:12px;gap:8px}.arena .street::before,.arena .street::after{width:18px}
+}
+@media (orientation:portrait) and (min-width:600px){
+  .arena{--opponent-cw:38px;--hero-cw:70px}
+  .arena .ava{width:36px;font-size:17px}.arena .nm{font-size:14px}.arena .stk{font-size:13px}
+  .arena .tag{font-size:11px;height:19px}.arena .seat .bet{font-size:11px;min-height:18px}
+}
+@media (orientation:portrait) and (max-height:660px){
+  .arena{--player-w:58px;--opponent-cw:17px;--hero-cw:32px}
+  .arena .ava{display:none}.arena .pod{padding:3px 1px;gap:0}
+  .arena .nm,.arena .stk{font-size:10px}.arena .tag{font-size:9px;height:15px;min-height:15px;margin-top:2px}
+  .arena .seat .bet,.arena.t8 .seat:not(.you) .bet,.arena.t8 .seat.you .bet{min-height:13px;font-size:9px;margin-top:1px}
+  .arena .street{font-size:10px}.arena .pot{font-size:11px}.arena .pot b{font-size:18px}
+  .arena .msg{display:none}
+}
+@media (orientation:landscape){.arena{--player-w:clamp(100px,13cqw,140px);--opponent-cw:clamp(22px,3.6cqw,38px);--hero-cw:clamp(38px,6cqw,68px)}}
+@media (orientation:landscape) and (max-height:560px){
+  .arena{--player-w:76px;--opponent-cw:18px;--hero-cw:32px}
+  .arena .pod{padding:3px;gap:4px}.arena .ava{width:22px;font-size:12px}
+  .arena .nm,.arena .stk{font-size:10px;line-height:1.2}.arena .tag{font-size:9px;height:15px;min-height:15px;margin-top:2px}
+  .arena .seat .bet,.arena.t8 .seat:not(.you) .bet,.arena.t8 .seat.you .bet{min-height:13px;font-size:9px;margin-top:1px}
+  .arena .street{font-size:10px}.arena .pot b{font-size:18px}.arena .msg{display:none}
+}

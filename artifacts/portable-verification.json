@@ -1,6 +1,7 @@
 {
-  "errors": [],
-  "externalRequests": [],
-  "cards": 12,
-  "orientationRetainsDocument": true
+  "offline": true,
+  "delivery": "in-memory document",
+  "httpRequests": [],
+  "sameDocument": true,
+  "seats": 6
 }

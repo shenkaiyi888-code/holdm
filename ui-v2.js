@@ -42,11 +42,53 @@
     }
     document.dispatchEvent(new CustomEvent('holdm:feedback',{detail:{kind,seat:i}}));
   }
+  const arena=$('#arena');
+  let seatLayout='',layoutFrame=0;
+  function layoutSeats(){
+    layoutFrame=0;
+    const seats=[...arena.querySelectorAll(':scope > .seat')];
+    const w=arena.clientWidth,h=arena.clientHeight;
+    if(!w||!h||!seats.length)return;
+    const portrait=matchMedia('(orientation: portrait)').matches;
+    const sizes=seats.map(el=>({w:el.offsetWidth,h:el.offsetHeight,hole:el.querySelector('.hole').offsetHeight+4}));
+    const boards=$('#board2').hidden?1:2;
+    const signature=[w,h,portrait,boards,...sizes.flatMap(s=>[s.w,s.h,s.hole])].join(':');
+    if(signature===seatLayout)return;
+    seatLayout=signature;
+    const gap=w<600?6:10,topIndex=seats.length===8?4:3;
+    const side=Math.max(...sizes.filter((_,i)=>i!==0&&i!==topIndex).map(s=>s.w));
+    const top=sizes[topIndex].h+gap;
+    const bottom=sizes[0].h+gap;
+    const tableW=w-2*(side+gap),availableH=h-top-bottom;
+    const tableH=portrait?availableH:Math.min(availableH,tableW/1.65);
+    const tableY=top+(availableH-tableH)/2;
+    const cx=w/2,cy=tableY+tableH/2,rx=tableW/2,ry=tableH/2;
+    const rail=Math.max(10,Math.min(24,Math.round(w*(portrait?.034:.02))));
+    const contentH=tableH-sizes[topIndex].hole-sizes[0].hole-gap*2;
+    const boardGap=w<400?4:6,centerGap=contentH<190?5:10;
+    const cardW=Math.max(20,Math.min(76,(tableW-rail*2-boardGap*4-16)/5,(contentH-48-centerGap*(boards+2))/(1.4*boards)));
+    const vars={'table-x':cx-rx,'table-y':tableY,'table-w':tableW,'table-h':tableH,'rail-w':rail,'board-cw':cardW,'board-gap':boardGap,'center-gap':centerGap,'center-shift':(sizes[0].hole-sizes[topIndex].hole)/2};
+    Object.entries(vars).forEach(([key,value])=>arena.style.setProperty('--'+key,value+'px'));
+    const angles=seats.length===8?[90,140,180,220,270,320,0,40]:[90,150,210,270,330,30];
+    seats.forEach((el,i)=>{
+      const a=angles[i]*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),s=sizes[i];
+      const sx=Math.abs(dx)<.001?0:Math.sign(dx),sy=Math.abs(dy)<.001?0:Math.sign(dy);
+      let x=cx+rx*dx+sx*s.w/2+dx*gap,y=cy+ry*dy+sy*s.h/2+dy*gap;
+      el.dataset.edge=i===0?'bottom':i===topIndex?'top':dx<0?'left':'right';
+      el.style.setProperty('--seat-x',x+'px');el.style.setProperty('--seat-y',y+'px');
+    });
+    // The engine's existing collision-aware marker follows the new seat positions.
+    window.placeDealerButton?.();
+  }
+  function scheduleSeats(){if(!layoutFrame)layoutFrame=requestAnimationFrame(layoutSeats);}
+  new ResizeObserver(scheduleSeats).observe(arena);
+  document.fonts.ready.then(()=>{seatLayout='';scheduleSeats();});
   window.HoldmUI={
     stack,
     action,
     sync(G,seats){
-      seats.forEach((el,i)=>{el.setAttribute('aria-label',`${G.players[i].name}，筹码 ${G.players[i].chips}${el.classList.contains('turn')?'，正在行动':''}`);});
+      seats.forEach((el,i)=>{el.setAttribute('aria-label',`${G.players[i].name}，筹码 ${G.players[i].chips}${el.classList.contains('turn')?'，正在行动':''}`);el.querySelector('.tag').title=el.querySelector('.tag').textContent;});
+      layoutSeats();
       $('#bOrientation').disabled=false;
     }
   };
