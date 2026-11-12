@@ -709,6 +709,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 .net-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
 .net-list li{display:flex; justify-content:space-between; gap:10px; background:var(--well); border:1px solid var(--line); border-radius:10px; padding:7px 11px; font-size:13px}
 .net-list li small{color:var(--muted)}
+.net-list .net-kick{padding:2px 10px; font-size:12px; margin-left:8px; min-height:0}
 .net-list li .ok{color:var(--win)} .net-list li .off{color:#ff9a90}
 .net-err{color:#ff9a90; font-size:12.5px; min-height:1em}
 .ledger{width:100%; border-collapse:collapse; font-size:14px}
@@ -1967,13 +1968,22 @@ function newGame(){
   if (G.priv){ mode = 'cash'; buyIn = PRIV.unit; }
   initPlayers();
   G.ledger = {};
-  G.players.forEach(p => { if (p.human) ledgerBuy(p, p.chips, true); });
-  G.handNo = 0; G.over = false; G.img = {bluff:0, value:0};
+  /* the host reloaded mid-session: everyone's buys and last stacks come back, and each player sits down with their stack */
+  const back = G.priv ? privLoad() : null;
+  if (back) back.rows.forEach(r => { if (r && r.name) G.ledger[r.name] = {name:String(r.name), buy:+r.buy || 0, buys:+r.buys || 0, cash:Math.max(0, +r.cash || 0)}; });
+  G.players.forEach(p => {
+    if (!p.human) return;
+    const b = back && G.ledger[p.name];
+    if (b && b.cash > 0){ p.chips = p.startChips = b.cash; b.cash = 0; }
+    else if (b && b.buys >= PRIV.max){ p.chips = p.startChips = 0; p.out = true; }
+    else ledgerBuy(p, p.chips, true);
+  });
+  G.handNo = back ? Math.max(0, +back.hand || 0) : 0; G.over = false; G.img = {bluff:0, value:0};
   if (!NET.role) clearSave();
   G.dealer = Math.floor(Math.random() * G.players.length);
   logEl.innerHTML = '';
   HISTORY.length = 0;
-  if (G.priv) log(`私人局开始：只有真人，不补电脑；${privText()}`, 'sys');
+  if (G.priv) log(back ? '接着刚才的私人局账本，朋友回来会带着原来的筹码入座' : `私人局开始：只有真人，不补电脑；${privText()}`, 'sys');
   else log(`本局对手：${G.players.slice(1).filter(p => !p.vacant).map(p => p.human ? `${p.name}（真人）` : `${p.name}（${p.hidden ? '风格未知' : p.style}）`).join('、')}`, 'sys');
   startHand();
 }
@@ -3936,6 +3946,21 @@ function emptySeat(){
   const p = {name:'空位', chips:0, ava:'', out:true, vacant:true, vacantFor:1e9, st:{hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0}};
   resetPlayer(p); p.startChips = 0; return p;
 }
+/* the host's page keeps the private ledger, so a reload of that page does not wipe who bought what */
+const PRIV_SAVE = 'holdem.privSave';
+function privSave(){
+  if (NET.role !== 'host' || !G.priv || G.over || !G.ledger) return;
+  const rows = ledgerRows().map(r => ({name:r.name, buy:r.buy, buys:r.buys, cash:r.chips}));
+  try { localStorage.setItem(PRIV_SAVE, JSON.stringify({room:NET.room, t:Date.now(), hand:G.handNo, rows})); } catch (e) {}
+}
+function privSaveClear(){ try { localStorage.removeItem(PRIV_SAVE); } catch (e) {} }
+function privLoad(){
+  try {
+    const v = JSON.parse(localStorage.getItem(PRIV_SAVE) || 'null');
+    if (v && v.room === NET.room && Date.now() - v.t < 12 * 3600000 && Array.isArray(v.rows)) return v;
+  } catch (e) {}
+  return null;
+}
 function ledgerBuy(p, n, count){
   if (!G.ledger || !n) return;
   const r = G.ledger[p.name] || (G.ledger[p.name] = {name:p.name, buy:0, cash:0, buys:0});
@@ -3960,6 +3985,7 @@ function endSession(){
   G.endAfter = false; G.waitSeat = false;
   G.over = true; G.handOver = true; G.waiting = false; G.thinking = -1; G.deadline = 0; G.nextAt = 0;
   const rows = ledgerRows();
+  privSaveClear();
   G.msg = ['牌局结束，请看最终结算'];
   log('私人局结束 · 最终结算：' + rows.map(r => `${r.name} ${r.net > 0 ? '+' : r.net < 0 ? '−' : '±'}${fmt(Math.abs(r.net))}`).join('，'), 'res');
   render(); openLedger();
@@ -4146,10 +4172,11 @@ function netConnect(room, role){
   netBadge();
 }
 /* leave the room; the page goes back to a normal single-player game */
-function netLeave(why){
+function netLeave(why, keep){
   if (!NET.role) return;
   const wasGuest = NET.role === 'guest';
-  if (NET.room) netPost('api/leave', {room:NET.room, id:NET.id}).catch(() => {});
+  if (NET.role === 'host' && !keep) privSaveClear();
+  if (NET.room && !keep) netPost('api/leave', {room:NET.room, id:NET.id}).catch(() => {});
   if (NET.es) NET.es.close();
   NET.es = null; NET.role = null; NET.room = ''; NET.conn = false; NET.peers.clear(); NET.roster = [];
   NET.seated = false; NET.hostGone = false; NET.rebuyAsked = false;
@@ -4186,6 +4213,9 @@ function netBadge(){
 function netOnMessage(m){
   if (m.t === 'error'){ if (NET.es) NET.es.close(); netLeave(m.msg); openNet(); return; }
   if (m.t === 'closed'){ netLeave('房主关闭了房间'); return; }
+  if (m.t === 'kicked'){ netLeave('你被房主请出了房间'); openNet(); return; }
+  /* this player opened the same room in another window: that one keeps the seat, this one stops quietly */
+  if (m.t === 'replaced'){ netLeave('你在另一个窗口打开了这个房间，这里已经断开。要回到这里，刷新页面就行。', true); openNet(); return; }
   if (m.t === 'chat') return netShowChat(m.from, m.name, m.q);
   if (m.t === 'roster'){
     NET.roster = m.list || [];
@@ -4259,7 +4289,7 @@ function netPeerDrop(id, left){
     if (G.thinking === x.seat && !G.handOver) netStartClock(x.seat);
   }
   clearTimeout(x.dropT);
-  if (left){ x.gone = true; log(`${x.name}离开了房间`, 'sys'); }
+  if (left){ x.gone = true; if (!x.kicked) log(`${x.name}离开了房间`, 'sys'); }
   else { log(`${x.name}断线了，${GONE_MS / 60000} 分钟内回来还能接着打`, 'sys'); x.dropT = setTimeout(() => { x.gone = true; netRenderDlg(); }, GONE_MS); }
   if (!(p && p.remote === id)) { if (x.gone) NET.peers.delete(id); }
   render(); netBadge(); netRenderDlg();
@@ -4267,9 +4297,11 @@ function netPeerDrop(id, left){
 function netHostMessage(m){
   if (m.t === 'welcome'){ NET.peers.forEach(x => x.avas = []); render(); return; }
   if (m.t === 'admin'){ if (m.sys === true) adminApply(m.edits); return; }
-  if (m.t === 'join') return netPeerJoin(m.id, m.name);
-  if (m.t === 'drop') return netPeerDrop(m.id, false);
-  if (m.t === 'leave') return netPeerDrop(m.id, true);
+  if (m.t === 'join' || m.t === 'drop' || m.t === 'leave'){
+    if (m.from) return;   /* only the server can say who joined or left; a guest's fake "leave" is ignored */
+    if (m.t === 'join') return netPeerJoin(m.id, m.name);
+    return netPeerDrop(m.id, m.t === 'leave');
+  }
   const x = NET.peers.get(m.from); if (!x) return;
   const i = x.seat, p = G.players[i], mine = p && p.remote === x.id;
   if (m.t === 'hello'){
@@ -4353,6 +4385,7 @@ function netApplySeats(){
     p.wantRebuy = false;
   });
   NET.rebuyAsked = false;
+  privSave();
   netBadge();
 }
 /* the thinking clock: only while friends are seated */
@@ -4371,6 +4404,7 @@ function netStartClock(i){
 }
 function netHandDone(){
   clearTimeout(NET.clockT); G.deadline = 0;
+  privSave();
   if (online()) NET.out.hist = H;
   G.nextAt = 0;
   if (G.endAfter && NET.role === 'host'){ wait(endSession, 2500); return; }
@@ -4521,6 +4555,13 @@ function netApply(m){
   }
 }
 /* switch this page into a friend's view of someone else's table */
+/* the same browser always joins a given room as the same player, even from a new tab or after WeChat reopens the link */
+function guestId(room){
+  const k = 'holdem.gid.' + room;
+  let v = store.get(k, '');
+  if (!/^[a-f0-9]{16}$/.test(v)){ v = randHex(8); store.set(k, v); }
+  return v;
+}
 function netBecomeGuest(room){
   runId++;
   clearTimeout(NET.clockT);
@@ -4528,6 +4569,7 @@ function netBecomeGuest(room){
   NET.blank = true; NET.seated = false;
   logEl.innerHTML = ''; HISTORY.length = 0; H = null;
   closeNew(); closeBots(); closeReview();
+  NET.id = guestId(room); sset('holdem.netId', NET.id);
   netConnect(room, 'guest');
   render();
 }
@@ -4671,7 +4713,8 @@ function netRenderDlg(){
     NET.peers.forEach(x => {
       const p = G.players[x.seat], seated = p && p.remote === x.id;
       const st = x.gone ? '<small class="off">已离开</small>' : x.online ? '<small class="ok">在线</small>' : '<small class="off">断线中</small>';
-      list += `<li><span>${esc(x.name)} <small>${!x.seat ? '观战' : seated ? '已入座' : '下一手入座'}</small></span>${st}</li>`;
+      const kick = x.gone ? '' : ` <button class="ghost net-kick" type="button" data-id="${esc(x.id)}">${NET.kickAsk === x.id ? '确定请出？' : '请出'}</button>`;
+      list += `<li><span>${esc(x.name)} <small>${!x.seat ? '观战' : seated ? '已入座' : '下一手入座'}</small></span><span>${st}${kick}</span></li>`;
     });
   } else {
     NET.roster.forEach(x => {
@@ -4705,9 +4748,22 @@ function netRenderDlg(){
   });
   const sh = $('#ntShare');
   if (sh) sh.addEventListener('click', () => navigator.share({title:'bluff? 德州房间 ' + NET.room, text:`来 bluff? 一起打德州，房间号 ${NET.room}`, url:link}).catch(() => {}));
+  body.querySelectorAll('.net-kick').forEach(b => b.addEventListener('click', () => netKick(b.dataset.id)));
   const r2 = $('#ntRules2');
   if (r2) r2.addEventListener('click', () => { NET.backToNet = true; $('#netDlg').hidden = true; openNew(); });
   $('#ntLeave').addEventListener('click', () => netLeave(''));
+}
+/* the host asks someone to leave: first tap asks, second tap does it. Their chips stay in the settlement. */
+function netKick(id){
+  const x = NET.peers.get(id);
+  if (!x || NET.role !== 'host') return;
+  if (NET.kickAsk !== id){ NET.kickAsk = id; netRenderDlg(); setTimeout(() => { if (NET.kickAsk === id){ NET.kickAsk = ''; netRenderDlg(); } }, 4000); return; }
+  NET.kickAsk = ''; x.kicked = true;
+  netPost('api/kick', {room:NET.room, id:NET.id, target:id}).then(r => {
+    if (!r.ok) throw new Error(r.error || '');
+    const p = G.players[x.seat], chips = p && p.remote === id ? p.chips + (G.handOver ? 0 : p.total) : 0;
+    log(`房主把${x.name}请出了房间${G.priv && chips ? `，${fmt(chips)} 筹码记入结算` : ''}`, 'sys');
+  }).catch(e => { x.kicked = false; NET.notice = '请出失败：' + (e.message || '网络错误'); netRenderDlg(); NET.notice = ''; });
 }
 /* older phone browsers (and some in-app browsers) have no clipboard API */
 function copyOld(text){
