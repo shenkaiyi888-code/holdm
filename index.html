@@ -82,6 +82,7 @@ button{cursor:pointer}
 .ghost:hover:not(:disabled){border-color:var(--line-2); background:var(--panel-2)}
 .ghost:disabled{opacity:.4; cursor:not-allowed}
 .ghost.armed{border-color:var(--danger); color:var(--danger)}
+.b-fold.armed{box-shadow:0 0 0 2px var(--danger) inset; font-size:14px}
 .toggle{display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12.5px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px 12px}
 .toggle input{accent-color:var(--gold); margin:0}
 select.ghost option{background:var(--panel); color:var(--text)}
@@ -1011,6 +1012,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <label class="toggle" for="optEq"><input type="checkbox" id="optEq" checked> 显示胜率</label>
       <label class="toggle" for="optMute"><input type="checkbox" id="optMute"> 荷官静音</label>
       <label class="toggle" for="optDealer"><input type="checkbox" id="optDealer" checked> 显示荷官</label>
+      <label class="toggle" for="optFoldSafe" title="弃牌要连按两下才生效，防止误触"><input type="checkbox" id="optFoldSafe" checked> 弃牌按两下</label>
       <label class="toggle" for="optAuto" title="一手结束 10 秒后自动发下一手；联机有朋友在桌上时总是自动"><input type="checkbox" id="optAuto" checked> 自动下一手</label>
       <select class="ghost" id="optSpeed" aria-label="节奏">
         <option value="1">正常节奏</option>
@@ -3044,7 +3046,15 @@ function armOr(key, fn){
   armed = key; clearTimeout(armT); armT = setTimeout(() => { armed = ''; renderControls(); }, 3000);
   renderControls();
 }
-$('#bFold').addEventListener('click', () => G.waiting && doAction(0, 'fold'));
+/* 强 fold: folding needs a second tap within 3 seconds (can be turned off in the menu), so a stray tap can't throw a hand away */
+let foldSafe = store.get('holdem.foldSafe', '1') === '1';
+$('#optFoldSafe').checked = foldSafe;
+$('#optFoldSafe').addEventListener('change', e => { foldSafe = e.target.checked; store.set('holdem.foldSafe', foldSafe ? '1' : '0'); armed = ''; renderControls(); });
+$('#bFold').addEventListener('click', () => {
+  if (!G.waiting) return;
+  if (foldSafe) return armOr('fold', () => doAction(0, 'fold'));
+  doAction(0, 'fold');
+});
 $('#bCall').addEventListener('click', () => {
   if (!G.waiting) return;
   const me = G.players[0], toCall = G.currentBet - me.bet;
@@ -3467,6 +3477,8 @@ function renderControls(){
 
   const w = G.waiting;
   $('#bFold').disabled = !w;
+  $('#bFold').classList.toggle('armed', w && armed === 'fold');
+  $('#bFold').firstChild.textContent = w && armed === 'fold' ? (b.toCall <= 0 ? '能免费过牌，再按一次弃' : '再按一次弃牌') : '弃牌';
   $('#bCall').disabled = !w;
   const callBtn = $('#bCall');
   if (!w) armed = '';
