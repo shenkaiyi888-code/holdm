@@ -6,6 +6,8 @@ This update keeps the poker engine, hand evaluation, betting rules, computer opp
 
 `play.html` and `orientation-shell.js` keep one live game iframe. The orientation button changes its viewport without recreating the game document or reconnecting the room. Touch devices can use a rotated viewport even if the browser does not support orientation locking. Desktop portrait mode uses a centered vertical viewport. Room invitations point to the outer root URL.
 
+Pinch zoom uses the stable document layout viewport for the iframe dimensions. Safari can report the magnified visual viewport through `innerWidth` / `innerHeight`; using those values collapsed the table and stacked its absolute seats. The frame is anchored to the document, and visual viewport events with unchanged layout dimensions no longer resize it. Browser magnification remains enabled. Run `node scripts/verify-zoom.cjs` for the 1.25×–3× zoom regression, including orientation changes during the same hand. The regression fails on the preceding `e8d9cf4` revision and passes with this fix. It uses Chromium page scaling plus Safari-style viewport reporting; it does not claim physical iPhone coverage.
+
 The old dealer panels, character chatter and narration are retired from the UI. The original hidden DOM remains so existing game bindings and other game pages continue to work. There are no new dealer characters in this version.
 
 Phone portrait has the primary three actions at the bottom. Landscape puts those actions beside the table; iPad and desktop get more space for cards and player plates. Compact eight-seat tables use smaller community cards and move the middle opponents' backs outward to keep the board clear.

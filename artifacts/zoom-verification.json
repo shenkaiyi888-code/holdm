@@ -1,0 +1,77 @@
+{
+  "cases": [
+    {
+      "viewport": [
+        390,
+        740
+      ],
+      "seats": 6,
+      "factors": [
+        1.25,
+        1.5,
+        2,
+        3,
+        1
+      ],
+      "geometryStable": true,
+      "frameResizesDuringPinch": 0,
+      "stateRetained": true,
+      "orientationAtZoom": true
+    },
+    {
+      "viewport": [
+        390,
+        740
+      ],
+      "seats": 8,
+      "factors": [
+        1.25,
+        1.5,
+        2,
+        3,
+        1
+      ],
+      "geometryStable": true,
+      "frameResizesDuringPinch": 0,
+      "stateRetained": true,
+      "orientationAtZoom": true
+    },
+    {
+      "viewport": [
+        360,
+        640
+      ],
+      "seats": 8,
+      "factors": [
+        1.25,
+        1.5,
+        2,
+        3,
+        1
+      ],
+      "geometryStable": true,
+      "frameResizesDuringPinch": 0,
+      "stateRetained": true,
+      "orientationAtZoom": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "seats": 8,
+      "factors": [
+        1.25,
+        1.5,
+        2,
+        3,
+        1
+      ],
+      "geometryStable": true,
+      "frameResizesDuringPinch": 0,
+      "stateRetained": true,
+      "orientationAtZoom": true
+    }
+  ],
+  "errors": []
+}

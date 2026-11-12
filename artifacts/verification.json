@@ -1373,7 +1373,7 @@
         "bet"
       ],
       "oscillators": 3,
-      "animations": 6
+      "animations": 2
     },
     {
       "kind": "raise",
