@@ -1,5 +1,45 @@
 # Design QA
 
+## Approved J/Q/K integration
+
+final result: passed
+
+Source visual truth: `/workspace/generated_images/court-characters/J-jack.png`, `Q-queen.png` and `K-king.png`. These are the approved original J, revised high-updo Q and revised authoritative K, each 1254×1254 with alpha. Production portraits in `public/assets/table-v2/court-*.webp` are 768×768 derivatives. Closed-eye frames were generated from the approved portraits; the application reveals only their eye regions during a blink.
+
+The source images specify character art. The header placement and picker adapt that art to the existing responsive poker interface; they do not represent a replacement page design.
+
+### Comparison evidence
+
+- `artifacts/dealer-asset-comparison.webp`: approved source and actual browser-rendered portraits in the same comparison input. Both sides are normalized to 90×90 CSS pixels at device scale factor 1. The desktop portraits render at 116×116 CSS pixels. Complete crowns, hairstyles and shoulder silhouettes remain visible.
+- `artifacts/dealer-layout-comparison.webp`: the previously approved 390×740 table layout beside the current browser-rendered 390×740, eight-player flop state. Card positions, player information and action-area proportions match. The intended addition is the 44×44 header control. The randomized dealer marker and sampled equity may differ between captures.
+- `artifacts/dealer-picker-390x740.webp` and `artifacts/dealer-picker-1440x900.webp`: the picker open with K selected on phone and desktop, captured at the stated CSS viewport and device scale factor 1.
+- `artifacts/dealer-blink-comparison.webp`: the same phone picker with open eyes and at the closed-eye animation phase. This focused comparison checks that clothing, crowns and facial silhouettes stay stable while the eye patches change.
+
+Both original character assets and browser screenshots were opened and compared in the combined inputs above. These are rendered browser captures from the running Node game at `http://terminal.local:4173/`, rather than HTTP-health or build-only checks. The preview relay failed to initialize, so browser verification used Chromium directly against that same local server.
+
+### Findings and iteration history
+
+- Resolved P2 — first picker capture could show J/Q as temporarily empty while asynchronously decoded images were becoming ready. Evidence: `artifacts/dealer-blink-comparison-initial.webp`. Base portraits now preload and decode synchronously; blink frames retain deferred loading. Capture checks also wait for image decoding and two paint frames. Post-fix evidence: all three figures appear in both states of `artifacts/dealer-blink-comparison.webp` and in both picker screenshots.
+- No remaining actionable P0/P1/P2 findings in the tested scope.
+
+### Required fidelity surfaces
+
+- Fonts and typography: new controls use the existing Apple-native system stack, with 18px picker heading, 12–13px supporting labels and a compact rank marker. Existing card-rank typography remains separate. Linux Chromium exercises the fallback; SF Pro/PingFang rendering is device-dependent.
+- Spacing and layout rhythm: the character stays in a 44×44 header button outside the arena. All header controls and picker bounds fit eight tested viewport sizes. The three choices use one consistent grid; native dialog focus and a 44px completion control support keyboard and touch interaction. The play area retains its prior geometry.
+- Colors and tokens: the interface retains charcoal, green and muted champagne tokens. Red/yellow/navy character colors come from the approved art. Selected and focused states are visible without recoloring the portraits.
+- Image quality and asset fidelity: approved J, revised Q and revised K retain their features and full silhouettes after scaling/compression. Transparent WebP assets have no visible opaque background or halo. Generated closed-eye patches avoid full-frame silhouette flicker. No character has been replaced by CSS/SVG drawings, emoji or generic placeholders.
+- Copy and content: choices are labeled J · 近卫, Q · 王后 and K · 君王. The picker communicates quiet companionship and exposes the idle-motion preference. The main menu can hide or restore the portrait.
+
+### Interaction and regression evidence
+
+`artifacts/dealer-verification.json` records eight viewport checks: 320×568, 360×640, 390×740, 390×844, 768×1024, 1024×768, 1440×900 and 844×390. All three characters switch, selection and motion preferences survive reload, hiding/restoring works, controls remain silent, the live hand remains unchanged during selection and orientation changes, and system reduced motion disables both breathing and blinking. No page errors or failed asset responses were observed.
+
+The existing 16 six/eight-seat layout cases and check/bet/raise audio/mute checks pass in `artifacts/verification.json`. The 1.25×–3× pinch-zoom regression passes in `artifacts/zoom-verification.json`. The standalone bundle loads with no external HTTP requests and retains its document while switching orientation; the two-board feature remains clear at 320×568 and 768×1024.
+
+Implementation checklist: approved assets installed; picker/visibility/persistence wired; quiet motion and reduced motion checked; responsive layouts compared; page errors checked; poker and zoom regressions passed. No implementation fix remains from this comparison. Physical Safari/iPad rendering and audio remain device-coverage gaps; these checks use Chromium viewport emulation.
+
+## Previous responsive-table verification
+
 Result: passed
 
 Reference: the selected portrait poker image in the conversation, with the requested emerald felt, neutral white faces and restrained details. The generated `public/assets/table-v2/card-back.webp` and common chip master were inspected together with the browser screenshots. This is an implementation on the existing game, with adaptations for six/eight seats and smaller viewports.

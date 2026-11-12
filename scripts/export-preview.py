@@ -12,8 +12,10 @@ for p in asset_root.rglob('*'):
         mime = {'.webp':'image/webp', '.ttf':'font/ttf', '.svg':'image/svg+xml'}[p.suffix]
         assets['/assets/table-v2/'+p.relative_to(asset_root).as_posix()] = [mime,base64.b64encode(p.read_bytes()).decode()]
 game = (root/'index.html').read_text()
-game = game.replace('<link rel="stylesheet" href="/ui-v2.css">','<style>'+(root/'ui-v2.css').read_text()+'</style>')
-game = game.replace('<script src="/ui-v2.js"></script>','<script>'+(root/'ui-v2.js').read_text()+'</script>')
+for name in ('ui-v2.css', 'court-dealers.css'):
+    game = game.replace(f'<link rel="stylesheet" href="/{name}">','<style>'+(root/name).read_text()+'</style>')
+for name in ('ui-v2.js', 'court-dealers.js'):
+    game = game.replace(f'<script src="/{name}"></script>','<script>'+(root/name).read_text()+'</script>')
 game = game.replace("const asset = name => '/assets/table-v2/' + name;", "const asset = name => parent.__HOLDM_ASSETS['/assets/table-v2/' + name];")
 shell = (root/'play.html').read_text()
 code = (root/'orientation-shell.js').read_text().replace("frame.src = '/game.html' + location.search + location.hash;", 'frame.srcdoc = window.__HOLDM_DOCUMENT;')

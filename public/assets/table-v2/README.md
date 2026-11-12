@@ -6,3 +6,7 @@ WebP files are the optimized runtime assets; the original PNG sources are kept i
 
 Suit icons: [Bootstrap Icons](https://github.com/twbs/icons), MIT, see ICON-LICENSE.txt.
 Card rank font: [Libre Baskerville](https://fonts.google.com/specimen/Libre+Baskerville), SIL OFL, see FONT-LICENSE.txt. The bundled subset contains only card ranks, numbers and punctuation.
+
+## Approved court dealers
+
+`court-j.webp`, `court-q.webp` and `court-k.webp` contain the user-approved J, revised Q and revised K portraits. Corresponding `court-*-blink.webp` files contain generated closed-eye frames. All are 768×768 WebP with transparency. The component uses localized eye masks over the approved portraits during a blink. Original PNG masters are retained in the source archive.

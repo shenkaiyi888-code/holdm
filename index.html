@@ -987,6 +987,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 </style>
 
 <link rel="stylesheet" href="/ui-v2.css">
+<link rel="stylesheet" href="/court-dealers.css">
 </head>
 <body class="no-dealer">
 <div class="app">
@@ -1285,6 +1286,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 </div>
 
 <script src="/ui-v2.js"></script>
+<script src="/court-dealers.js"></script>
 <script>
 (() => {
 'use strict';
@@ -3116,7 +3118,7 @@ function fly(html, from, to, ms, o = {}){
   return a.finished.then(() => el.remove(), () => el.remove());
 }
 const coinsHTML = n => `<div class="coins">${window.HoldmUI.stack(5,n)}</div>`;
-const dealerPoint = () => centerOf($('.deal-origin'));
+const dealerPoint = () => window.HoldmCourt?.origin() || centerOf($('.deal-origin'));
 
 /* sounds: synthesized, start after the first click/tap */
 let actx = null, soundOn = store.get('holdem.sound', '1') === '1';

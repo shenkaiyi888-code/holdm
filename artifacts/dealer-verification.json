@@ -1,0 +1,519 @@
+{
+  "viewports": [
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "header": {
+        "viewport": [
+          320,
+          568
+        ],
+        "controls": [
+          {
+            "x": 36,
+            "y": 15,
+            "w": 56.234375,
+            "h": 30
+          },
+          {
+            "x": 145.984375,
+            "y": 8,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 195.984375,
+            "y": 8,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 254,
+            "y": 8,
+            "w": 56,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 10,
+          "y": 65,
+          "w": 300,
+          "h": 360
+        },
+        "origin": {
+          "x": 167.984375,
+          "y": 30,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 14,
+        "y": 147.5625,
+        "w": 292,
+        "h": 272.859375,
+        "scroll": 290,
+        "client": 290
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        360,
+        640
+      ],
+      "header": {
+        "viewport": [
+          360,
+          640
+        ],
+        "controls": [
+          {
+            "x": 36,
+            "y": 15,
+            "w": 56.234375,
+            "h": 30
+          },
+          {
+            "x": 185.984375,
+            "y": 8,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 235.984375,
+            "y": 8,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 294,
+            "y": 8,
+            "w": 56,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 10,
+          "y": 65,
+          "w": 340,
+          "h": 432
+        },
+        "origin": {
+          "x": 207.984375,
+          "y": 30,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 14,
+        "y": 176.90625,
+        "w": 332,
+        "h": 286.1875,
+        "scroll": 330,
+        "client": 330
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        390,
+        740
+      ],
+      "header": {
+        "viewport": [
+          390,
+          740
+        ],
+        "controls": [
+          {
+            "x": 47,
+            "y": 12,
+            "w": 67.546875,
+            "h": 36
+          },
+          {
+            "x": 209.984375,
+            "y": 8,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 260.984375,
+            "y": 8,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 320,
+            "y": 8,
+            "w": 56,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 14,
+          "y": 65,
+          "w": 362,
+          "h": 524.5
+        },
+        "origin": {
+          "x": 231.984375,
+          "y": 30,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 14,
+        "y": 219.484375,
+        "w": 362,
+        "h": 301.03125,
+        "scroll": 360,
+        "client": 360
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "header": {
+        "viewport": [
+          390,
+          844
+        ],
+        "controls": [
+          {
+            "x": 47,
+            "y": 12,
+            "w": 67.546875,
+            "h": 36
+          },
+          {
+            "x": 209.984375,
+            "y": 8,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 260.984375,
+            "y": 8,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 320,
+            "y": 8,
+            "w": 56,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 14,
+          "y": 65,
+          "w": 362,
+          "h": 628.5
+        },
+        "origin": {
+          "x": 231.984375,
+          "y": 30,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 14,
+        "y": 271.484375,
+        "w": 362,
+        "h": 301.03125,
+        "scroll": 360,
+        "client": 360
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        768,
+        1024
+      ],
+      "header": {
+        "viewport": [
+          768,
+          1024
+        ],
+        "controls": [
+          {
+            "x": 65,
+            "y": 22.5,
+            "w": 84.515625,
+            "h": 43
+          },
+          {
+            "x": 573.96875,
+            "y": 22,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 624.96875,
+            "y": 22,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 683.984375,
+            "y": 22,
+            "w": 52.015625,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 32,
+          "y": 90,
+          "w": 704,
+          "h": 749
+        },
+        "origin": {
+          "x": 595.96875,
+          "y": 44,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 164,
+        "y": 348.484375,
+        "w": 440,
+        "h": 327.03125,
+        "scroll": 438,
+        "client": 438
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        1024,
+        768
+      ],
+      "header": {
+        "viewport": [
+          1024,
+          768
+        ],
+        "controls": [
+          {
+            "x": 55,
+            "y": 15,
+            "w": 73.203125,
+            "h": 38
+          },
+          {
+            "x": 829.96875,
+            "y": 12,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 885.96875,
+            "y": 12,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 949.984375,
+            "y": 12,
+            "w": 52.015625,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 22,
+          "y": 79,
+          "w": 686,
+          "h": 677
+        },
+        "origin": {
+          "x": 851.96875,
+          "y": 34,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 292,
+        "y": 220.484375,
+        "w": 440,
+        "h": 327.03125,
+        "scroll": 438,
+        "client": 438
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "header": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "controls": [
+          {
+            "x": 55,
+            "y": 15,
+            "w": 73.203125,
+            "h": 38
+          },
+          {
+            "x": 1245.96875,
+            "y": 12,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 1301.96875,
+            "y": 12,
+            "w": 52.015625,
+            "h": 44
+          },
+          {
+            "x": 1365.984375,
+            "y": 12,
+            "w": 52.015625,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 22,
+          "y": 79,
+          "w": 1022,
+          "h": 809
+        },
+        "origin": {
+          "x": 1267.96875,
+          "y": 34,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 500,
+        "y": 286.484375,
+        "w": 440,
+        "h": 327.03125,
+        "scroll": 438,
+        "client": 438
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "header": {
+        "viewport": [
+          844,
+          390
+        ],
+        "controls": [
+          {
+            "x": 575,
+            "y": 15,
+            "w": 56.234375,
+            "h": 30
+          },
+          {
+            "x": 681.96875,
+            "y": 8,
+            "w": 44,
+            "h": 44
+          },
+          {
+            "x": 731.96875,
+            "y": 8,
+            "w": 46.015625,
+            "h": 44
+          },
+          {
+            "x": 783.984375,
+            "y": 8,
+            "w": 46.015625,
+            "h": 44
+          }
+        ],
+        "arena": {
+          "x": 14,
+          "y": 8,
+          "w": 543,
+          "h": 374
+        },
+        "origin": {
+          "x": 703.96875,
+          "y": 30,
+          "w": 44,
+          "h": 44
+        }
+      },
+      "picker": {
+        "x": 202,
+        "y": 48.65625,
+        "w": 440,
+        "h": 292.6875,
+        "scroll": 438,
+        "client": 438
+      },
+      "allThreeSwitch": true,
+      "stateRetained": true,
+      "preferencesPersist": true,
+      "silent": true,
+      "canHide": true,
+      "motionOptional": true
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "reducedMotion": true
+}
