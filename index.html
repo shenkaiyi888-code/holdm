@@ -1088,7 +1088,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <span id="smokeNote">只是氛围，不影响牌局</span>
     </div>
     <div class="actions">
-      <div class="mini-read" id="miniRead"></div>
+      <div class="mini-read" id="miniRead" role="group" aria-label="手牌辅助信息"></div>
       <div class="status-row">
         <div class="status" id="status">发牌中</div>
         <button class="ghost chat-btn" id="bChat" type="button" hidden aria-expanded="false" aria-label="发短句和表情">💬</button>
@@ -3356,17 +3356,17 @@ function placeDealerButton(){
     const r = e.getBoundingClientRect();
     if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:Math.max(r.right, r.left + 64) + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
   }));
-  ['#board', '.pot-chips', '.pot', '#street'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push(r); } });
-  const hits = (x, y) => keep.filter(r => x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom).length;
+  ['#board', '.pot-chips', '.pot', '#street'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,weight:10}); } });
+  const hits = (x, y) => keep.reduce((n, r) => n + (x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom ? (r.weight || 1) : 0), 0);
   let best = null;
   const tries = [];
-  [16, 30].forEach(gap => [.75, -.75, 1.25, -1.25, 1.75, -1.75, .35, -.35, 2.3, -2.3, 3.14].forEach(ang => tries.push([ang, gap])));
+  [16, 30, 44].forEach(gap => [.75, -.75, 1.25, -1.25, 1.75, -1.75, .35, -.35, 2.3, -2.3, 3.14].forEach(ang => tries.push([ang, gap])));
   for (const [ang, gap] of tries){
     const rx = dx * Math.cos(ang) - dy * Math.sin(ang), ry = dx * Math.sin(ang) + dy * Math.cos(ang);
     const dist = Math.hypot(pod.w * rx, pod.h * ry) / 2 + gap;
     const x = pod.x + rx * dist, y = pod.y + ry * dist;
     const out = x - R < ar.left || x + R > ar.right || y - R < ar.top || y + R > ar.bottom;
-    const h = hits(x, y) + (out ? 5 : 0);
+    const h = hits(x, y) + (out ? 100 : 0);
     if (!best || h < best.h) best = {x, y, h};
     if (!h) break;
   }
@@ -3379,6 +3379,7 @@ addEventListener('orientationchange', () => setTimeout(placeDealerButton, 300));
 /* ---------- rendering ---------- */
 const arena = $('#arena');
 const seats = [];
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(placeDealerButton).observe(arena);
 /* 6 seats use the original pos0-pos5 layout; 8 seats use s8-0 to s8-7 */
 function rebuildSeats(n){
   if (seats.length === n) return;
@@ -3626,8 +3627,11 @@ function render(){
     : !G.handOver && G.thinking >= 0 && G.players[G.thinking] ? `${G.players[G.thinking].name} 思考中`
     : G.handOver ? (G.over ? '本局结束' : '本手结束') : `第 ${G.handNo || 1} 手 · ${G.sbAmt}/${G.bbAmt}`;
   ht.classList.toggle('you', you);
-  $('#miniRead').innerHTML = `筹码 <b>${fmt(me.chips)}</b> · <b>${esc($('#myHand').textContent)}</b>`
-    + (eq != null ? ` · 胜率 <b>${Math.round(eq * 100)}%</b>` : '') + (odds != null ? ` · 需 <b>${Math.round(odds * 100)}%</b>` : '');
+  const readStat = (key, label, value, cls = '') => `<span class="mini-stat" data-stat="${key}"><span>${label}</span><b class="${cls}">${esc(value)}</b></span>`;
+  $('#miniRead').innerHTML = readStat('stack', '筹码', fmt(me.chips))
+    + readStat('hand', '牌型', $('#myHand').textContent)
+    + (showEq ? readStat('equity', '胜率', eqEl.textContent, eqEl.className) : '')
+    + readStat('odds', '跟注需', $('#myOdds').textContent);
   renderControls();
   renderImage();
   window.HoldmUI?.sync(G, seats);
