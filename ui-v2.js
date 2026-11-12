@@ -78,7 +78,7 @@
       el.style.setProperty('--seat-x',x+'px');el.style.setProperty('--seat-y',y+'px');
     });
     // The engine's existing collision-aware marker follows the new seat positions.
-    window.placeDealerButton?.();
+    document.dispatchEvent(new Event('holdm:table-layout'));
   }
   function scheduleSeats(){if(!layoutFrame)layoutFrame=requestAnimationFrame(layoutSeats);}
   new ResizeObserver(scheduleSeats).observe(arena);
@@ -86,6 +86,7 @@
   window.HoldmUI={
     stack,
     action,
+    layout(){seatLayout='';layoutSeats();},
     sync(G,seats){
       seats.forEach((el,i)=>{el.setAttribute('aria-label',`${G.players[i].name}，筹码 ${G.players[i].chips}${el.classList.contains('turn')?'，正在行动':''}`);el.querySelector('.tag').title=el.querySelector('.tag').textContent;});
       layoutSeats();

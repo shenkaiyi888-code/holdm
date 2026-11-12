@@ -19,10 +19,11 @@ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y
   for(const [w,h] of [[320,568],[360,640],[390,740],[390,844],[768,1024],[1024,768],[1440,900],[844,390]]){
    const{c,p,f}=await open(w,h);const before=await state(f);
    assert.equal(await f.locator('#bCourtDealer').getAttribute('data-dealer'),'k');
-   const header=await f.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height}};return{viewport:[innerWidth,innerHeight],controls:['.brand h1','#bCourtDealer','#bOrientation','#bMenu'].map(s=>rect(document.querySelector(s))),arena:rect(document.querySelector('.arena')),origin:HoldmCourt.origin()};});
+   const header=await f.evaluate(()=>{const rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height}};return{viewport:[innerWidth,innerHeight],controls:['.brand h1','#bCourtDealer','#bOrientation','#bMenu'].map(s=>rect(document.querySelector(s))),arena:rect(document.querySelector('.arena')),dealer:rect(document.getElementById('bCourtDealer')),origin:HoldmCourt.origin()};});
    for(const r of header.controls)assert.ok(r.x>=-1&&r.x+r.w<=header.viewport[0]+1,JSON.stringify({message:'Header controls must remain visible',w,h,r}));
    for(let i=0;i<header.controls.length;i++)for(let j=i+1;j<header.controls.length;j++)assert.ok(!overlap(header.controls[i],header.controls[j]),JSON.stringify({message:'Header controls must not collide',w,h,i,j}));
-   assert.ok(header.controls[1].w>=44&&header.controls[1].h>=44);assert.ok(!overlap(header.controls[1],header.arena),'Dealer must remain outside the table');
+   assert.ok(header.dealer.w>=(w<340?80:96)&&header.dealer.h>=80,JSON.stringify({message:'The header portrait must be clearly larger than the old 40px avatar',w,h,dealer:header.dealer}));
+   assert.ok(!overlap(header.dealer,header.arena),'The enlarged dealer must remain in the upper bar');
    await f.evaluate(()=>{window.dealerSounds=[];document.addEventListener('holdm:sound',e=>dealerSounds.push(e.detail.kind));});
    await p.screenshot({path:`artifacts/dealer-${w}x${h}.png`});
    await f.locator('#bCourtDealer').click();await loaded(f);assert.equal(await f.locator('#courtPicker').isVisible(),true);
@@ -49,6 +50,12 @@ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y
    await f.locator('#bOrientation').click();await p.waitForTimeout(180);assert.deepEqual(await state(f),before);assert.equal(await f.locator('#bCourtDealer').getAttribute('data-dealer'),'q');
    await f.locator('#bOrientation').click();await p.waitForTimeout(180);assert.deepEqual(await state(f),before);
    assert.deepEqual(await f.evaluate(()=>dealerSounds),[],'Dealer controls must stay silent');
+   if(w<h&&w<600){
+    await f.locator('#bRaise').click();await f.locator('#bCancel').waitFor({state:'visible'});
+    const form=await f.locator('#bRaise').evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,vw:innerWidth,vh:innerHeight}});
+    assert.ok(form.x>=0&&form.y>=0&&form.x+form.w<=form.vw+1&&form.y+form.h<=form.vh+1,'Betting controls must remain visible');
+    await f.locator('#bCancel').click();assert.deepEqual(await state(f),before);
+   }
    await p.reload();await p.frameLocator('#game').locator('#stPlay').click();const reloaded=p.frames()[1];
    assert.equal(await reloaded.locator('#bCourtDealer').getAttribute('data-dealer'),'q');
    assert.equal(await reloaded.locator('#bCourtDealer .court-portrait').evaluate(e=>getComputedStyle(e).animationName),'none');

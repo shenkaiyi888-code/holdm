@@ -25,7 +25,9 @@
   }
   const button=document.createElement('button');button.id='bCourtDealer';button.type='button';button.className='court-button';
   button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','courtPicker');button.setAttribute('aria-expanded','false');
-  document.getElementById('bOrientation').before(button);
+  const toolbar=document.createElement('div');toolbar.className='court-toolbar';
+  const orientation=document.getElementById('bOrientation'),menu=document.getElementById('bMenu');
+  orientation.before(toolbar);toolbar.append(orientation,menu);toolbar.before(button);
   const dialog=document.createElement('dialog');dialog.id='courtPicker';dialog.className='court-picker';dialog.setAttribute('aria-labelledby','courtTitle');
   dialog.innerHTML='<div class="court-heading"><div><h2 id="courtTitle">选择荷官</h2><p>安静陪局</p></div><button type="button" class="court-done">完成</button></div><div class="court-options" role="group" aria-label="荷官角色"></div><label class="court-motion"><input type="checkbox" id="courtMotion">轻微待机动作</label>';
   document.body.append(dialog);
@@ -39,37 +41,42 @@
   const visibilityLabel=document.createElement('label');visibilityLabel.className='toggle';visibilityLabel.htmlFor='courtVisible';
   const visibility=document.createElement('input');visibility.type='checkbox';visibility.id='courtVisible';
   visibilityLabel.append(visibility,document.createTextNode(' 显示荷官'));document.querySelector('.top .meta').append(visibilityLabel);
+  const menuChoice=document.createElement('button');menuChoice.type='button';menuChoice.className='ghost';menuChoice.textContent='更换荷官';
+  document.querySelector('.top .meta').append(menuChoice);
   const motion=dialog.querySelector('#courtMotion');
   function update(){
     const character=cast[prefs.dealer];
     if(button.dataset.dealer!==prefs.dealer){
-      const rank=document.createElement('span');rank.className='court-rank';rank.textContent=character.rank;
+      const rank=document.createElement('span');rank.className='court-rank';rank.textContent=`${character.rank} · 荷官`;
       button.replaceChildren(portrait(prefs.dealer),rank);button.dataset.dealer=prefs.dealer;
     }
     button.hidden=!prefs.visible;button.title=`${character.rank} · ${character.name}，点击切换荷官`;
     button.setAttribute('aria-label',`切换荷官，当前 ${character.rank} · ${character.name}`);
     document.body.classList.toggle('court-still',!prefs.motion);
+    document.body.classList.toggle('court-header',prefs.visible);
     visibility.checked=prefs.visible;motion.checked=prefs.motion;
     options.querySelectorAll('button').forEach(choice=>choice.setAttribute('aria-pressed',String(choice.dataset.dealer===prefs.dealer)));
+    window.HoldmUI?.layout();
   }
-  button.onclick=()=>{
+  function openPicker(){
     document.querySelector('.top').classList.remove('open');
     const menu=document.getElementById('bMenu');menu.setAttribute('aria-expanded','false');menu.textContent='菜单';
     dialog.showModal();button.setAttribute('aria-expanded','true');options.querySelector('[aria-pressed=true]').focus();
   };
+  button.onclick=openPicker;menuChoice.onclick=openPicker;
   dialog.querySelector('.court-done').onclick=()=>dialog.close();
-  dialog.addEventListener('close',()=>{button.setAttribute('aria-expanded','false');(prefs.visible?button:document.getElementById('bMenu')).focus();});
+  dialog.addEventListener('close',()=>{button.setAttribute('aria-expanded','false');(button.getBoundingClientRect().width?button:document.getElementById('bMenu')).focus();});
   dialog.addEventListener('click',event=>{
     if(event.target!==dialog)return;
     const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();
   });
   visibility.onchange=()=>{prefs.visible=visibility.checked;remember();update();};
   motion.onchange=()=>{prefs.motion=motion.checked;remember();update();};
-  update();
   window.HoldmCourt={
     origin(){
       const r=button.getBoundingClientRect();
       return r.width&&r.height?{x:r.x+r.width/2,y:r.y+r.height/2,w:r.width,h:r.height}:null;
     }
   };
+  update();
 })();

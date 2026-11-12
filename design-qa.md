@@ -11,7 +11,7 @@ The source images specify character art. The header placement and picker adapt t
 ### Comparison evidence
 
 - `artifacts/dealer-asset-comparison.webp`: approved source and actual browser-rendered portraits in the same comparison input. Both sides are normalized to 90×90 CSS pixels at device scale factor 1. The desktop portraits render at 116×116 CSS pixels. Complete crowns, hairstyles and shoulder silhouettes remain visible.
-- `artifacts/dealer-layout-comparison.webp`: the previously approved 390×740 table layout beside the current browser-rendered 390×740, eight-player flop state. Card positions, player information and action-area proportions match. The intended addition is the 44×44 header control. The randomized dealer marker and sampled equity may differ between captures.
+- `artifacts/dealer-layout-comparison.webp`: the previous 40px header portrait beside the enlarged 112px header portrait at the same 390×740 eight-player flop state. The larger figure deliberately takes more header height; all player information, board slots and action controls remain visible. The randomized dealer marker and sampled equity may differ between captures.
 - `artifacts/dealer-picker-390x740.webp` and `artifacts/dealer-picker-1440x900.webp`: the picker open with K selected on phone and desktop, captured at the stated CSS viewport and device scale factor 1.
 - `artifacts/dealer-blink-comparison.webp`: the same phone picker with open eyes and at the closed-eye animation phase. This focused comparison checks that clothing, crowns and facial silhouettes stay stable while the eye patches change.
 
@@ -20,12 +20,13 @@ Both original character assets and browser screenshots were opened and compared 
 ### Findings and iteration history
 
 - Resolved P2 — first picker capture could show J/Q as temporarily empty while asynchronously decoded images were becoming ready. Evidence: `artifacts/dealer-blink-comparison-initial.webp`. Base portraits now preload and decode synchronously; blink frames retain deferred loading. Capture checks also wait for image decoding and two paint frames. Post-fix evidence: all three figures appear in both states of `artifacts/dealer-blink-comparison.webp` and in both picker screenshots.
+- Resolved P2 — the original 40px persistent portrait made the approved character details too small. It now occupies 80–160px in the upper bar, with 112px on ordinary phones. Branding and controls rearrange beside it, and betting forms compact the header while an amount is being chosen. Evidence: the updated layout comparison and all eight viewport records.
 - No remaining actionable P0/P1/P2 findings in the tested scope.
 
 ### Required fidelity surfaces
 
 - Fonts and typography: new controls use the existing Apple-native system stack, with 18px picker heading, 12–13px supporting labels and a compact rank marker. Existing card-rank typography remains separate. Linux Chromium exercises the fallback; SF Pro/PingFang rendering is device-dependent.
-- Spacing and layout rhythm: the character stays in a 44×44 header button outside the arena. All header controls and picker bounds fit eight tested viewport sizes. The three choices use one consistent grid; native dialog focus and a 44px completion control support keyboard and touch interaction. The play area retains its prior geometry.
+- Spacing and layout rhythm: the character stays in the upper bar outside the arena, at 80–160px according to the screen. All header controls and picker bounds fit eight tested viewport sizes. The three choices use one consistent grid; native dialog focus and a 44px completion control support keyboard and touch interaction. The play area adapts to the taller header, and portrait betting controls remain in bounds while the header is compacted.
 - Colors and tokens: the interface retains charcoal, green and muted champagne tokens. Red/yellow/navy character colors come from the approved art. Selected and focused states are visible without recoloring the portraits.
 - Image quality and asset fidelity: approved J, revised Q and revised K retain their features and full silhouettes after scaling/compression. Transparent WebP assets have no visible opaque background or halo. Generated closed-eye patches avoid full-frame silhouette flicker. No character has been replaced by CSS/SVG drawings, emoji or generic placeholders.
 - Copy and content: choices are labeled J · 近卫, Q · 王后 and K · 君王. The picker communicates quiet companionship and exposes the idle-motion preference. The main menu can hide or restore the portrait.

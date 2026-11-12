@@ -3358,7 +3358,7 @@ function placeDealerButton(){
     const r = e.getBoundingClientRect();
     if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:Math.max(r.right, r.left + 64) + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
   }));
-  ['#board', '.pot', '#street'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,weight:10}); } });
+  ['#board', '#board2', '.pot', '#street', '#bCourtDealer'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,weight:10}); } });
   const hits = (x, y) => keep.reduce((n, r) => n + (x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom ? (r.weight || 1) : 0), 0);
   let best = null;
   const tries = [];
@@ -3381,6 +3381,7 @@ addEventListener('orientationchange', () => setTimeout(placeDealerButton, 300));
 /* ---------- rendering ---------- */
 const arena = $('#arena');
 const seats = [];
+document.addEventListener('holdm:table-layout', placeDealerButton);
 if (typeof ResizeObserver !== 'undefined') new ResizeObserver(placeDealerButton).observe(arena);
 /* 6 seats use the original pos0-pos5 layout; 8 seats use s8-0 to s8-7 */
 function rebuildSeats(n){
