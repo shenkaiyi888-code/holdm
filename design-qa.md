@@ -31,6 +31,8 @@ The real check/bet/raise buttons were exercised against the existing engine. Eac
 
 Eight viewport cases now assert visible helper fields inside the console, real percentage values and no community-card overlap with opponent cards, player plates or the dealer marker. A known royal flush displays 100% equity and the correct hand type; calling 40 into a 240 pot displays 14% required equity. The strip remains visible while choosing a raise, respects the equity toggle and clears the percentage after folding. The existing equity and odds algorithms are unchanged.
 
+The interface now requests the native Apple system font stack for headings, controls, player names and numerical readouts. On non-Apple systems it falls back to the platform system font. Printed playing-card ranks keep their dedicated card font. Layout checks cover the new metrics in the test environment; SF Pro and PingFang rendering require an Apple device.
+
 Testing was performed in Chromium with mobile/touch viewport emulation; it does not substitute for physical Safari/iPad audio and browser-chrome checks before rollout.
 
 ## Pinch zoom regression
