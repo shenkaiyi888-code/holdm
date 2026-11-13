@@ -50,7 +50,10 @@ body::before{content:"";position:fixed;inset:-15%;pointer-events:none;background
 .tag{background:#101a18c9;color:#acb7af;border:1px solid #a8baa215;min-height:20px;font:11px var(--f-body);margin-top:5px;padding:3px 8px}
 .tag.raise{background:#635c3e55;color:#e0cba5}.tag.think{background:#c1b08c12;color:#d5c3a6}.tag.think::after{animation:none}
 .seat.turn .pod{border-color:#d5c3a6;box-shadow:0 0 0 2px #d5c3a61c,0 5px 12px #0005}.seat.win .pod{border-color:#9dbca0;box-shadow:0 0 0 2px #9dbca018,0 5px 12px #0005}.seat.turn .ava::after{inset:-3px;border-width:1px;border-color:#d5c3a666;animation:none}.status.you{animation:none}
-.bd{background:#d8c7a9;color:#27302b;border-color:#c9b89d;font:9px var(--f-body)}.dbtn{background:#eee7d6;border-color:#c4b395;color:#26322a;font:700 18px var(--f-num);box-shadow:0 2px 4px #0006}
+.bd{background:#d8c7a9;color:#27302b;border-color:#c9b89d;font:9px var(--f-body)}
+.dbtn{width:66px;height:30px;margin:-15px 0 0 -33px;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 7px 0 4px;border:1px solid #fff7e8;border-radius:999px;background:#f0e6d3;color:#1c3028;font:600 12px/1 var(--f-body);box-shadow:0 0 0 2px #15251ee6,0 3px 7px #0006;pointer-events:none}
+.dbtn-letter{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:#244c3c;color:#fffaf0;font:750 15px/1 var(--f-num)}
+.dbtn-label{white-space:nowrap;letter-spacing:.04em}
 .msg{font:12px var(--f-body);color:#cdd3c4;max-width:30ch;min-height:16px}.msg div+div{font-size:11px}
 .console{grid-column:2;grid-row:2!important;align-self:center;position:relative!important;padding:22px 20px;background:linear-gradient(135deg,#ffffff04,transparent),#1b2425;border:1px solid #ffffff12;border-radius:20px;box-shadow:0 12px 32px #0003;gap:14px}
 .console .mini-read,.console .actions.raising .mini-read{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 10px;white-space:normal;font:12px/1.5 var(--f-body);color:#a3ada7;overflow:visible;text-overflow:clip}
@@ -139,6 +142,7 @@ body::before{content:"";position:fixed;inset:-15%;pointer-events:none;background
   .arena .tag{font-size:11px;height:19px}.arena .seat .bet{font-size:11px;min-height:18px}
 }
 @media (orientation:portrait) and (max-height:660px){
+  .dbtn{width:60px;height:28px;margin:-14px 0 0 -30px;gap:4px;padding:0 6px 0 3px;font-size:11px}.dbtn-letter{width:20px;height:20px;font-size:14px}
   .arena{--player-w:58px;--opponent-cw:17px;--hero-cw:32px}
   .arena .ava{display:none}.arena .pod{padding:3px 1px;gap:0}
   .arena .nm,.arena .stk{font-size:10px}.arena .tag{font-size:9px;height:15px;min-height:15px;margin-top:2px}

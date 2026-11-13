@@ -1069,7 +1069,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <div class="msg" id="msg"></div>
       </div>
     </div>
-    <div class="dbtn" id="dbtn" hidden title="庄家">D</div>
+    <div class="dbtn" id="dbtn" hidden role="img" aria-label="庄家位置" title="庄家位置"><span class="dbtn-letter" aria-hidden="true">D</span><span class="dbtn-label" aria-hidden="true">庄家</span></div>
   </section>
   </div>
 
@@ -3390,28 +3390,41 @@ function placeDealerButton(){
   const btn = $('#dbtn');
   if (!G.handNo || G.players[G.dealer].out){ btn.hidden = true; return; }
   btn.hidden = false;
+  btn.title = `${G.players[G.dealer].name} · 庄家位置`;
+  btn.setAttribute('aria-label',btn.title);
   const ar = $('#arena').getBoundingClientRect(), pod = centerOf(seats[G.dealer].querySelector('.pod'));
   const cx = ar.left + ar.width / 2, cy = ar.top + ar.height / 2;
   let dx = cx - pod.x, dy = cy - pod.y; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
   /* try spots around the dealer's name plate and take the first that covers no bet, cards or name plate */
-  const R = 14, keep = [];
-  seats.forEach(el => el.querySelectorAll('.pod, .hole .card, .bet, .tag, .bd').forEach(e => {
+  const halfW = btn.offsetWidth / 2, halfH = btn.offsetHeight / 2, keep = [];
+  seats.forEach(el => el.querySelectorAll('.pod, .hole .card, .bet:not(:empty), .tag:not(:empty), .bd').forEach(e => {
     const r = e.getBoundingClientRect();
-    if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:Math.max(r.right, r.left + 64) + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
+    if (r.width) keep.push(e.classList.contains('bet') ? {left:r.left - 4, right:r.right + 4, top:r.top - 4, bottom:r.bottom + 4} : {left:r.left - 3, right:r.right + 3, top:r.top - 3, bottom:r.bottom + 3});
   }));
   ['#board', '#board2', '.pot', '#street', '#bCourtDealer'].forEach(selector => { const e=$(selector); if(e){ const r=e.getBoundingClientRect(); if(r.width && r.height) keep.push({left:r.left,right:r.right,top:r.top,bottom:r.bottom,weight:10}); } });
-  const hits = (x, y) => keep.reduce((n, r) => n + (x + R > r.left && x - R < r.right && y + R > r.top && y - R < r.bottom ? (r.weight || 1) : 0), 0);
+  const hits = (x, y) => keep.reduce((n, r) => n + (x + halfW > r.left && x - halfW < r.right && y + halfH > r.top && y - halfH < r.bottom ? (r.weight || 1) : 0), 0);
   let best = null;
   const tries = [];
-  [16, 30, 44].forEach(gap => [.75, -.75, 1.25, -1.25, 1.75, -1.75, .35, -.35, 2.3, -2.3, 3.14].forEach(ang => tries.push([ang, gap])));
+  const angles = [.75, -.75, 1.25, -1.25, 1.75, -1.75, .35, -.35, ...Array.from({length:32},(_,i)=>i*Math.PI/16)];
+  [6, 12, 22, 34].forEach(gap => angles.forEach(ang => tries.push([ang, gap])));
   for (const [ang, gap] of tries){
     const rx = dx * Math.cos(ang) - dy * Math.sin(ang), ry = dx * Math.sin(ang) + dy * Math.cos(ang);
-    const dist = Math.hypot(pod.w * rx, pod.h * ry) / 2 + gap;
+    const dist = Math.min(Math.abs(rx) > .001 ? (pod.w / 2 + halfW + gap) / Math.abs(rx) : Infinity, Math.abs(ry) > .001 ? (pod.h / 2 + halfH + gap) / Math.abs(ry) : Infinity);
     const x = pod.x + rx * dist, y = pod.y + ry * dist;
-    const out = x - R < ar.left || x + R > ar.right || y - R < ar.top || y + R > ar.bottom;
+    const out = x - halfW < ar.left || x + halfW > ar.right || y - halfH < ar.top || y + halfH > ar.bottom;
     const h = hits(x, y) + (out ? 100 : 0);
     if (!best || h < best.h) best = {x, y, h};
     if (!h) break;
+  }
+  if (best.h){
+    // Tight layouts may only leave a narrow opening between other seats.
+    // Try the edges of those openings, preferring the dealer's own plate.
+    const openings = keep.flatMap(r => [r.left - halfW - 1, r.right + halfW + 1, pod.x].flatMap(x => [r.top - halfH - 1, r.bottom + halfH + 1, pod.y].map(y => ({x,y}))));
+    openings.sort((a,b) => Math.hypot(a.x-pod.x,a.y-pod.y)-Math.hypot(b.x-pod.x,b.y-pod.y));
+    for (const {x,y} of openings){
+      if(x-halfW<ar.left||x+halfW>ar.right||y-halfH<ar.top||y+halfH>ar.bottom)continue;
+      if(!hits(x,y)){best={x,y,h:0};break;}
+    }
   }
   btn.style.transform = `translate(${best.x - ar.left}px, ${best.y - ar.top}px)`;
 }
