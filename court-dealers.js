@@ -1,4 +1,4 @@
-/* The approved J/Q/K cast is presentation only; it never owns the poker state. */
+/* The court cast is presentation only; it never owns the poker state. */
 (() => {
   'use strict';
   const asset = name => '/assets/table-v2/' + name;
@@ -6,11 +6,12 @@
   const cast = {
     j: {rank:'J',name:'近卫',eyes:[[36.84,44.98,4.7,2.3],[49.76,43.5,5.2,2.7]],period:'7.1s'},
     q: {rank:'Q',name:'王后',eyes:[[47.77,44.38,6,3.3],[60.85,44.46,6,3.3]],period:'8.3s'},
-    k: {rank:'K',name:'君王',eyes:[[44.42,39.07,5.4,2.6],[56.46,39.07,5.4,2.6]],period:'9.7s'}
+    k: {rank:'K',name:'君王',eyes:[[44.42,39.07,5.4,2.6],[56.46,39.07,5.4,2.6]],period:'9.7s'},
+    yi: {rank:'Joker',name:'Yi',header:'Yi',eyes:[[42.2,42.2,7,3.4],[56.6,40.8,7,3.6]],period:'8.9s'}
   };
   let saved;
   try { saved=JSON.parse(localStorage.getItem(key)); } catch (_) {}
-  const prefs={dealer:['j','q','k'].includes(saved?.dealer)?saved.dealer:'k',visible:saved?.visible!==false,motion:saved?.motion!==false};
+  const prefs={dealer:Object.hasOwn(cast,saved?.dealer)?saved.dealer:'k',visible:saved?.visible!==false,motion:saved?.motion!==false};
   const remember=()=>{try{localStorage.setItem(key,JSON.stringify(prefs));}catch(_) {}};
   function portrait(id,lazy=false){
     const span=document.createElement('span');span.className='court-portrait';span.dataset.character=id;span.setAttribute('aria-hidden','true');
@@ -47,7 +48,7 @@
   function update(){
     const character=cast[prefs.dealer];
     if(button.dataset.dealer!==prefs.dealer){
-      const rank=document.createElement('span');rank.className='court-rank';rank.textContent=`${character.rank} · 荷官`;
+      const rank=document.createElement('span');rank.className='court-rank';rank.textContent=`${character.header||character.rank} · 荷官`;
       button.replaceChildren(portrait(prefs.dealer),rank);button.dataset.dealer=prefs.dealer;
     }
     button.hidden=!prefs.visible;button.title=`${character.rank} · ${character.name}，点击切换荷官`;

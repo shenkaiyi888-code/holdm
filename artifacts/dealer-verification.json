@@ -57,13 +57,45 @@
       },
       "picker": {
         "x": 14,
-        "y": 147.5625,
+        "y": 37.90625,
         "w": 292,
-        "h": 272.859375,
+        "h": 492.1875,
         "scroll": 290,
-        "client": 290
+        "client": 290,
+        "scrollHeight": 490,
+        "clientHeight": 490,
+        "choices": [
+          {
+            "id": "j",
+            "x": 29,
+            "y": 117.09375,
+            "w": 127.5,
+            "h": 167.5
+          },
+          {
+            "id": "q",
+            "x": 163.5,
+            "y": 117.09375,
+            "w": 127.5,
+            "h": 167.5
+          },
+          {
+            "id": "k",
+            "x": 29,
+            "y": 291.59375,
+            "w": 127.5,
+            "h": 167.5
+          },
+          {
+            "id": "yi",
+            "x": 163.5,
+            "y": 291.59375,
+            "w": 127.5,
+            "h": 167.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -127,13 +159,45 @@
       },
       "picker": {
         "x": 14,
-        "y": 176.90625,
+        "y": 63.40625,
         "w": 332,
-        "h": 286.1875,
+        "h": 513.1875,
         "scroll": 330,
-        "client": 330
+        "client": 330,
+        "scrollHeight": 511,
+        "clientHeight": 511,
+        "choices": [
+          {
+            "id": "j",
+            "x": 29,
+            "y": 142.59375,
+            "w": 147.5,
+            "h": 178
+          },
+          {
+            "id": "q",
+            "x": 183.5,
+            "y": 142.59375,
+            "w": 147.5,
+            "h": 178
+          },
+          {
+            "id": "k",
+            "x": 29,
+            "y": 327.59375,
+            "w": 147.5,
+            "h": 178
+          },
+          {
+            "id": "yi",
+            "x": 183.5,
+            "y": 327.59375,
+            "w": 147.5,
+            "h": 178
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -197,13 +261,45 @@
       },
       "picker": {
         "x": 14,
-        "y": 219.484375,
+        "y": 106.40625,
         "w": 362,
-        "h": 301.03125,
+        "h": 527.1875,
         "scroll": 360,
-        "client": 360
+        "client": 360,
+        "scrollHeight": 525,
+        "clientHeight": 525,
+        "choices": [
+          {
+            "id": "j",
+            "x": 33,
+            "y": 189.59375,
+            "w": 157,
+            "h": 179.5
+          },
+          {
+            "id": "q",
+            "x": 200,
+            "y": 189.59375,
+            "w": 157,
+            "h": 179.5
+          },
+          {
+            "id": "k",
+            "x": 33,
+            "y": 379.09375,
+            "w": 157,
+            "h": 179.5
+          },
+          {
+            "id": "yi",
+            "x": 200,
+            "y": 379.09375,
+            "w": 157,
+            "h": 179.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -267,13 +363,45 @@
       },
       "picker": {
         "x": 14,
-        "y": 271.484375,
+        "y": 158.40625,
         "w": 362,
-        "h": 301.03125,
+        "h": 527.1875,
         "scroll": 360,
-        "client": 360
+        "client": 360,
+        "scrollHeight": 525,
+        "clientHeight": 525,
+        "choices": [
+          {
+            "id": "j",
+            "x": 33,
+            "y": 241.59375,
+            "w": 157,
+            "h": 179.5
+          },
+          {
+            "id": "q",
+            "x": 200,
+            "y": 241.59375,
+            "w": 157,
+            "h": 179.5
+          },
+          {
+            "id": "k",
+            "x": 33,
+            "y": 431.09375,
+            "w": 157,
+            "h": 179.5
+          },
+          {
+            "id": "yi",
+            "x": 200,
+            "y": 431.09375,
+            "w": 157,
+            "h": 179.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -336,14 +464,46 @@
         }
       },
       "picker": {
-        "x": 164,
-        "y": 348.484375,
-        "w": 440,
-        "h": 327.03125,
-        "scroll": 438,
-        "client": 438
+        "x": 104,
+        "y": 350.65625,
+        "w": 560,
+        "h": 322.6875,
+        "scroll": 558,
+        "client": 558,
+        "scrollHeight": 321,
+        "clientHeight": 321,
+        "choices": [
+          {
+            "id": "j",
+            "x": 123,
+            "y": 433.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "q",
+            "x": 256,
+            "y": 433.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "k",
+            "x": 389,
+            "y": 433.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "yi",
+            "x": 522,
+            "y": 433.84375,
+            "w": 123,
+            "h": 164.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -406,14 +566,46 @@
         }
       },
       "picker": {
-        "x": 292,
-        "y": 220.484375,
-        "w": 440,
-        "h": 327.03125,
-        "scroll": 438,
-        "client": 438
+        "x": 232,
+        "y": 222.65625,
+        "w": 560,
+        "h": 322.6875,
+        "scroll": 558,
+        "client": 558,
+        "scrollHeight": 321,
+        "clientHeight": 321,
+        "choices": [
+          {
+            "id": "j",
+            "x": 251,
+            "y": 305.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "q",
+            "x": 384,
+            "y": 305.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "k",
+            "x": 517,
+            "y": 305.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "yi",
+            "x": 650,
+            "y": 305.84375,
+            "w": 123,
+            "h": 164.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -476,14 +668,46 @@
         }
       },
       "picker": {
-        "x": 500,
-        "y": 286.484375,
-        "w": 440,
-        "h": 327.03125,
-        "scroll": 438,
-        "client": 438
+        "x": 440,
+        "y": 288.65625,
+        "w": 560,
+        "h": 322.6875,
+        "scroll": 558,
+        "client": 558,
+        "scrollHeight": 321,
+        "clientHeight": 321,
+        "choices": [
+          {
+            "id": "j",
+            "x": 459,
+            "y": 371.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "q",
+            "x": 592,
+            "y": 371.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "k",
+            "x": 725,
+            "y": 371.84375,
+            "w": 123,
+            "h": 164.5
+          },
+          {
+            "id": "yi",
+            "x": 858,
+            "y": 371.84375,
+            "w": 123,
+            "h": 164.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,
@@ -546,14 +770,46 @@
         }
       },
       "picker": {
-        "x": 202,
+        "x": 142,
         "y": 48.65625,
-        "w": 440,
+        "w": 560,
         "h": 292.6875,
-        "scroll": 438,
-        "client": 438
+        "scroll": 558,
+        "client": 558,
+        "scrollHeight": 291,
+        "clientHeight": 291,
+        "choices": [
+          {
+            "id": "j",
+            "x": 157,
+            "y": 119.84375,
+            "w": 125,
+            "h": 155.5
+          },
+          {
+            "id": "q",
+            "x": 292,
+            "y": 119.84375,
+            "w": 125,
+            "h": 155.5
+          },
+          {
+            "id": "k",
+            "x": 427,
+            "y": 119.84375,
+            "w": 125,
+            "h": 155.5
+          },
+          {
+            "id": "yi",
+            "x": 562,
+            "y": 119.84375,
+            "w": 125,
+            "h": 155.5
+          }
+        ]
       },
-      "allThreeSwitch": true,
+      "allFourSwitch": true,
       "stateRetained": true,
       "preferencesPersist": true,
       "silent": true,

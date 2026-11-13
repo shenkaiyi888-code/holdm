@@ -3059,9 +3059,34 @@ document.addEventListener('visibilitychange', () => {
   if (actx && actx.state !== 'running') actx.resume().catch(() => {});
 });
 addEventListener('pagehide', () => { audioStale = true; });
+/* Two dry knuckle taps. Midrange body and a short contact transient keep the
+   sound audible on phone speakers without a long bass tail or added voice. */
+function checkSound(a,output,when=a.currentTime){
+  const hit=(at,level)=>{
+    const time=when+at;
+    const b=a.createBuffer(1,Math.ceil(a.sampleRate*.032),a.sampleRate),data=b.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*Math.exp(-i/a.sampleRate*145);
+    const source=a.createBufferSource(),filter=a.createBiquadFilter(),gain=a.createGain();
+    source.buffer=b;filter.type='bandpass';filter.frequency.value=1750;filter.Q.value=.7;gain.gain.value=.23*level;
+    source.connect(filter).connect(gain).connect(output);source.start(time);source.stop(time+.04);
+    for(const [start,end,volume,duration,type] of [[680,430,.11,.075,'triangle'],[250,170,.035,.085,'sine']]){
+      const o=a.createOscillator(),g=a.createGain();o.type=type;
+      o.frequency.setValueAtTime(start,time);o.frequency.exponentialRampToValueAtTime(end,time+duration);
+      g.gain.setValueAtTime(0,time);g.gain.linearRampToValueAtTime(volume*level,time+.0015);g.gain.exponentialRampToValueAtTime(.0001,time+duration);
+      o.connect(g).connect(output);o.start(time);o.stop(time+duration+.015);
+    }
+  };
+  hit(0,1);hit(.115,.85);
+}
 function sfx(kind){
-  if (soundOn && actx && actx.state !== 'running') actx.resume().catch(() => {});
-  if (!soundOn || !actx || actx.state !== 'running') return;
+  if (!soundOn || !actx) return;
+  if(actx.state!=='running'){
+    const context=actx,requestedAt=performance.now();
+    context.resume().then(()=>{
+      if(soundOn&&actx===context&&context.state==='running'&&performance.now()-requestedAt<500)sfx(kind);
+    }).catch(()=>{});
+    return;
+  }
   const a = actx, t = a.currentTime;
   if (!a._holdmOutput){ a._holdmOutput = a.createGain(); a._holdmOutput.gain.value = .55; a._holdmOutput.connect(a.destination); }
   const output = a._holdmOutput;
@@ -3081,20 +3106,10 @@ function sfx(kind){
     const g = a.createGain(); g.gain.value = v;
     s.connect(f).connect(g).connect(output); s.start(t + at);
   };
-  /* a knuckle on a thick wooden table: deep thump that sinks in pitch, a dull woody body, a soft click */
-  const knock = (at, v) => {
-    const o = a.createOscillator(), g = a.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(115, t + at); o.frequency.exponentialRampToValueAtTime(42, t + at + .16);
-    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(.6 * v, t + at + .004); g.gain.exponentialRampToValueAtTime(.0001, t + at + .26);
-    o.connect(g).connect(output); o.start(t + at); o.stop(t + at + .28);
-    tone(230, .09, 'triangle', .09 * v, at);
-    noise(.06, .32 * v, 380, at);
-    noise(.018, .08 * v, 1100, at);
-  };
   if (kind === 'deal') noise(.05, .16, 2800);
   else if (kind === 'flip') noise(.07, .13, 1900);
   else if (kind === 'chips'){ tone(2500, .05, 'triangle', .045); tone(3200, .05, 'triangle', .035, .04); tone(2800, .06, 'triangle', .03, .085); }
-  else if (kind === 'check') [0, .14].forEach((at, k) => knock(at, k ? .16 : .18));
+  else if (kind === 'check') checkSound(a,output,t);
   else if (kind === 'bet'){ noise(.045,.06,1500); tone(1700,.06,'triangle',.025,.035); }
   else if (kind === 'raise'){ noise(.055,.075,1600); tone(1900,.055,'triangle',.03,.035); tone(2600,.07,'triangle',.025,.09); }
   else if (kind === 'fold') noise(.12, .05, 900);
@@ -4939,7 +4954,7 @@ $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; open
 $('#stOnline').addEventListener('click', () => { $('#startDlg').hidden = true; openNet(); });
 
 /* automated rule checks open the page with ?selftest */
-if (/[?&]selftest/.test(location.search)) window.__holdm = {G, NET, HISTORY, mayRaise, bounds, doAction, render, sfx, animateDeal, setRaiseDefaults, freeze(){runId++;clearTimeout(G.idleT);}, botAct, botContext, startHand, newGame, get H(){ return H; }};
+if (/[?&]selftest/.test(location.search)) window.__holdm = {G, NET, HISTORY, mayRaise, bounds, doAction, render, sfx, animateDeal, setRaiseDefaults, freeze(){runId++;clearTimeout(G.idleT);}, botAct, botContext, startHand, newGame, checkSound, get audio(){ return actx; }, get H(){ return H; }};
 
 /* ---------- boot ---------- */
 function snapshot(){

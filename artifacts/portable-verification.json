@@ -3,5 +3,6 @@
   "delivery": "in-memory document",
   "httpRequests": [],
   "sameDocument": true,
-  "seats": 6
+  "seats": 6,
+  "yiPortraitLoaded": true
 }

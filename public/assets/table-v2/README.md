@@ -12,3 +12,5 @@ Card rank font: [Libre Baskerville](https://fonts.google.com/specimen/Libre+Bask
 ## Approved court dealers
 
 `court-j.webp`, `court-q.webp` and `court-k.webp` contain the user-approved J, revised Q and revised K portraits. Corresponding `court-*-blink.webp` files contain generated closed-eye frames. All are 768×768 WebP with transparency. The component uses localized eye masks over the approved portraits during a blink. Original PNG masters are retained in the source archive.
+
+`court-yi.webp` and `court-yi-blink.webp` add Joker · Yi in the same flat anime/comic style. The navy/red two-point jester cap, pale forelock and harlequin costume distinguish Yi from the other three characters. Both runtime images are transparent 768×768 derivatives of generated 1254×1254 masters; the component reveals only the localized eye regions of the blink frame. Source-archive masters are `masters/court-yi.png` and `masters/court-yi-blink.png`.

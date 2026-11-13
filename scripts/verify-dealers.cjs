@@ -27,18 +27,23 @@ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y
    await f.evaluate(()=>{window.dealerSounds=[];document.addEventListener('holdm:sound',e=>dealerSounds.push(e.detail.kind));});
    await p.screenshot({path:`artifacts/dealer-${w}x${h}.png`});
    await f.locator('#bCourtDealer').click();await loaded(f);assert.equal(await f.locator('#courtPicker').isVisible(),true);
-   const picker=await f.locator('#courtPicker').evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,scroll:e.scrollWidth,client:e.clientWidth}});
+   const picker=await f.locator('#courtPicker').evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,scroll:e.scrollWidth,client:e.clientWidth,scrollHeight:e.scrollHeight,clientHeight:e.clientHeight,choices:[...e.querySelectorAll('.court-choice')].map(choice=>{const r=choice.getBoundingClientRect();return{id:choice.dataset.dealer,x:r.x,y:r.y,w:r.width,h:r.height};})}});
    assert.ok(picker.x>=-1&&picker.y>=-1&&picker.x+picker.w<=header.viewport[0]+1&&picker.y+picker.h<=header.viewport[1]+1,JSON.stringify({w,h,picker}));assert.ok(picker.scroll<=picker.client+1);
+   assert.equal(picker.choices.length,4,'J, Q, K and Yi must all be available');
+   assert.ok(picker.scrollHeight<=picker.clientHeight+1,'Every dealer and the motion control must fit without scrolling');
+   assert.equal(picker.choices[0].y,picker.choices[1].y,'The first pair must stay in one row');
+   assert.equal(picker.choices[2].y,picker.choices[3].y,'The second pair must stay in one row');
+   assert.ok(w<600?picker.choices[2].y>picker.choices[0].y:picker.choices[2].y===picker.choices[0].y,'Phones use two rows; larger screens use one row');
    await f.evaluate(()=>document.querySelectorAll('#courtPicker .court-portrait').forEach(el=>el.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=0;})));
    if(w===390&&h===740||w===1440){
     await p.screenshot({path:`artifacts/dealer-picker-${w}x${h}.png`});
-    for(const id of ['j','q','k'])await f.locator(`.court-choice[data-dealer=${id}] .court-portrait`).screenshot({path:`artifacts/dealer-render-${w}-${id}.png`});
+    for(const id of ['j','q','k','yi'])await f.locator(`.court-choice[data-dealer=${id}] .court-portrait`).screenshot({path:`artifacts/dealer-render-${w}-${id}.png`});
     await f.evaluate(()=>document.querySelectorAll('#courtPicker .court-blink').forEach(el=>el.getAnimations().forEach(a=>{a.pause();a.currentTime=Number(a.effect.getTiming().duration)*.955;})));
     await p.screenshot({path:`artifacts/dealer-blink-${w}x${h}.png`});
     await f.evaluate(()=>document.querySelectorAll('#courtPicker .court-blink').forEach(el=>el.getAnimations().forEach(a=>a.currentTime=0)));
    }
    await p.keyboard.press('Escape');assert.equal(await f.locator('#courtPicker').isVisible(),false);
-   for(const id of ['j','q','k']){
+   for(const id of ['j','q','k','yi']){
     await f.locator('#bCourtDealer').click();await f.locator(`.court-choice[data-dealer=${id}]`).click();
     assert.equal(await f.locator('#courtPicker').isVisible(),false);assert.equal(await f.locator('#bCourtDealer').getAttribute('data-dealer'),id);assert.deepEqual(await state(f),before);
    }
@@ -46,8 +51,10 @@ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y
    assert.equal(await f.locator('#bCourtDealer .court-portrait').evaluate(e=>getComputedStyle(e).animationName),'none');
    await f.locator('#bMenu').click();await f.locator('#courtVisible').uncheck();assert.equal(await f.locator('#bCourtDealer').isVisible(),false);assert.ok(await f.evaluate(()=>HoldmCourt.origin()?.w>0),'Hiding the decorative portrait must keep the table deal origin available');
    await f.locator('#courtVisible').check();await f.locator('#bMenu').click();
-   await f.locator('#bCourtDealer').click();await f.locator('[data-dealer=q].court-choice').click();
-   await f.locator('#bOrientation').click();await p.waitForTimeout(180);assert.deepEqual(await state(f),before);assert.equal(await f.locator('#bCourtDealer').getAttribute('data-dealer'),'q');
+   await f.locator('#bCourtDealer').click();await f.locator('[data-dealer=yi].court-choice').click();
+   assert.equal(await f.locator('#bCourtDealer .court-rank').innerText(),'Yi · 荷官');
+   await p.screenshot({path:`artifacts/dealer-yi-${w}x${h}.png`});
+   await f.locator('#bOrientation').click();await p.waitForTimeout(180);assert.deepEqual(await state(f),before);assert.equal(await f.locator('#bCourtDealer').getAttribute('data-dealer'),'yi');
    await f.locator('#bOrientation').click();await p.waitForTimeout(180);assert.deepEqual(await state(f),before);
    assert.deepEqual(await f.evaluate(()=>dealerSounds),[],'Dealer controls must stay silent');
    if(w<h&&w<600){
@@ -57,9 +64,9 @@ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y
     await f.locator('#bCancel').click();assert.deepEqual(await state(f),before);
    }
    await p.reload();await p.frameLocator('#game').locator('#stPlay').click();const reloaded=p.frames()[1];
-   assert.equal(await reloaded.locator('#bCourtDealer').getAttribute('data-dealer'),'q');
+   assert.equal(await reloaded.locator('#bCourtDealer').getAttribute('data-dealer'),'yi');
    assert.equal(await reloaded.locator('#bCourtDealer .court-portrait').evaluate(e=>getComputedStyle(e).animationName),'none');
-   report.viewports.push({viewport:[w,h],header,picker,allThreeSwitch:true,stateRetained:true,preferencesPersist:true,silent:true,canHide:true,motionOptional:true});await c.close();
+   report.viewports.push({viewport:[w,h],header,picker,allFourSwitch:true,stateRetained:true,preferencesPersist:true,silent:true,canHide:true,motionOptional:true});await c.close();
   }
   const reduced=await open(390,844,true);
   assert.equal(await reduced.f.locator('#bCourtDealer .court-portrait').evaluate(e=>getComputedStyle(e).animationName),'none');

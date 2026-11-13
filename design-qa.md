@@ -1,5 +1,36 @@
 # Design QA
 
+## Joker Yi and check sound
+
+final result: passed
+
+Visual target: the existing approved J/Q/K court portraits specify the navy outlines, pale faces, flat red/navy/ivory/yellow palette and shoulder-bust framing. The user requested a new dealer named Yi, optionally as a Joker. `/workspace/generated_images/court-characters/Yi-joker.png` extends that selected style with a two-point jester cap, a pale forelock, a small cheek marking and a harlequin costume. The generated open/closed masters are 1254×1254 RGBA; runtime WebPs are 768×768 with alpha. Both original masters are retained in the downloadable source archive.
+
+### Comparison evidence
+
+- `artifacts/yi-style-reference.webp` puts the three approved sources and Yi into one style comparison. Navy line weight, flat coloring, face detail and complete shoulder silhouettes were inspected together.
+- `artifacts/yi-dealer-source-render.webp` places all four source portraits and actual browser renders together at the phone picker's 126px portrait size. The original and rendered Yi retain the complete cap, bells, hair and shoulders; there is no opaque image background or visible alpha halo.
+- `artifacts/yi-dealer-blink-comparison.webp` compares the same 390×740 phone picker at open-eye and blink phases. Only feathered eye patches change; cap, hair, collar and silhouette stay on the original base image. Small generated-frame alpha differences outside those masks never enter the displayed portrait.
+- `artifacts/yi-dealer-phone.webp`, `yi-dealer-desktop.webp`, `yi-picker-phone.webp` and `yi-picker-desktop.webp` are actual browser full-view captures. The character remains in the upper bar and the poker content remains visible.
+
+### Findings and required surfaces
+
+- Layout: the picker now uses two columns below 600px and four on wider screens. All four characters, completion button and motion checkbox fit without scrolling at every tested size, including 320×568 and 844×390. Header sizes and table/player placement retain their existing geometry.
+- Typography/content: native system typography is retained. The new choice reads Joker · Yi, its header tag reads Yi · 荷官, and accessible labels identify both the character and the selection action. Existing saved J/Q/K preferences and the default K are preserved.
+- Color/art fidelity: Yi shares the existing flat comic style and palette. Selected states, dialog colors and focus treatment use the existing navy/ivory tokens. The character is a generated raster asset, with no replacement CSS character drawing or generic placeholder.
+- Motion: Yi has gentle breathing and localized blinking. The existing per-browser motion preference and system reduced motion stop both effects. Selecting or hiding the portrait retains the current hand, cards and amounts. Dealer controls remain silent.
+- No unresolved actionable P0/P1/P2 findings remain in this scoped update.
+
+### Sound and interaction verification
+
+Check now synthesizes two dry wooden taps 115ms apart, with a short contact transient and more midrange body than the previous bass-heavy effect. `artifacts/check-sound.wav` is a render of the actual production synthesizer. `artifacts/check-sound-verification.json` records separated taps in both full-band and 350–3500Hz output, no clipping and a silent tail. A real AudioContext resume test produces exactly one check after delayed resume and zero sounds if muted during that delay; replaced contexts and late resume requests are discarded.
+
+`artifacts/dealer-verification.json` records eight viewport checks: 320×568, 360×640, 390×740, 390×844, 768×1024, 1024×768, 1440×900 and 844×390. All four selections, Yi preference persistence, hiding/restoring, optional motion, reduced motion, keyboard dismissal and same-hand orientation changes pass. There are no page errors or failed responses. `artifacts/verification.json` records all 16 six/eight-seat layout cases plus actual check/bet/raise controls, one sound event per action, helper values, and mute behavior. Browser evidence uses Chromium with mobile/touch viewport emulation; the phone-band signal check does not claim physical iPhone speaker or Safari coverage.
+
+The regenerated portable preview also loads both Yi images without HTTP requests and retains the same game document while switching orientation. Two-board clearance still passes at 320×568 and 768×1024. Results are in `artifacts/portable-verification.json`.
+
+Implementation checklist: source/render comparison inspected; Yi and blink assets installed; picker layout, naming and persistence verified; sound rendered and resume/mute behavior checked; existing responsive interactions and portable preview passed. No blocking implementation fix remains.
+
 ## Navy and emerald art polish
 
 final result: passed
