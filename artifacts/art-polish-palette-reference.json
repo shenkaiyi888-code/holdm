@@ -1,0 +1,12 @@
+{
+  "source": "https://coruscating-belekoy-e1d2f2.netlify.app/",
+  "scope": "Navy/emerald palette only; current responsive layout retained",
+  "originalTokens": {
+    "room": "#0e1320",
+    "room2": "#1a2340",
+    "felt": "#21865f",
+    "feltMid": "#146446",
+    "feltDeep": "#0a3a29"
+  },
+  "notes": "Old reference replay uses system font fallbacks; no external font requests. Card faces stay neutral white and UI keeps the Apple system font stack per earlier requests."
+}

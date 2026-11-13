@@ -1,0 +1,67 @@
+{
+  "captures": [
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "seats": 6,
+      "dpr": 2,
+      "file": "artifacts/art-polish-390x844.webp",
+      "background": "rgb(14, 19, 32)",
+      "cardBack": "url(\"http://terminal.local:4173/assets/table-v2/card-back.webp\")",
+      "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"PingFang SC\", system-ui, \"Helvetica Neue\", Arial, sans-serif"
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "seats": 8,
+      "dpr": 2,
+      "file": "artifacts/art-polish-320x568.webp",
+      "background": "rgb(14, 19, 32)",
+      "cardBack": "url(\"http://terminal.local:4173/assets/table-v2/card-back.webp\")",
+      "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"PingFang SC\", system-ui, \"Helvetica Neue\", Arial, sans-serif"
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "seats": 8,
+      "dpr": 2,
+      "file": "artifacts/art-polish-844x390.webp",
+      "background": "rgb(14, 19, 32)",
+      "cardBack": "url(\"http://terminal.local:4173/assets/table-v2/card-back.webp\")",
+      "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"PingFang SC\", system-ui, \"Helvetica Neue\", Arial, sans-serif"
+    },
+    {
+      "viewport": [
+        768,
+        1024
+      ],
+      "seats": 8,
+      "dpr": 2,
+      "file": "artifacts/art-polish-768x1024.webp",
+      "background": "rgb(14, 19, 32)",
+      "cardBack": "url(\"http://terminal.local:4173/assets/table-v2/card-back.webp\")",
+      "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"PingFang SC\", system-ui, \"Helvetica Neue\", Arial, sans-serif"
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "seats": 8,
+      "dpr": 2,
+      "file": "artifacts/art-polish-1440x900.webp",
+      "background": "rgb(14, 19, 32)",
+      "cardBack": "url(\"http://terminal.local:4173/assets/table-v2/card-back.webp\")",
+      "font": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"PingFang SC\", system-ui, \"Helvetica Neue\", Arial, sans-serif"
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "captureFormat": "WebP derivatives of raw browser PNG captures, same dimensions"
+}

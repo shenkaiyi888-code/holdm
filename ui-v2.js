@@ -4,16 +4,6 @@
   const $ = s => document.querySelector(s);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const asset = name => '/assets/table-v2/' + name;
-  const urls = [];
-  const atlas = new Image();
-  atlas.onload = () => {
-    ['felt','leather','paper'].forEach((name,i) => {
-      const canvas = document.createElement('canvas'); canvas.width=384;canvas.height=384;
-      canvas.getContext('2d').drawImage(atlas,atlas.width*(i/3)+40,atlas.height*.2,atlas.width/3-80,atlas.height*.6,0,0,384,384);
-      canvas.toBlob(blob=>{ if(!blob)return;const u=URL.createObjectURL(blob);urls.push(u);document.documentElement.style.setProperty('--texture-'+name,`url("${u}")`); });
-    });
-  };
-  atlas.src=asset('materials.webp');
   const origin=document.createElement('span');origin.className='deal-origin';origin.setAttribute('aria-hidden','true');$('.felt').append(origin);
   const orientation=document.createElement('button');orientation.type='button';orientation.id='bOrientation';orientation.className='ghost';
   $('#bMenu').before(orientation);

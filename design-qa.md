@@ -1,5 +1,38 @@
 # Design QA
 
+## Navy and emerald art polish
+
+final result: passed
+
+Visual target: the user's older screenshot supplies the navy/emerald/ivory color relationship; `artifacts/art-polish-before-phone.webp` supplies the retained geometry. The old public site at `https://coruscating-belekoy-e1d2f2.netlify.app/` was read to recover its original room (`#0e1320`, `#1a2340`) and felt (`#21865f`, `#146446`, `#0a3a29`) tokens. `artifacts/art-polish-old-reference.webp` is a local replay of that source, with external font requests disabled. This reference is for palette, rather than reproducing its old dealer panel, typography or settings layout; its preflop state differs from the final current-game flop.
+
+Generated visual truth: `/workspace/generated_images/art-polish/card-back-engraved.png` (1073×1466), `felt-emerald-refined.png` and `rail-leather.png` (both 1254×1254). Runtime assets are the engraved back at 512×700 and the two materials at 768×768. Original masters are in the source archive. All changed artwork was generated as raster assets; the table still has native DOM cards and controls.
+
+Full-view evidence: `artifacts/art-polish-comparison.webp` places the retained geometry reference and final browser implementation in one comparison input. Both use 390×844 CSS px, DPR 2, 780×1688 pixels per side, the same six-player flop, cards, names and amounts. Monte Carlo equity may differ slightly. `artifacts/art-polish-palette-comparison.webp` places the old-site palette replay beside the final implementation at the same capture density; different layout/state are intentional and are not treated as pixel-fidelity findings.
+
+Focused evidence: `artifacts/art-polish-card-comparison.webp` places the generated back and the actual browser-rendered back together, and shows actual cards at 24/48/96 CSS px beside a white face. The master is downsampled for comparison with the 96 CSS px @2x render. Rounded corners, the one-pixel CSS card edge and a small cover crop of the outer navy margin are intentional; all engraved framing remains visible. The corner ornaments and paired spades are recognizable at phone sizes.
+
+### Findings and iteration history
+
+- Resolved P2 — the first generated felt had curly, noisy grain behind the board. Evidence: `artifacts/art-polish-comparison-initial.webp` and `art-polish-phone-initial.webp`. A second ImageGen pass produced microscopic, low-contrast nap. The final capture was repeated at the same viewport/state and inspected in the combined comparison.
+- Resolved P2 — the phone's raised-bet confirmation inherited a saturated gold gradient from the legacy layout. A scoped override now uses the same restrained ivory as the primary action, with muted red reserved for the all-in state. `artifacts/art-polish-raise-comparison.webp` places the earlier and corrected 390×844 @2x raise forms together; the final state was recaptured and inspected after the fix.
+- Palette calibration — the original site's room and felt colors were recovered after the first pass. Final lighting uses those colors over the refined raster material, restoring the softer luminous green center. The navy body keeps the existing slow animated illumination.
+- No actionable P0/P1/P2 differences remain in this scoped palette/material/card-back update.
+
+### Required fidelity surfaces
+
+- Fonts/typography: native Apple system stack is retained for names, amounts, controls and menus; printed ranks retain Libre Baskerville. Sizes, wrapping and layout are unchanged. Linux Chromium uses fallbacks; physical SF Pro/PingFang rendering is a device check.
+- Spacing/layout rhythm: six/eight players remain outside the rail; the header portrait and three primary actions retain their measured sizes. All 16 existing responsive cases pass. Additional final art captures cover 320×568, 390×844, 844×390, 768×1024 and 1440×900, all at DPR 2.
+- Colors/tokens: original navy room and emerald felt tokens ground the palette. Navy secondary controls, restrained ivory primary actions, a warm brown rail and cool avatar plates now share it. Card faces are neutral `#fcfcfd`, preserving the user's earlier white-paper request rather than the older ivory faces.
+- Image quality: source/render comparisons show the generated engraving, clean borders and white face at practical sizes. The refined felt is smooth; the matte leather rail has no visible tile seams in inspected views. The three runtime assets total about 228 KB. No portrait artwork or standard suit icons were replaced.
+- Copy/content: game-specific labels, stats, names, dealer-position wording and action amounts remain current game content. No design-process copy appears in the game.
+
+### Interaction and verification
+
+`artifacts/art-polish-verification.json` records five final visual captures with no page errors or failed responses. The menu and raise form were inspected in `art-polish-menu.webp` and `art-polish-raise.webp`. The existing 16 layout/equity/check-bet-raise/audio/mute cases and eight dealer/menu/selection/persistence/orientation/reduced-motion cases pass. The portable preview loads without external requests and retains its game document across orientation switches; both boards remain clear at 320×568 and 768×1024. These are Chromium checks; physical Safari remains a coverage gap.
+
+Implementation checklist: generated assets installed and preloaded; original palette mapped; paper edges and buttons refined; initial felt issue fixed and recaptured; source/render comparisons inspected; primary interactions and console errors checked. No blocking implementation fix remains in this pass.
+
 ## Approved J/Q/K integration
 
 final result: passed

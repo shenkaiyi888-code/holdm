@@ -2,6 +2,8 @@
 
 Run the existing server with `npm start`, or `npm run dev -- --host 0.0.0.0 --port 4173 --strictPort`.
 
+The current art pass uses the older shared site's navy/emerald palette (`#0e1320` / `#1a2340` room, `#21865f` / `#146446` / `#0a3a29` felt). The engraved navy/ivory card back, smooth emerald felt and warm matte leather rail are individual ImageGen assets. The former material atlas remains in the library; the live interface loads the new textures directly. Animated room lighting, neutral-white card faces and the Apple-native UI font remain active. The final comparisons and visual checks are recorded in `design-qa.md` and `artifacts/art-polish-*.webp`.
+
 This update keeps the poker engine, hand evaluation, betting rules, computer opponents, room APIs and SSE transport in `index.html` / `server.js`. It changes presentation through `ui-v2.css` and `ui-v2.js`. Existing deal, flip and chip flight animations are reused. Check uses two soft taps; opening bets and raises use distinct short chip sounds, routed through the existing mute preference.
 
 Computer-player decisions now use the position/range policy in `poker-ai.js`, through the existing engine action path. It receives only the acting player's cards and a public-table snapshot. The strategy, integration and validation are described in `AI-UPDATE.md`; the portable preview embeds this module too.
