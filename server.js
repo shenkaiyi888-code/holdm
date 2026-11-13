@@ -1,10 +1,11 @@
 /* bluff? 联机服务器：提供德州扑克、21 点、百家乐和跑马四个页面，并在同一房间的玩家之间转发消息。
    不依赖任何第三方包，Node 18+ 直接运行：node server.js
-   牌局逻辑全部在房主的浏览器里运行，服务器只负责转发。 */
+   牌局逻辑全部在房主的浏览器里运行；服务器转发联机状态并审核房间聊天。 */
 'use strict';
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const chatPolicy = require('./chat-policy.js');
 
 const PORT = +process.env.PORT || 3000;
 const MAX_PLAYERS = 8;
@@ -53,6 +54,28 @@ function roster(room){
 }
 function tellHost(room, msg){ const h = room.clients.get(room.host); if (h) push(h, msg); }
 
+function prepareChat(room, id, input){
+  const client = room.clients.get(id), now = Date.now();
+  if (room.game !== 'holdem' || !client?.res || client.res.destroyed || client.res.writableEnded)
+    return {status:403,error:'请先连接房间，再发送消息。'};
+  client.chatAttempts = (client.chatAttempts || []).filter(t => now - t < 10000);
+  if (client.chatAttempts.length >= 8) return {status:429,error:'发送太频繁，稍后再试。'};
+  client.chatAttempts.push(now);
+  const result = chatPolicy.validate(input);
+  if (!result.ok) return {status:400,error:result.error,code:result.code};
+  if (now - (client.chatSentAt || 0) < 1200) return {status:429,error:'发得有点快，稍等一下。'};
+  const msg = {t:'chat',room:room.code,id:crypto.randomUUID(),from:id,
+    name:chatPolicy.validate({text:client.name}).ok ? client.name : '玩家',text:result.text,at:now};
+  if (result.q != null) msg.q = result.q;
+  return {msg,client};
+}
+function publishChat(room, prepared){
+  prepared.client.chatSentAt = prepared.msg.at;
+  room.touched = prepared.msg.at;
+  room.chat = [...(room.chat || []),prepared.msg].slice(-50);
+  room.clients.forEach(client => push(client,prepared.msg));
+}
+
 function readBody(req, limit = 512 * 1024){
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
@@ -89,6 +112,7 @@ function openStream(req, res, q){
   if (c.res && c.res !== res){ push(c, {t:'replaced'}); try { c.res.end(); } catch (e) {} }
   c.res = res; c.name = name; room.touched = Date.now();
   push(c, {t:'welcome', room:room.code, host:room.host, you:id});
+  if (room.game === 'holdem') push(c, {t:'chat-history',room:room.code,messages:room.chat || []});
   if (id !== room.host) tellHost(room, {t:'join', id, name});
   room.clients.forEach(o => push(o, {t:'roster', list:roster(room)}));
   req.on('close', () => {
@@ -113,7 +137,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
       return res.end(fs.readFileSync(PAGE));
     }
-    const uiFile = ['/orientation-shell.js','/ui-v2.js','/ui-v2.css','/court-dealers.js','/court-dealers.css','/poker-ai.js'].includes(p) ? path.join(__dirname,p.slice(1))
+    const uiFile = ['/orientation-shell.js','/ui-v2.js','/ui-v2.css','/court-dealers.js','/court-dealers.css','/poker-ai.js','/chat-policy.js','/room-chat.css'].includes(p) ? path.join(__dirname,p.slice(1))
       : /^\/assets\/table-v2\/(?:icons\/)?[a-z0-9-]+\.(?:png|webp|svg|ttf)$/.test(p) ? path.join(__dirname,'public',p) : null;
     if ((req.method === 'GET' || req.method === 'HEAD') && uiFile){
       if (!fs.existsSync(uiFile)){ res.writeHead(404); return res.end(); }
@@ -150,13 +174,30 @@ const server = http.createServer(async (req, res) => {
       rooms.set(code, {code, host:id, clients:new Map(), touched:Date.now(), game:gameOf(b.game)});
       return json(res, 200, {room:code});
     }
+    if (req.method === 'POST' && p === '/api/chat'){
+      const b = await readBody(req, 8 * 1024), id = cleanId(b.id);
+      const room = rooms.get(String(b.room || '').toUpperCase());
+      if (!room || !room.clients.has(id)) return json(res, 404, {error:'不在房间里'});
+      const prepared = prepareChat(room,id,b);
+      if (!prepared.msg) return json(res,prepared.status,{error:prepared.error,code:prepared.code});
+      publishChat(room,prepared);
+      return json(res,200,{ok:true,id:prepared.msg.id});
+    }
     if (req.method === 'POST' && p === '/api/send'){
       const b = await readBody(req);
       const room = rooms.get(String(b.room || '').toUpperCase()), id = cleanId(b.id);
       if (!room || !room.clients.has(id)) return json(res, 404, {error:'不在房间里'});
+      // Old clients use this relay for quick chat. They get the same validation
+      // as the dedicated endpoint; no unreviewed chat or history can be relayed.
+      const batch = (Array.isArray(b.batch) ? b.batch : []).filter(m => m && typeof m === 'object');
+      if (batch.some(m => m.msg?.t === 'chat-history')) return json(res,403,{error:'不能发送聊天历史。'});
+      const chats = batch.filter(m => m.msg?.t === 'chat');
+      if (chats.length > 1) return json(res,429,{error:'一次只能发送一条聊天消息。'});
+      const chat = chats.length ? prepareChat(room,id,chats[0].msg) : null;
+      if (chat && !chat.msg) return json(res,chat.status,{error:chat.error,code:chat.code});
       room.touched = Date.now();
-      for (const m of Array.isArray(b.batch) ? b.batch : []){
-        if (!m || typeof m !== 'object') continue;
+      for (const m of batch){
+        if (m.msg?.t === 'chat'){ publishChat(room,chat); continue; }
         const body = Object.assign({}, m.msg, {from:id}); delete body.sys;   /* only the server marks messages as sys */
         const payload = JSON.stringify(body);
         if (m.to === '*') room.clients.forEach(c => push(c, payload));

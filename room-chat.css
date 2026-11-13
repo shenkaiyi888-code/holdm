@@ -1,0 +1,30 @@
+.chat-btn{position:relative;min-width:44px;min-height:44px;color:var(--text);font:500 13px var(--f-system)}
+.chat-unread{position:absolute;top:-5px;right:-5px;min-width:18px;padding:1px 4px;border-radius:10px;background:#eadac0;color:#18223a;font:600 10px/16px var(--f-system)}
+.room-chat{position:fixed;inset:auto;left:var(--chat-x,50%);top:var(--chat-y,50%);transform:translate(-50%,-50%);width:min(420px,var(--chat-width,calc(100vw - 28px)));height:min(520px,var(--chat-height,calc(100dvh - 28px)));max-width:none;max-height:var(--chat-height,calc(100dvh - 28px));margin:0;padding:16px;border:1px solid #b4c3de33;border-radius:20px;background:#18223a;color:var(--text);box-shadow:0 18px 70px #03061599;font-family:var(--f-system);overflow:hidden}
+.room-chat[open]{display:flex;flex-direction:column;gap:10px}
+.room-chat::backdrop{background:#080e128c}
+.room-chat-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}
+.room-chat h2{margin:0;font:600 18px/1.4 var(--f-system)}
+.room-chat-heading small{display:block;margin-top:2px;color:var(--muted);font-size:12px}
+.room-chat-close{min-height:44px;min-width:52px;border:1px solid #ffffff24;border-radius:10px;background:#ffffff04;color:var(--text);font:14px var(--f-system);cursor:pointer}
+.room-chat-rule{margin:0;color:var(--muted);font-size:12px;line-height:1.5;flex:none}
+.room-chat-messages{flex:1;min-height:32px;margin:0;padding:10px 0;list-style:none;overflow-y:auto;overscroll-behavior:contain;border-block:1px solid #ffffff12}
+.room-chat-empty{padding:16px 6px;text-align:center;color:var(--muted);font-size:13px}
+.room-chat-message{display:flex;flex-direction:column;gap:3px;max-width:90%;width:fit-content;margin:0 0 12px;padding:8px 10px;border-radius:12px;background:#111a2c;color:var(--text);font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.room-chat-message.self{margin-left:auto;background:#29423f}
+.room-chat-message:last-child{margin-bottom:0}
+.room-chat-meta{display:flex;gap:10px;align-items:center;color:#b4c1d4;font-size:11px;line-height:1.4}
+.room-chat-meta b{font-weight:500}.room-chat-meta time{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
+.room-chat-quick{display:flex;gap:6px;min-height:40px;overflow-x:auto;overscroll-behavior:contain;flex:none;scrollbar-width:thin}
+.room-chat-quick button{flex:none;min-height:40px;white-space:nowrap;padding:6px 11px;border:1px solid #ffffff1c;border-radius:10px;background:#ffffff04;color:var(--text);font:13px var(--f-system);cursor:pointer}
+.room-chat-compose{display:flex;align-items:center;gap:8px;flex:none;margin:0}
+.room-chat-compose input{flex:1;width:0;min-width:0;min-height:46px;padding:10px 12px;border:1px solid #91a5c540;border-radius:12px;background:#101a2f;color:var(--text);font:16px/1.4 var(--f-system);outline:none}
+.room-chat-compose input:focus{border-color:#d5c3a6}.room-chat-compose input[aria-invalid=true]{border-color:#e4a49e}
+.room-chat-send{flex:none;min-width:58px;min-height:46px;border:0;border-radius:12px;background:#eadac0;color:#172039;font:600 14px var(--f-system);cursor:pointer}
+.room-chat button:disabled,.room-chat input:disabled{opacity:.45;cursor:default}
+.room-chat-footer{display:flex;align-items:flex-start;gap:10px;min-height:18px;flex:none;color:var(--muted);font-size:11px;line-height:1.5}
+#chatError{flex:1;color:#e4b4ac;min-width:0}#chatCount{margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.room-chat-turn{min-height:36px;padding:7px 10px;border:1px solid #d5c3a64d;border-radius:9px;background:#d5c3a60b;color:#eadac0;font:13px var(--f-system);cursor:pointer;flex:none}
+.room-chat button:focus-visible,.room-chat-messages:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.room-chat.room-chat-compact{padding:12px;gap:7px}.room-chat-compact .room-chat-rule{font-size:11px}.room-chat-compact .room-chat-turn{min-height:30px;padding:4px 8px}.room-chat-compact .room-chat-quick{display:none}.room-chat-compact .room-chat-messages{padding:6px 0}.room-chat-compact .room-chat-heading small{display:none}
+@media (max-height:560px){.room-chat{padding:12px;gap:7px}.room-chat-rule{font-size:11px}.room-chat-turn{min-height:30px;padding:4px 8px}.room-chat-quick{display:none}.room-chat-messages{padding:6px 0}.room-chat-heading small{display:none}}

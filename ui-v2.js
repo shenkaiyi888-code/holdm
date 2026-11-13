@@ -81,6 +81,7 @@
       seats.forEach((el,i)=>{el.setAttribute('aria-label',`${G.players[i].name}，筹码 ${G.players[i].chips}${el.classList.contains('turn')?'，正在行动':''}`);el.querySelector('.tag').title=el.querySelector('.tag').textContent;});
       layoutSeats();
       $('#bOrientation').disabled=false;
+      window.HoldmChat?.sync();
     }
   };
   // One live region for action announcements; unchanged engine status remains visible.

@@ -1,5 +1,17 @@
 # Design QA
 
+## Online daily chat
+
+final result: passed
+
+The requested new flow reuses the existing action-area chat entry and the current navy/ivory visual tokens. It adds a native dialog with room-only message history, daily greetings/emoji, a 16px text composer and inline feedback for prohibited discussion. Message text uses native system typography, with 46px input/send controls and a 44px return control. The table layout and upper-bar court portraits are retained.
+
+`artifacts/room-chat-phone.webp`, `room-chat-320x568.webp`, `room-chat-844x390.webp` and `room-chat-1440x900.webp` show real browser captures. `room-chat-blocked.webp` shows a rejected draft, without adding that text to the room transcript. `room-chat-keyboard-portrait.webp` and `room-chat-keyboard-landscape.webp` show the dialog fitted to a simulated 360px visible region. The unavailable keyboard area itself is not an OS keyboard capture. Only the dialog moves/resizes; game-frame dimensions, table bounds and hand identity stay unchanged. The focused composer keeps the message list at its end.
+
+`artifacts/room-chat-verification.json` records actual two-player send/receive, unread state, local rejection, literal-markup display, keyboard-shortcut and IME isolation, same-hand orientation changes, reconnect/rejoin history and draft clearing on leave. All nine viewport cases fit the dialog, history, input, send, close and current-turn controls without horizontal overflow. API checks verify direct and legacy moderation, inactive membership, room isolation, canonical sender fields, rate limiting, retired phrases and rejection of client-supplied history. The existing 16-layout/action-audio/helper cases and portable preview pass. No page errors or failed responses were observed in the browser flow.
+
+The filter is a deterministic list/pattern policy. Common Chinese/English discussion and tested obfuscations are blocked, while private codes and indirect references remain a known limit of free typing. Ambiguous words can be rejected. These are documented product limits rather than a claim that all card discussion is impossible. VisualViewport and touch checks use Chromium; physical Safari and OS keyboard behavior remain device coverage gaps. No unresolved blocking UI finding remains in the tested scope.
+
 ## Joker Yi and check sound
 
 final result: passed

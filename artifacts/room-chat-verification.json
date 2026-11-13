@@ -1,0 +1,448 @@
+{
+  "api": {
+    "membership": true,
+    "serverIdentity": true,
+    "crossRoomPrivate": true,
+    "directAndRelayBlocked": true,
+    "retiredPresetsBlocked": true,
+    "historyForgeryBlocked": true,
+    "rateLimited": true,
+    "offlineCannotSend": true,
+    "reconnectHistory": 3,
+    "safeLegacyEmoji": true
+  },
+  "viewports": [
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "dialog": {
+        "x": 14,
+        "y": 24,
+        "w": 292,
+        "h": 520
+      },
+      "input": {
+        "x": 31,
+        "y": 453,
+        "w": 192,
+        "h": 46
+      },
+      "send": {
+        "x": 231,
+        "y": 453,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 237,
+        "y": 41.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 31,
+        "y": 142.1875,
+        "w": 258,
+        "h": 36
+      },
+      "history": {
+        "x": 31,
+        "y": 188.1875,
+        "w": 258,
+        "h": 204.8125
+      },
+      "font": "16px",
+      "scroll": 290,
+      "client": 290
+    },
+    {
+      "viewport": [
+        360,
+        640
+      ],
+      "dialog": {
+        "x": 14,
+        "y": 60,
+        "w": 332,
+        "h": 520
+      },
+      "input": {
+        "x": 31,
+        "y": 489,
+        "w": 232,
+        "h": 46
+      },
+      "send": {
+        "x": 271,
+        "y": 489,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 277,
+        "y": 77.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 31,
+        "y": 160.1875,
+        "w": 298,
+        "h": 36
+      },
+      "history": {
+        "x": 31,
+        "y": 206.1875,
+        "w": 298,
+        "h": 222.8125
+      },
+      "font": "16px",
+      "scroll": 330,
+      "client": 330
+    },
+    {
+      "viewport": [
+        390,
+        740
+      ],
+      "dialog": {
+        "x": 14,
+        "y": 110,
+        "w": 362,
+        "h": 520
+      },
+      "input": {
+        "x": 31,
+        "y": 539,
+        "w": 262,
+        "h": 46
+      },
+      "send": {
+        "x": 301,
+        "y": 539,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 307,
+        "y": 127.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 31,
+        "y": 210.1875,
+        "w": 328,
+        "h": 36
+      },
+      "history": {
+        "x": 31,
+        "y": 256.1875,
+        "w": 328,
+        "h": 222.8125
+      },
+      "font": "16px",
+      "scroll": 360,
+      "client": 360
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "dialog": {
+        "x": 14,
+        "y": 162,
+        "w": 362,
+        "h": 520
+      },
+      "input": {
+        "x": 31,
+        "y": 591,
+        "w": 262,
+        "h": 46
+      },
+      "send": {
+        "x": 301,
+        "y": 591,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 307,
+        "y": 179.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 31,
+        "y": 262.1875,
+        "w": 328,
+        "h": 36
+      },
+      "history": {
+        "x": 31,
+        "y": 308.1875,
+        "w": 328,
+        "h": 222.8125
+      },
+      "font": "16px",
+      "scroll": 360,
+      "client": 360
+    },
+    {
+      "viewport": [
+        768,
+        1024
+      ],
+      "dialog": {
+        "x": 174,
+        "y": 252,
+        "w": 420,
+        "h": 520
+      },
+      "input": {
+        "x": 191,
+        "y": 681,
+        "w": 320,
+        "h": 46
+      },
+      "send": {
+        "x": 519,
+        "y": 681,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 525,
+        "y": 269.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 191,
+        "y": 352.1875,
+        "w": 386,
+        "h": 36
+      },
+      "history": {
+        "x": 191,
+        "y": 398.1875,
+        "w": 386,
+        "h": 222.8125
+      },
+      "font": "16px",
+      "scroll": 418,
+      "client": 418
+    },
+    {
+      "viewport": [
+        1024,
+        768
+      ],
+      "dialog": {
+        "x": 302,
+        "y": 124,
+        "w": 420,
+        "h": 520
+      },
+      "input": {
+        "x": 319,
+        "y": 553,
+        "w": 320,
+        "h": 46
+      },
+      "send": {
+        "x": 647,
+        "y": 553,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 653,
+        "y": 141.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 319,
+        "y": 224.1875,
+        "w": 386,
+        "h": 36
+      },
+      "history": {
+        "x": 319,
+        "y": 270.1875,
+        "w": 386,
+        "h": 222.8125
+      },
+      "font": "16px",
+      "scroll": 418,
+      "client": 418
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "dialog": {
+        "x": 510,
+        "y": 190,
+        "w": 420,
+        "h": 520
+      },
+      "input": {
+        "x": 527,
+        "y": 619,
+        "w": 320,
+        "h": 46
+      },
+      "send": {
+        "x": 855,
+        "y": 619,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 861,
+        "y": 207.59375,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 527,
+        "y": 290.1875,
+        "w": 386,
+        "h": 36
+      },
+      "history": {
+        "x": 527,
+        "y": 336.1875,
+        "w": 386,
+        "h": 222.8125
+      },
+      "font": "16px",
+      "scroll": 418,
+      "client": 418
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "dialog": {
+        "x": 212,
+        "y": 14,
+        "w": 420,
+        "h": 362
+      },
+      "input": {
+        "x": 225,
+        "y": 292,
+        "w": 328,
+        "h": 46
+      },
+      "send": {
+        "x": 561,
+        "y": 292,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 567,
+        "y": 27,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 225,
+        "y": 101.5,
+        "w": 394,
+        "h": 30
+      },
+      "history": {
+        "x": 225,
+        "y": 138.5,
+        "w": 394,
+        "h": 146.5
+      },
+      "font": "16px",
+      "scroll": 418,
+      "client": 418
+    },
+    {
+      "viewport": [
+        390,
+        420
+      ],
+      "dialog": {
+        "x": 14,
+        "y": 14,
+        "w": 362,
+        "h": 392
+      },
+      "input": {
+        "x": 27,
+        "y": 322,
+        "w": 270,
+        "h": 46
+      },
+      "send": {
+        "x": 305,
+        "y": 322,
+        "w": 58,
+        "h": 46
+      },
+      "close": {
+        "x": 311,
+        "y": 27,
+        "w": 52,
+        "h": 44
+      },
+      "turn": {
+        "x": 27,
+        "y": 101.5,
+        "w": 336,
+        "h": 30
+      },
+      "history": {
+        "x": 27,
+        "y": 138.5,
+        "w": 336,
+        "h": 176.5
+      },
+      "font": "16px",
+      "scroll": 360,
+      "client": 360
+    }
+  ],
+  "keyboard": [
+    {
+      "mode": "portrait",
+      "visibleHeight": 360,
+      "tableUnchanged": true,
+      "dialogVisible": true
+    },
+    {
+      "mode": "landscape",
+      "visibleHeight": 360,
+      "tableUnchanged": true,
+      "dialogVisible": true
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "browser": {
+    "twoActualPlayers": true,
+    "typingKeepsHand": true,
+    "imeSafe": true,
+    "localBlock": true,
+    "unread": true,
+    "markupIsText": true,
+    "sameHandOrientation": true,
+    "reloadHistory": true,
+    "draftClearedOnLeave": true
+  }
+}

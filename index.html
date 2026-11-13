@@ -988,6 +988,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 
 <link rel="stylesheet" href="/ui-v2.css">
 <link rel="stylesheet" href="/court-dealers.css">
+<link rel="stylesheet" href="/room-chat.css">
 <link rel="preload" as="image" href="/assets/table-v2/card-back.webp">
 <link rel="preload" as="image" href="/assets/table-v2/felt-emerald.webp">
 <link rel="preload" as="image" href="/assets/table-v2/rail-leather.webp">
@@ -1095,9 +1096,8 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <div class="mini-read" id="miniRead" role="group" aria-label="手牌辅助信息"></div>
       <div class="status-row">
         <div class="status" id="status">发牌中</div>
-        <button class="ghost chat-btn" id="bChat" type="button" hidden aria-expanded="false" aria-label="发短句和表情">💬</button>
+        <button class="ghost chat-btn" id="bChat" type="button" hidden aria-haspopup="dialog" aria-controls="chatPop" aria-expanded="false" aria-label="房间聊天">聊天<span class="chat-unread" id="chatUnread" hidden></span></button>
       </div>
-      <div class="chat-pop" id="chatPop" hidden></div>
       <div class="raise-row" id="raiseRow">
         <div class="presets">
           <button type="button" data-p="min">最小</button>
@@ -1150,6 +1150,19 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <div class="quick" id="chatQuick"></div>
     </div>
   </details>
+
+  <dialog class="room-chat" id="chatPop" aria-labelledby="chatTitle" aria-describedby="chatRule">
+    <div class="room-chat-heading"><div><h2 id="chatTitle">房间聊天</h2><small id="chatRoom"></small></div><button class="room-chat-close" id="chatClose" type="button" autofocus>返回</button></div>
+    <p class="room-chat-rule" id="chatRule">聊聊日常，勿讨论手牌、牌力、下注或行动建议。</p>
+    <button class="room-chat-turn" id="chatTurn" type="button" hidden>轮到你了 · 返回牌桌</button>
+    <ol class="room-chat-messages" id="chatMessages" role="log" aria-label="房间消息" aria-live="polite" aria-relevant="additions" tabindex="0"><li class="room-chat-empty" id="chatEmpty">打个招呼吧</li></ol>
+    <div class="room-chat-quick" id="chatPresets" role="group" aria-label="日常短句和表情"></div>
+    <form class="room-chat-compose" id="chatForm">
+      <input type="text" id="chatInput" maxlength="160" placeholder="说点日常的…" aria-label="聊天内容" aria-describedby="chatRule chatError chatCount" autocomplete="off" enterkeyhint="send">
+      <button class="room-chat-send" id="chatSend" type="submit">发送</button>
+    </form>
+    <div class="room-chat-footer"><span id="chatError" role="status" aria-live="polite"></span><span id="chatCount">0/80</span></div>
+  </dialog>
 
   <div class="modal" id="ledDlg" hidden role="dialog" aria-modal="true" aria-labelledby="ldTitle">
     <div class="sheet" style="max-width:520px">
@@ -1291,6 +1304,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 <script src="/ui-v2.js"></script>
 <script src="/court-dealers.js"></script>
 <script src="/poker-ai.js"></script>
+<script src="/chat-policy.js"></script>
 <script>
 (() => {
 'use strict';
@@ -2961,7 +2975,7 @@ $('#optSpeed').addEventListener('change', e => { G.speed = +e.target.value; });
 $('#optEq').addEventListener('change', () => { eqKey = ''; render(); });
 document.addEventListener('keydown', e => {
   if (!$('#review').hidden || !$('#botsDlg').hidden || !$('#newDlg').hidden){ if (e.key === 'Escape'){ closeReview(); closeBots(); closeNew(); } return; }
-  if (e.target.matches('input[type=number],select') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.isComposing || e.target.closest('input,textarea,select,[contenteditable=true]') || $('#chatPop').open || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (G.waiting){
     if (k === 'f') $('#bFold').click();
@@ -4154,10 +4168,10 @@ function netSend(msg, to){ netSendBatch([{to:to || 'host', msg}]); }
 
 function netConnect(room, role){
   if (NET.es) NET.es.close();
-  NET.room = room; NET.role = role; NET.lastSeq = 0; NET.hostGone = false;
+  NET.room = room; NET.role = role; NET.lastSeq = 0; NET.hostGone = false; NET.conn = false;
   sset('holdem.netRoom', room); sset('holdem.netRole', role);
   document.body.classList.toggle('net-guest', role === 'guest');
-  $('#chat').hidden = false; $('#bChat').hidden = false; $('#bLog').textContent = '聊天 · 记录';
+  chatReset(); $('#chat').hidden = false; $('#bChat').hidden = false;
   const name = encodeURIComponent(myName || (role === 'host' ? '房主' : '玩家'));
   const es = new EventSource(`api/events?room=${room}&id=${NET.id}&name=${name}`);
   NET.es = es;
@@ -4184,7 +4198,7 @@ function netLeave(why, keep){
     G.priv = false;
   }
   document.body.classList.remove('net-guest');
-  $('#chat').hidden = true; $('#bChat').hidden = true; $('#chatPop').hidden = true; $('#bLog').textContent = '牌局记录';
+  setPop(false); chatReset(); $('#chat').hidden = true; $('#bChat').hidden = true;
   NET.notice = why || '';
   if (wasGuest || wasPriv){ HISTORY.length = 0; newGame(); }   /* a private table had no computer players to carry on with */
   else {
@@ -4203,6 +4217,7 @@ function netBadge(){
   if (!NET.role) b.textContent = '联机';
   else if (NET.role === 'host') b.textContent = `房间 ${NET.room} · ${1 + [...NET.peers.values()].filter(x => !x.gone).length} 人`;
   else b.textContent = `房间 ${NET.room}`;
+  window.HoldmChat?.sync();
 }
 
 function netOnMessage(m){
@@ -4211,7 +4226,11 @@ function netOnMessage(m){
   if (m.t === 'kicked'){ netLeave('你被房主请出了房间'); openNet(); return; }
   /* this player opened the same room in another window: that one keeps the seat, this one stops quietly */
   if (m.t === 'replaced'){ netLeave('你在另一个窗口打开了这个房间，这里已经断开。要回到这里，刷新页面就行。', true); openNet(); return; }
-  if (m.t === 'chat') return netShowChat(m.from, m.name, m.q);
+  if (m.t === 'chat') return netShowChat(m);
+  if (m.t === 'chat-history'){
+    if (m.room === NET.room && Array.isArray(m.messages)) m.messages.slice(-50).forEach(message => netShowChat(message,true));
+    return;
+  }
   if (m.t === 'roster'){
     NET.roster = m.list || [];
     if (NET.role === 'guest'){
@@ -4576,31 +4595,142 @@ function netBecomeGuest(room){
 }
 
 /* ----- chat ----- */
-/* only preset lines, sent by number: nobody can type their cards or anything else into the chat */
-const QUICK = ['👍', '😂', '😮', '😭', '🔥', '🙏', '🤔', '😎', '🤡', '💀',
-  '早知道就 fold 了', '又偷鸡？', '这都能中？', '河牌杀我', '你是不是有坚果', '我信你了', '别诈我', '这把我先撤',
-  '坐等摊牌', '牌神保佑', '下次一定', '稳住，能赢', '快点吧～', '好牌！', '运气真好', '再来！'];
-$('#chatQuick').innerHTML = QUICK.map((q, k) => `<button type="button" data-q="${k}">${q}</button>`).join('');
-$('#chatQuick').querySelectorAll('button').forEach(b => b.addEventListener('click', () => netChat(+b.dataset.q)));
-/* the 💬 button next to the status opens the same lines above the controls, so the table stays in view */
-$('#chatPop').innerHTML = $('#chatQuick').innerHTML;
-const setPop = open => { $('#chatPop').hidden = !open; $('#bChat').setAttribute('aria-expanded', String(open)); };
-$('#chatPop').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { netChat(+b.dataset.q); setPop(false); }));
-$('#bChat').addEventListener('click', e => { e.stopPropagation(); setPop($('#chatPop').hidden); });
-document.addEventListener('click', e => { if (!$('#chatPop').hidden && !e.target.closest('#chatPop')) setPop(false); });
-let chatAt = 0;
-function netChat(q){
-  if (!QUICK[q] || !NET.role || Date.now() - chatAt < 700) return;
-  chatAt = Date.now();
-  netSendBatch([{to:'*', msg:{t:'chat', name:myName || '玩家', q}}]);
+const chatPolicy = window.HoldmChatPolicy;
+const chatSeen = new Set();
+let chatUnread = 0, chatSending = false, chatError = '', chatRequest = 0;
+const chatDialog = $('#chatPop'), chatInput = $('#chatInput'), chatMessages = $('#chatMessages');
+$('#chatPresets').innerHTML = Object.entries(chatPolicy.QUICK).map(([q,text]) => `<button type="button" data-q="${q}">${text}</button>`).join('');
+$('#chatPresets').querySelectorAll('button').forEach(button => button.addEventListener('click', () => netChat(+button.dataset.q)));
+$('#chatQuick').innerHTML = '<button type="button" id="chatFromLog">打开房间聊天</button>';
+$('#chatFromLog').addEventListener('click', () => { document.body.classList.remove('show-log'); setPop(true); });
+function chatReset(){
+  chatRequest++; chatSending = false; chatError = ''; chatUnread = 0; chatSeen.clear();
+  chatInput.value = '';
+  chatMessages.querySelectorAll('.room-chat-message').forEach(message => message.remove());
+  $('#chatEmpty').hidden = false;
+  chatSync();
 }
-function netShowChat(from, name, q){
-  const text = QUICK[q];
-  if (typeof q !== 'number' || !text) return;
-  name = String(name || '玩家').slice(0, 8);
-  const k = G.players.findIndex((p, i) => NET.role === 'host' ? (p.remote === from || (from === NET.id && i === 0)) : p.pid === from);
-  seatSay(k, name, text);
+function chatSync(){
+  const ready = !!(NET.role && NET.conn), count = [...chatInput.value].length;
+  $('#chatRoom').textContent = NET.room ? `房间 ${NET.room} · 仅房间内可见` : '';
+  chatInput.disabled = !ready;
+  chatInput.setAttribute('aria-invalid',String(count > chatPolicy.MAX_LENGTH));
+  $('#chatSend').disabled = !ready || chatSending || !chatInput.value.trim() || count > chatPolicy.MAX_LENGTH;
+  $('#chatSend').textContent = chatSending ? '发送中' : '发送';
+  $('#chatPresets').querySelectorAll('button').forEach(button => { button.disabled = !ready || chatSending; });
+  $('#chatError').textContent = !ready && NET.role ? '连接中，稍后就能继续聊天。' : chatError;
+  $('#chatCount').textContent = `${count}/${chatPolicy.MAX_LENGTH}`;
+  $('#chatTurn').hidden = !(NET.role && G.waiting && !G.handOver);
+  $('#chatUnread').hidden = !chatUnread;
+  $('#chatUnread').textContent = chatUnread > 99 ? '99+' : String(chatUnread);
+  $('#bChat').setAttribute('aria-label',chatUnread ? `房间聊天，${chatUnread} 条未读消息` : '房间聊天');
 }
+function setPop(open){
+  if (open && NET.role){
+    chatUnread = 0; chatSync();
+    if (!chatDialog.open) chatDialog.showModal();
+    chatFit();
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    $('#bChat').setAttribute('aria-expanded','true');
+  } else if (chatDialog.open) chatDialog.close();
+}
+// Fit only this dialog to the visible area above a phone keyboard. The table's
+// stable iframe viewport and current hand are left to the orientation shell.
+function chatFit(){
+  if (!chatDialog.open) return;
+  const follow = document.activeElement === chatInput || chatMessages.scrollHeight-chatMessages.scrollTop-chatMessages.clientHeight < 48;
+  try {
+    const frame = window.frameElement, owner = frame ? parent : window;
+    const visible = owner.visualViewport;
+    if (visible && Math.abs(visible.scale - 1) > .01) return;
+    const area = {left:visible?.offsetLeft || 0,top:visible?.offsetTop || 0,width:visible?.width || owner.innerWidth,height:visible?.height || owner.innerHeight};
+    let points;
+    if (frame){
+      const bounds = frame.getBoundingClientRect(), matrix = new DOMMatrix(owner.getComputedStyle(frame).transform);
+      const left = Math.max(bounds.left,area.left), top = Math.max(bounds.top,area.top);
+      const right = Math.min(bounds.right,area.left+area.width), bottom = Math.min(bounds.bottom,area.top+area.height);
+      if (right <= left || bottom <= top) return;
+      points = [[left,top],[right,top],[left,bottom],[right,bottom]].map(([x,y]) => {
+        const dx = x-(bounds.left+bounds.width/2), dy = y-(bounds.top+bounds.height/2);
+        return {x:innerWidth/2+matrix.a*dx+matrix.b*dy,y:innerHeight/2+matrix.c*dx+matrix.d*dy};
+      });
+    } else points = [{x:area.left,y:area.top},{x:area.left+area.width,y:area.top+area.height}];
+    const left = Math.max(0,Math.min(...points.map(p=>p.x))), right = Math.min(innerWidth,Math.max(...points.map(p=>p.x)));
+    const top = Math.max(0,Math.min(...points.map(p=>p.y))), bottom = Math.min(innerHeight,Math.max(...points.map(p=>p.y)));
+    const width = right-left, height = bottom-top;
+    chatDialog.style.setProperty('--chat-x',`${(left+right)/2}px`);chatDialog.style.setProperty('--chat-y',`${(top+bottom)/2}px`);
+    chatDialog.style.setProperty('--chat-width',`${Math.max(1,width-28)}px`);chatDialog.style.setProperty('--chat-height',`${Math.max(1,height-28)}px`);
+    chatDialog.classList.toggle('room-chat-compact',height<560);
+    if (follow) chatMessages.scrollTop = chatMessages.scrollHeight;
+  } catch (_) {} // A standalone/embedded preview still has the CSS viewport fit.
+}
+let chatFitFrame = 0;
+function chatScheduleFit(){if(chatDialog.open&&!chatFitFrame)chatFitFrame=requestAnimationFrame(()=>{chatFitFrame=0;chatFit();});}
+addEventListener('resize',chatScheduleFit);addEventListener('holdm:layout',chatScheduleFit);
+chatInput.addEventListener('focus',chatScheduleFit);
+try { new Set([window.visualViewport,parent.visualViewport]).forEach(viewport=>{viewport?.addEventListener('resize',chatScheduleFit);viewport?.addEventListener('scroll',chatScheduleFit);}); } catch (_) {}
+$('#bChat').addEventListener('click', () => setPop(!chatDialog.open));
+$('#chatClose').addEventListener('click', () => setPop(false));
+$('#chatTurn').addEventListener('click', () => setPop(false));
+chatDialog.addEventListener('close', () => {
+  $('#bChat').setAttribute('aria-expanded','false');
+  if ($('#bChat').getBoundingClientRect().width) $('#bChat').focus();
+});
+chatDialog.addEventListener('click', event => {
+  if (event.target !== chatDialog) return;
+  const r = chatDialog.getBoundingClientRect();
+  if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) setPop(false);
+});
+chatInput.addEventListener('input', () => { chatError = ''; chatSync(); });
+chatInput.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && (event.isComposing || event.keyCode === 229)) event.preventDefault();
+});
+$('#chatForm').addEventListener('submit', event => { event.preventDefault(); netChat(chatInput.value); });
+async function netChat(value){
+  if (chatSending || !NET.role || !NET.conn) return;
+  const input = typeof value === 'number' ? {q:value} : {text:value};
+  const result = chatPolicy.validate(input);
+  if (!result.ok){ chatError = result.error; chatSync(); return; }
+  const room = NET.room, request = ++chatRequest, draft = chatInput.value;
+  chatSending = true; chatError = ''; chatSync();
+  try {
+    const response = await netPost('api/chat', {room,id:NET.id,...input});
+    if (room !== NET.room || request !== chatRequest) return;
+    if (!response.ok) throw new Error(response.error || '消息未发送，请重试。');
+    if (typeof value !== 'number' && chatInput.value === draft) chatInput.value = '';
+  } catch (error){
+    if (room === NET.room && request === chatRequest) chatError = error.message === 'Failed to fetch' ? '消息未发送，请检查网络后重试。' : error.message;
+  } finally {
+    if (room === NET.room && request === chatRequest){ chatSending = false; chatSync(); }
+  }
+}
+function netShowChat(message, history = false){
+  if (message.room !== NET.room || typeof message.id !== 'string' || chatSeen.has(message.id)) return;
+  const result = chatPolicy.validate(typeof message.text === 'string' ? {text:message.text} : {q:message.q});
+  if (!result.ok) return;
+  chatSeen.add(message.id);
+  if (chatSeen.size > 100) chatSeen.delete(chatSeen.values().next().value);
+  const atBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 48;
+  const self = message.from === NET.id, row = document.createElement('li');
+  row.className = 'room-chat-message' + (self ? ' self' : ''); row.dataset.message = message.id;
+  const meta = document.createElement('span'); meta.className = 'room-chat-meta';
+  const name = document.createElement('b'); name.textContent = self ? '你' : String(message.name || '玩家').slice(0,8);
+  const time = document.createElement('time');
+  if (Number.isFinite(message.at)){
+    const date = new Date(message.at); time.dateTime = date.toISOString();
+    time.textContent = date.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  }
+  meta.append(name,time);
+  const text = document.createElement('span'); text.className = 'room-chat-text'; text.textContent = result.text;
+  row.append(meta,text); chatMessages.append(row); $('#chatEmpty').hidden = true;
+  const messages = chatMessages.querySelectorAll('.room-chat-message');
+  if (messages.length > 50) messages[0].remove();
+  if (atBottom || self || history) chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (!history && !self && !chatDialog.open) chatUnread++;
+  chatSync();
+}
+window.HoldmChat = {sync:chatSync};
+chatSync();
 /* a chat line in the log and a speech bubble over seat k (k < 0: log only) */
 function seatSay(k, name, text){
   const li = document.createElement('li'); li.className = 'chat';
