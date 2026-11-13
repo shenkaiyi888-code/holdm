@@ -1,0 +1,293 @@
+{
+  "cases": [
+    {
+      "viewport": [
+        390,
+        740
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        390,
+        740
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        320,
+        568
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        360,
+        640
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        360,
+        640
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        768,
+        1024
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        768,
+        1024
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        1024,
+        768
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        1024,
+        768
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        1440,
+        900
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "seats": 6,
+      "flights": 12,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "seats": 8,
+      "flights": 16,
+      "tableOrigin": true,
+      "queuedHidden": true,
+      "facesClear": true,
+      "correctLandings": true,
+      "stateRetained": true,
+      "communityStreets": [
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "errors": []
+}

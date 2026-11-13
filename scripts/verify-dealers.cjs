@@ -44,7 +44,7 @@ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y
    }
    await f.locator('#bCourtDealer').click();await f.locator('#courtMotion').uncheck();await f.locator('.court-done').click();
    assert.equal(await f.locator('#bCourtDealer .court-portrait').evaluate(e=>getComputedStyle(e).animationName),'none');
-   await f.locator('#bMenu').click();await f.locator('#courtVisible').uncheck();assert.equal(await f.locator('#bCourtDealer').isVisible(),false);assert.equal(await f.evaluate(()=>HoldmCourt.origin()),null);
+   await f.locator('#bMenu').click();await f.locator('#courtVisible').uncheck();assert.equal(await f.locator('#bCourtDealer').isVisible(),false);assert.ok(await f.evaluate(()=>HoldmCourt.origin()?.w>0),'Hiding the decorative portrait must keep the table deal origin available');
    await f.locator('#courtVisible').check();await f.locator('#bMenu').click();
    await f.locator('#bCourtDealer').click();await f.locator('[data-dealer=q].court-choice').click();
    await f.locator('#bOrientation').click();await p.waitForTimeout(180);assert.deepEqual(await state(f),before);assert.equal(await f.locator('#bCourtDealer').getAttribute('data-dealer'),'q');

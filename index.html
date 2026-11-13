@@ -3102,6 +3102,33 @@ const spd = () => Math.max(.45, G.speed);
 const wait = (fn, ms) => { const id = runId; setTimeout(() => { if (id === runId) fn(); }, ms); };
 const fxLayer = $('#fx');
 function centerOf(el){ const r = el.getBoundingClientRect(); return {x:r.left + r.width / 2, y:r.top + r.height / 2, w:r.width, h:r.height}; }
+/* Route card centres around player plates and the decorative portrait. Card
+   orientation stays fixed, so the padded rectangles cover the whole flight. */
+function cardRoute(from,to,w,h,rotation){
+  const angle=Math.abs(rotation)*Math.PI/180;
+  const rx=(w*Math.cos(angle)+h*Math.sin(angle))/2+2,ry=(w*Math.sin(angle)+h*Math.cos(angle))/2+2;
+  const obstacles=[...document.querySelectorAll('#arena>.seat .pod,#bCourtDealer')].map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>({left:r.left-rx,right:r.right+rx,top:r.top-ry,bottom:r.bottom+ry}));
+  const inside=(p,r)=>p.x>r.left&&p.x<r.right&&p.y>r.top&&p.y<r.bottom;
+  const crosses=(a,b,r)=>{
+    let lo=0,hi=1;
+    for(const [p,d,min,max] of [[a.x,b.x-a.x,r.left,r.right],[a.y,b.y-a.y,r.top,r.bottom]]){
+      if(Math.abs(d)<.00001){if(p<=min||p>=max)return false;}
+      else{const t1=(min-p)/d,t2=(max-p)/d;lo=Math.max(lo,Math.min(t1,t2));hi=Math.min(hi,Math.max(t1,t2));if(lo>=hi)return false;}
+    }
+    return hi>0&&lo<1;
+  };
+  const clear=(a,b)=>!obstacles.some(r=>crosses(a,b,r));
+  if(clear(from,to))return[from,to];
+  const corners=obstacles.flatMap(r=>[{x:r.left-1,y:r.top-1},{x:r.right+1,y:r.top-1},{x:r.left-1,y:r.bottom+1},{x:r.right+1,y:r.bottom+1}]).filter(p=>p.x>=rx&&p.x<=innerWidth-rx&&p.y>=ry&&p.y<=innerHeight-ry&&!obstacles.some(r=>inside(p,r)));
+  const nodes=[from,to,...corners],distance=nodes.map(()=>Infinity),previous=nodes.map(()=>-1),visited=new Set();distance[0]=0;
+  while(visited.size<nodes.length){
+    let i=-1;nodes.forEach((_,j)=>{if(!visited.has(j)&&(i<0||distance[j]<distance[i]))i=j;});
+    if(i<0||!Number.isFinite(distance[i]))break;if(i===1){const route=[];for(let j=1;j>=0;j=previous[j])route.unshift(nodes[j]);return route;}
+    visited.add(i);
+    nodes.forEach((p,j)=>{if(visited.has(j)||!clear(nodes[i],p))return;const d=distance[i]+Math.hypot(p.x-nodes[i].x,p.y-nodes[i].y);if(d<distance[j]){distance[j]=d;previous[j]=i;}});
+  }
+  return null;
+}
 function fly(html, from, to, ms, o = {}){
   if (reduceMotion) return Promise.resolve();
   const el = document.createElement('div');
@@ -3114,7 +3141,22 @@ function fly(html, from, to, ms, o = {}){
   const frames = [{transform:tf(from, o.rot0 || 0, o.s0 ?? 1), opacity:o.o0 ?? 1}];
   if (mid) frames.push({transform:tf(mid, ((o.rot0 || 0) + (o.rot || 0)) / 2, ((o.s0 ?? 1) + (o.s1 ?? 1)) / 2), opacity:1, offset:.5});
   frames.push({transform:tf(to, o.rot || 0, o.s1 ?? 1), opacity:o.o1 ?? 1});
-  const a = el.animate(frames, {duration:ms, delay:o.delay || 0, easing:o.ease || 'cubic-bezier(.2,.75,.3,1)', fill:'both'});
+  const cardFlight=o.deal===true;
+  if(cardFlight){
+    el.style.opacity='0';
+    const rotation=o.rot||0,route=cardRoute(from,to,w,h,rotation);frames.length=0;
+    if(route){
+      const lengths=route.map((p,i)=>i?Math.hypot(p.x-route[i-1].x,p.y-route[i-1].y):0),total=lengths.reduce((a,b)=>a+b,0)||1;
+      let travelled=0;
+      route.forEach((p,i)=>{travelled+=lengths[i];const offset=i===route.length-1?1:travelled/total;
+        frames.push({transform:tf(p,rotation,(o.s0??1)+((o.s1??1)-(o.s0??1))*offset),opacity:(o.o0??1)+((o.o1??1)-(o.o0??1))*offset,offset});});
+    }else{
+      // If a very tight layout has no clear corridor, reveal the destination
+      // rather than sending a card through a player's face.
+      el.dataset.safeFade='true';frames.push({transform:tf(to,rotation,o.s1??1),opacity:0},{transform:tf(to,rotation,o.s1??1),opacity:o.o1??1});
+    }
+  }
+  const a = el.animate(frames, {duration:ms, delay:o.delay || 0, easing:o.ease || 'cubic-bezier(.2,.75,.3,1)', fill:cardFlight?'forwards':'both'});
   return a.finished.then(() => el.remove(), () => el.remove());
 }
 const coinsHTML = n => `<div class="coins">${window.HoldmUI.stack(5,n)}</div>`;
@@ -3218,7 +3260,7 @@ function animateDeal(){
     if (!card) return;
     card.style.visibility = 'hidden';
     const tgt = centerOf(card);
-    fly(backHTML(), origin, tgt, dur, {delay:t, cw:card.offsetWidth || 30, rot0:-40, rot:r ? 7 : -7, s0:.7})
+    fly(backHTML(), origin, tgt, dur, {deal:true,delay:t, cw:card.offsetWidth || 30, rot0:-40, rot:r ? 7 : -7, s0:.7})
       .then(() => { card.style.visibility = ''; sfx('deal'); });
     t += step;
   });
@@ -3234,7 +3276,6 @@ function animateDeal(){
 function renderBoardInto(boardEl, arr, instant){
   if (boardEl.children.length !== 5) boardEl.innerHTML = '<div class="slot"></div>'.repeat(5);
   let n = 0;
-  const origin = dealerPoint();
   for (let k = 0; k < 5; k++){
     const want = arr[k], node = boardEl.children[k];
     if (want === undefined){
@@ -3250,7 +3291,7 @@ function renderBoardInto(boardEl, arr, instant){
     f.style.visibility = 'hidden';
     const delay = n++ * 160 * spd();
     setTimeout(() => {
-      fly(backHTML(), origin, centerOf(f), 360 * spd(), {cw:f.offsetWidth, rot0:-30, s0:.7})
+      fly(backHTML(), dealerPoint(), centerOf(f), 360 * spd(), {deal:true,cw:f.offsetWidth, rot0:-30, s0:.7})
         .then(() => { f.style.visibility = ''; f.classList.add('go'); sfx('flip'); });
     }, delay);
   }

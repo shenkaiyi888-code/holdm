@@ -74,7 +74,7 @@
   motion.onchange=()=>{prefs.motion=motion.checked;remember();update();};
   window.HoldmCourt={
     origin(){
-      const r=button.getBoundingClientRect();
+      const r=document.querySelector('.deal-origin').getBoundingClientRect();
       return r.width&&r.height?{x:r.x+r.width/2,y:r.y+r.height/2,w:r.width,h:r.height}:null;
     }
   };

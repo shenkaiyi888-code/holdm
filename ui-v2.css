@@ -42,7 +42,7 @@ body::before{content:"";position:fixed;inset:-15%;pointer-events:none;background
 .pot{background:none;border:0;padding:0;gap:6px;font:12px/1.4 var(--f-body);color:#acb7aa}
 .pot .coin{display:inline-block;--token-w:18px}.pot b{font:600 clamp(20px,2.4cqw,28px)/1.2 var(--f-num);color:#eee8d6}
 .bet{background:#11241bd9;border:1px solid #c5c1a521;font:12px var(--f-num);padding:5px 10px;color:#e0dfd1;gap:4px}.bet::before{background:url('/assets/table-v2/chip-5.webp') center/cover;border-radius:0;width:18px;height:13px;box-shadow:none}
-.deal-origin{position:absolute;width:20px;height:28px;left:calc(50% - 10px);top:0;opacity:0;pointer-events:none}
+.deal-origin{position:absolute;width:20px;height:28px;left:62%;top:28%;transform:translate(-50%,-50%);opacity:0;pointer-events:none}
 .table-note{position:absolute;bottom:12%;font:8px var(--f-body);letter-spacing:.26em;color:#bdc7ac25;pointer-events:none}
 .pod,.t8 .pod{min-width:clamp(112px,14cqw,156px);background:linear-gradient(150deg,#333832,#1b2422);border:1px solid #ad9c7d69;box-shadow:inset 0 1px 0 #ffffff0b,0 5px 12px #0005;padding:5px 13px 5px 5px;gap:8px}
 .ava,.ava.chip{width:clamp(30px,4cqw,42px);border:1px solid #d0bea32e;box-shadow:none;background:linear-gradient(140deg,#565347,#383c34);font:16px var(--f-display);color:#d6c7ac}
