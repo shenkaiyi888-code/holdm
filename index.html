@@ -4151,7 +4151,7 @@ const navType = (performance.getEntriesByType && performance.getEntriesByType('n
 if (navType !== 'reload'){ sset('holdem.netId', null); sset('holdem.netRoom', null); sset('holdem.netRole', null); }
 NET.id = sget('holdem.netId') || randHex(8); sset('holdem.netId', NET.id);
 NET.available = false; NET.lastSeq = 0; NET.roster = [];
-const TURN_MS = 30000, AWAY_MS = 2500, GONE_MS = 120000, NEXT_MS = 10000;
+const TURN_MS = 60000, AWAY_MS = 2500, GONE_MS = 120000, NEXT_MS = 10000;
 const SEAT_ORDER = {6:[3, 1, 5, 2, 4], 8:[4, 2, 6, 1, 7, 3, 5]};
 const newStats = () => ({hands:0, vpip:0, pfr:0, raises:0, calls:0, faced:0, foldFaced:0});
 
@@ -4934,7 +4934,7 @@ const NET_FAQ = () => `<details class="net-faq"><summary>常见问题</summary><
   <dt>为什么进来了还不能打？</dt><dd>牌已经发出去的那一手，中途不能加人，不然牌序和底池都会乱，真实牌桌也是这样。等这手打完（通常几十秒），下一手就会给你发牌。</dd>
   <dt>空着的座位是谁？</dt><dd>是电脑。朋友进来会替换掉电脑。只想跟真人打，开房时选「只和朋友打」；开了房也能在这里点「改规则 / 换房间类型」。</dd>
   <dt>最多几个人？</dt><dd>6 人桌最多 6 个真人，8 人桌最多 8 个。坐满了的人进来只能观战。</dd>
-  <dt>想太久会怎样？</dt><dd>每人 30 秒，超时会自动过牌，不能过牌就弃牌。</dd>
+  <dt>想太久会怎样？</dt><dd>每次行动有 60 秒思考时间，超时会自动过牌，不能过牌就弃牌。</dd>
   <dt>掉线了怎么办？</dt><dd>2 分钟内重新打开链接，会回到原来的座位。房主关掉或刷新页面，牌局就结束了。</dd>
 </dl></details>`;
 function openNet(){ $('#netDlg').hidden = false; netRenderDlg(); }

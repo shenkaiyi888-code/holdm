@@ -2,6 +2,10 @@
 
 Run the existing server with `npm start`, or `npm run dev -- --host 0.0.0.0 --port 4173 --strictPort`.
 
+Online players now have 60 seconds for each action. The existing host timer and synchronized remaining-time snapshot use that duration; the room FAQ reflects the new limit. Timeout still checks when free and folds when facing a bet. Disconnected-player handling keeps its existing shorter timer.
+
+`artifacts/turn-clock-verification.json` records a browser check of the production timer and snapshot functions: a 60,000ms scheduled turn, matching host/snapshot/guest deadlines, automatic check/fold at timeout, the existing 2,500ms away timer, and no online timer in solo play. The diagnostic bridge and timer capture exist only in the local verification harness.
+
 Online rooms now support daily text chat through the existing action-area 聊天 button. The server checks both the new `/api/chat` endpoint and legacy quick-message relay before broadcasting or retaining a message. Common hand/strength/betting discussions and old poker-related presets are rejected. The dialog includes unread messages, daily presets, an 80-character composer, and a return-to-table control when it is the player's turn. Phone keyboard fitting adjusts only the chat dialog; text entry and IME never activate game hotkeys. Filtering scope, compatibility and verification are in `CHAT-UPDATE.md`.
 
 The current art pass uses the older shared site's navy/emerald palette (`#0e1320` / `#1a2340` room, `#21865f` / `#146446` / `#0a3a29` felt). The engraved navy/ivory card back, smooth emerald felt and warm matte leather rail are individual ImageGen assets. The former material atlas remains in the library; the live interface loads the new textures directly. Animated room lighting, neutral-white card faces and the Apple-native UI font remain active. The final comparisons and visual checks are recorded in `design-qa.md` and `artifacts/art-polish-*.webp`.

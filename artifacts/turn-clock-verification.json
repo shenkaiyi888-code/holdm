@@ -1,0 +1,14 @@
+{
+  "onlineMs": 60000,
+  "hostRemaining": 60000,
+  "snapshotRemaining": 60000,
+  "guestRemaining": 59987,
+  "freeTimeout": "过牌",
+  "freeFolded": false,
+  "facingTimeout": "弃牌",
+  "facingFolded": true,
+  "awayMs": 2500,
+  "offlineDeadline": 0,
+  "offlineArmed": 0,
+  "errors": []
+}
