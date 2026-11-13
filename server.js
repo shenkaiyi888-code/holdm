@@ -113,7 +113,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'});
       return res.end(fs.readFileSync(PAGE));
     }
-    const uiFile = ['/orientation-shell.js','/ui-v2.js','/ui-v2.css','/court-dealers.js','/court-dealers.css'].includes(p) ? path.join(__dirname,p.slice(1))
+    const uiFile = ['/orientation-shell.js','/ui-v2.js','/ui-v2.css','/court-dealers.js','/court-dealers.css','/poker-ai.js'].includes(p) ? path.join(__dirname,p.slice(1))
       : /^\/assets\/table-v2\/(?:icons\/)?[a-z0-9-]+\.(?:png|webp|svg|ttf)$/.test(p) ? path.join(__dirname,'public',p) : null;
     if ((req.method === 'GET' || req.method === 'HEAD') && uiFile){
       if (!fs.existsSync(uiFile)){ res.writeHead(404); return res.end(); }

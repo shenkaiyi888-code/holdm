@@ -1287,6 +1287,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 
 <script src="/ui-v2.js"></script>
 <script src="/court-dealers.js"></script>
+<script src="/poker-ai.js"></script>
 <script>
 (() => {
 'use strict';
@@ -2035,7 +2036,7 @@ function startHand(){
   G.salt = randHex(8);
   G.deckText = G.deck.slice().reverse().map(cardText).join(' ');
   G.rit = null; G.board2 = null; G.ritEq = null; G.ritBot = null;
-  G.board = []; G.street = 0; G.streetRaises = 0; G.handOver = false; G.showdown = false; G.msg = [];
+  G.board = []; G.street = 0; G.streetRaises = 0; G.handOver = false; G.showdown = false; G.msg = []; G.aiHistory = [];
   G.thinking = -1; G.waiting = false;
 
   log(`第 ${G.handNo} 手 · ${G.players[G.dealer].name}坐庄`, 'sep');
@@ -2128,6 +2129,7 @@ function doAction(i, type, to){
   G.deadline = 0;
   const wasOpening = G.currentBet === 0;
   const toCall = G.currentBet - p.bet;
+  const publicBefore = {bet:p.bet,currentBet:G.currentBet,call:Math.min(Math.max(0,toCall),p.chips),pot:potTotal(),raises:G.streetRaises};
   if (type === 'check' && toCall > 0) type = 'call';
   if (type === 'raise' && (p.chips <= toCall || Math.min(to, p.bet + p.chips) <= G.currentBet || !mayRaise(p))) type = 'call';
   /* a raise must be at least the last full raise (opening bet: one big blind) unless it is all-in */
@@ -2157,6 +2159,7 @@ function doAction(i, type, to){
     G.players.forEach((q, j) => { if (j !== i && canAct(q)) q.acted = false; });
     text = p.allIn ? `全下 ${to}` : (opening ? `下注 ${to}` : `加注到 ${to}`);
   }
+  (G.aiHistory ||= []).push({seat:i,street:G.street,type,increment:type==='raise'?p.bet-publicBefore.currentBet:Math.max(0,p.bet-publicBefore.bet),call:publicBefore.call,pot:publicBefore.pot,raises:publicBefore.raises,board:G.board.slice()});
   p.acted = true; p.actedAt = G.currentBet; p.lastAction = text;
   const feedback = {id:G.salt + ':' + (++feedbackSequence), i, kind:type === 'raise' ? (wasOpening ? 'bet' : 'raise') : type, text};
   window.HoldmUI?.action(i, feedback.kind, feedback, sfx);
@@ -2569,14 +2572,15 @@ function drawInfo(hole, board){
   const flush = fs >= 0 && hole.some(c => cs(c) === fs);
   const maskOf = arr => { let m = 0; arr.forEach(c => m |= 1 << cr(c)); if (m & (1 << 14)) m |= 2; return m; };
   const m = maskOf(cards), mb = maskOf(board);
-  let oesd = false, gut = false;
+  const straightOuts = new Set();
   if (!straightTop(m)) for (let t = 14; t >= 5; t--){
     const win = 31 << (t - 4);
     if (popcount(m & win) !== 4 || popcount(mb & win) >= 4) continue;
     const miss = win & ~m;
-    if (miss === (1 << t) || miss === (1 << (t - 4))) oesd = true; else gut = true;
+    const missingRank = Math.log2(miss);
+    straightOuts.add(missingRank === 1 ? 14 : missingRank);
   }
-  return {flush, oesd, gut};
+  return {flush, oesd:straightOuts.size>=2, gut:straightOuts.size===1};
 }
 function boardTexture(b){
   if (b.length < 3) return {dry:false, wet:false, scare:false};
@@ -2595,160 +2599,27 @@ function boardTexture(b){
   }
   return {dry, wet, scare};
 }
-/* decide whether this is a good spot to bluff, and with what story */
-function bluffPlan(p, i, c){
-  const M = eff(p);
-  if (styleDef(p).honest) return null;
-  const {eq, opps, toCall, pot, canRaise} = c;
-  if (!canRaise) return null;
-  const share = 1 / (opps + 1);
-  const st = G.street, b = G.board;
-  const dr = drawInfo(p.hand, b);
-  if (st >= 1 && st <= 2 && (dr.flush || dr.oesd)) p.hadDraw = true;
-  if (eq > share * 1.4) return null;
-  const K = Math.max(.2, Math.min(2.4, M.bluff * 10));
-  const oppF = [1, 1, .6, .3, .15, .1][Math.min(5, opps)];
-  let fr = 1;
-  const me = G.players[0];
-  if (!me.folded && !me.out && me.st && me.st.faced >= 6){
-    const f = me.st.foldFaced / me.st.faced;
-    fr = p.pro && p.pro.exploit ? (f > .55 ? 2.2 : f < .3 ? .1 : 1) : (f > .55 ? 1.35 : f < .3 ? .5 : 1);
-  }
-  const lv = live(), order = seatOrder(i);
-  const inPos = lv.every(q => q === p || seatOrder(G.players.indexOf(q)) < order);
-  const checkedTo = toCall === 0 && lv.some(q => q !== p && q.checked);
-  const tex = boardTexture(b);
-  const R = Math.random();
-  const pick = (kind, prob, size) => R < Math.min(.85, prob * K * oppF * fr) ? {kind, size} : null;
-  const size = (lo, hi) => p.pro && p.pro.balance ? .66 : lo + Math.random() * (hi - lo);
-  if (toCall === 0){
-    if (st === 0) return null;
-    if ((dr.flush || dr.oesd) && st < 3) return pick('semi', .35 + M.aggr * .3, size(.5, .75));
-    if (st === 1 && G.lastAgg === i && opps <= 2) return pick('cbet', (tex.dry ? .45 : .25) + M.aggr * .2, size(.33, .55));
-    if (st >= 2 && G.lastAgg === i && tex.scare && opps <= 2) return pick('barrel', .3 + M.aggr * .25, size(.6, .8));
-    if (st === 3 && p.hadDraw && opps === 1) return pick('river', .35 + M.aggr * .25, size(.65, M.aggr > .8 ? 1.2 : .85));
-    if (inPos && checkedTo && opps <= 2) return pick('float', .18 + M.aggr * .2, size(.45, .65));
-    if (dr.gut && st < 3) return pick('semi', .12 + M.aggr * .15, size(.5, .7));
-    return null;
-  }
-  if (st === 0){
-    const [h1, h2] = p.hand, suited = cs(h1) === cs(h2), gap = Math.abs(cr(h1) - cr(h2)), hasA = cr(h1) === 14 || cr(h2) === 14;
-    if (G.streetRaises === 1 && inPos && suited && (hasA || gap <= 1) && toCall <= G.bbAmt * 5) return pick('three', .12 + M.aggr * .15, 0);
-    return null;
-  }
-  if ((dr.flush || dr.oesd) && st < 3 && toCall <= pot * .7) return pick('semi', .12 + M.aggr * .22, size(.8, 1));
-  if (p.checked && opps === 1 && tex.wet && st < 3 && toCall <= pot * .6) return pick('xr', .06 + M.aggr * .1, size(.9, 1.1));
-  return null;
+/* The decision core receives no opponent hole cards, deck, private review data
+   or hidden style labels. Reads come from public actions and observed stats. */
+function botContext(i){
+  const p=G.players[i],pr=persona(p),def=styleDef(p);
+  return {seat:i,dealer:G.dealer,sb:G.sbIdx,bb:G.bbIdx,straddle:G.straddleIdx ?? -1,
+    bigBlind:G.bbAmt,currentBet:G.currentBet,minRaise:G.minRaise,raises:G.streetRaises,
+    street:G.street,board:G.board.slice(),hand:p.hand.slice(),style:eff(p),trap:pr.trap,honest:!!def.honest,
+    strategy:{balance:!!p.pro?.balance,exploit:!!p.pro?.exploit,pressure:!!p.pro?.barrel,value:!!p.pro?.value},
+    lastAgg:G.lastAgg,streetAgg:G.streetAgg,
+    canRaise:p.chips>Math.max(0,G.currentBet-p.bet)&&mayRaise(p)&&G.players.some(q=>q!==p&&canAct(q)),
+    players:G.players.map((q,seat)=>({seat,chips:q.chips,bet:q.bet,total:q.total,out:!!q.out,folded:!!q.folded,allIn:!!q.allIn,
+      stats:{...Object.fromEntries(['hands','vpip','pfr','raises','calls','faced','foldFaced'].map(k=>[k,+q.st?.[k]||0])),
+        shownBluffs:seat===0?G.img?.bluff||0:0,shownValue:seat===0?G.img?.value||0:0}})),
+    history:(G.aiHistory||[]).map(a=>({seat:a.seat,street:a.street,type:a.type,increment:a.increment,call:a.call,pot:a.pot,raises:a.raises,board:a.board.slice()}))};
 }
-
 function botAct(i){
-  const p = G.players[i];
-  if (G.toAct !== i || G.handOver) return;
-  G.bluffFlag = null;
-  const pro = p.pro, M = eff(p), pr = persona(p);
-  const opps = G.players.filter(q => q !== p && !q.out && !q.folded).length;
-  const def = styleDef(p);
-  let eq = equity(p.hand, G.board, opps, pro ? pro.iters : 260);
-  /* 傅楠童 always believes she holds the nuts */
-  if (def.nuts) eq = Math.min(.97, eq + (G.street ? .22 : .12));
-  let posAdj = 0;
-  const late = i === G.dealer || nextIdx(i, q => !q.out) === G.dealer;
-  if (pro && pro.pos) posAdj = late ? -.12 : (i === G.sbIdx || i === G.bbIdx) ? 0 : .05;
-  let valueK = 1;
-  const me = G.players[0];
-  if (pro && pro.exploit && !me.folded && !me.out && me.st.faced >= 4 && me.st.foldFaced / me.st.faced < .3) valueK = .82;
-  const share = 1 / (opps + 1), k = 1 + M.tight + posAdj;
-  const strongT = Math.min(.78, share * 2.2) * k;
-  const medT = Math.min(.56, share * 1.5) * k * valueK;
-  const pot = potTotal(), toCall = G.currentBet - p.bet, r = Math.random();
-  const canRaise = p.chips > toCall && G.players.some(q => q !== p && canAct(q)) && G.streetRaises < 4 && mayRaise(p);
-  /* each style sizes its bets its own way; tilt makes every bet bigger */
-  const sizeK = (pro ? 1 : pr.size) * (1 + (p.tilt || 0) * .3);
-  const sizeTo = frac => {
-    const minTo = G.currentBet === 0 ? G.bbAmt : G.currentBet + G.minRaise;
-    const to = G.currentBet + Math.round((pot + toCall) * frac * sizeK / 5) * 5;
-    return Math.min(Math.max(to, minTo), p.bet + p.chips);
-  };
-  const valueSize = () => pro ? (pro.balance ? .66 : pro.value ? .75 + Math.random() * .25 : .55 + Math.random() * .4) : .45 + Math.random() * .5 * (.5 + M.aggr);
-  const plan = () => bluffPlan(p, i, {eq, opps, toCall, pot, canRaise});
-  const bluffRaise = bl => { G.bluffFlag = bl.kind; return doAction(i, 'raise', bl.size ? sizeTo(bl.size) : Math.min(Math.max(G.currentBet * 3, G.currentBet + G.minRaise), p.bet + p.chips)); };
-  /* stack depth in big blinds against the deepest opponent still in */
-  const deepest = Math.max(0, ...G.players.filter(q => q !== p && !q.out && !q.folded).map(q => q.chips + q.bet));
-  const effBB = Math.min(p.chips + p.bet, deepest) / G.bbAmt;
-  /* short stacked: before the flop it is all-in or fold, like a real short stack */
-  if (G.street === 0 && canRaise && effBB <= 12){
-    const c = chenScore(p.hand);
-    const T = 8 + M.tight * 12 - (12 - effBB) * .3 - M.aggr * 1.5 + (G.streetRaises >= 1 ? 2 : 0) + (opps >= 4 ? 1 : 0);
-    if (c >= T){ G.bluffFlag = eq < share ? 'steal' : null; return doAction(i, 'raise', p.bet + p.chips); }
-    if (toCall === 0) return doAction(i, 'check');
-    if (eq > toCall / (pot + toCall) && toCall <= pot * .25) return doAction(i, 'call');
-    return doAction(i, 'fold');
-  }
-  /* slow-play: with a monster on the flop or turn, some players check and wait for you to bet */
-  if (toCall === 0 && G.street >= 1 && G.street <= 2 && eq > .82 && opps <= 2 && !p.trapping && Math.random() < pr.trap * (1 - (p.tilt || 0))){
-    p.trapping = true;
-    return doAction(i, 'check');
-  }
-
-  if (toCall === 0){
-    if (canRaise && ((eq > strongT && r < .55 + M.aggr * .45) || (eq > medT && r < M.aggr * .5)))
-      return doAction(i, 'raise', sizeTo(valueSize()));
-    if (pro && canRaise && G.street === 1 && G.lastAgg === i && eq > share && r < pro.cbet) return doAction(i, 'raise', sizeTo(.33 + Math.random() * .25));
-    if (pro && pro.barrel && canRaise && G.street >= 2 && G.lastAgg === i && eq > share && r < pro.barrel) return doAction(i, 'raise', sizeTo(.66));
-    const bl = plan();
-    if (bl) return bluffRaise(bl);
-    return doAction(i, 'check');
-  }
-  if (G.street === 0){
-    const blindTop = G.straddleIdx >= 0 ? G.bbAmt * 2 : G.bbAmt;
-    if (canRaise && G.streetRaises < 2 && toCall <= blindTop && eq > medT && r < .2 + M.aggr * .65){
-      const minTo = G.currentBet + G.minRaise;
-      return doAction(i, 'raise', Math.min(Math.max(blindTop * (pro ? 2 + Math.round(Math.random()) : 2 + Math.floor(Math.random() * 3)), minTo), p.bet + p.chips));
-    }
-    const unopened = G.players.every((q, j) => j === G.sbIdx || j === G.bbIdx || j === G.straddleIdx || q.bet === 0);
-    if (canRaise && unopened && !def.honest && (late || i === G.sbIdx) && toCall <= blindTop){
-      const K = Math.max(.2, Math.min(2.4, M.bluff * 10));
-      if (Math.random() < Math.min(.8, (.15 + M.aggr * .3) * K)){
-        G.bluffFlag = eq <= medT ? 'steal' : null;
-        return doAction(i, 'raise', Math.min(Math.max(Math.round(blindTop * 2.5), G.currentBet + G.minRaise), p.bet + p.chips));
-      }
-    }
-    const bl = plan();
-    if (bl) return bluffRaise(bl);
-  }
-  /* facing a raise or a bet: strong hands raise back (3-bet, 4-bet, raise a bet) instead of only calling */
-  if (canRaise && G.streetRaises >= 1){
-    const r2 = Math.random(), inPos = seatOrder(i) > seatOrder(G.streetAgg);
-    const shoveOr = to => to >= (p.bet + p.chips) * .45 ? p.bet + p.chips : Math.min(to, p.bet + p.chips);
-    if (G.street === 0){
-      let need = (G.streetRaises === 1 ? 10 : G.streetRaises === 2 ? 12 : 15) + Math.round(M.tight * 10);
-      /* someone who raises every hand gets played back at lighter */
-      const ag = G.players[G.streetAgg];
-      if (ag && ag.st && ag.st.hands >= 8 && ag.st.pfr / ag.st.hands > .35 && (pro || M.aggr > .6)) need -= 2;
-      if (chenScore(p.hand) >= need && r2 < .55 + M.aggr * .45)
-        return doAction(i, 'raise', shoveOr(Math.round(G.currentBet * (G.streetRaises === 1 ? (inPos ? 3 : 3.6) : 2.3) / 5) * 5));
-    } else {
-      const raiseT = (opps === 1 ? .8 : Math.min(.86, share * 2.4)) + M.tight * .4 + (G.streetRaises >= 2 ? .1 : 0);
-      /* a monster sometimes just calls to keep you betting */
-      if (eq > raiseT && !(eq > .95 && r2 < .25) && r2 < .5 + M.aggr * .45) return doAction(i, 'raise', shoveOr(sizeTo(pro ? valueSize() + .2 : .7 + Math.random() * .5)));
-    }
-  }
-  const potOdds = toCall / (pot + toCall);
-  if (canRaise && G.street > 0 && p.checked && eq > strongT && (p.trapping ? r < .75 : pro && r < .55)) return doAction(i, 'raise', sizeTo(.9));
-  if (canRaise && eq > strongT && r < .35 + M.aggr * .6) return doAction(i, 'raise', sizeTo(pro ? valueSize() + .1 : .6 + Math.random() * .6));
-  if (G.street > 0){ const bl = plan(); if (bl) return bluffRaise(bl); }
-  let need = potOdds + M.tight * .4 + (toCall >= p.chips ? .05 : 0);
-  if (G.streetAgg === 0){
-    const sens = p.pro ? (p.pro.exploit ? 1.6 : 1.2) : p.style === '跟注站' ? .3 : p.style === '岩石' ? .6 : 1;
-    need = Math.max(.04, need - (bluffiness() - .5) * .3 * sens);
-  }
-  if (eq >= need || (toCall <= G.bbAmt && eq > potOdds * .8)) return doAction(i, 'call');
-  /* deep stacks: small pairs and suited connectors call a small raise to try to hit big */
-  if (G.street === 0 && effBB >= 80 && toCall <= p.chips * .05 && M.tight < .12){
-    const [h1, h2] = p.hand, gap = Math.abs(cr(h1) - cr(h2));
-    if (cr(h1) === cr(h2) || (cs(h1) === cs(h2) && gap <= 2)) return doAction(i, 'call');
-  }
-  return doAction(i, 'fold');
+  const p=G.players[i];
+  if(!p||p.human||NET.role==='guest'||G.toAct!==i||G.handOver||!canAct(p))return;
+  const choice=window.HoldmAI.decide(botContext(i),{evaluate:evalHand,chen:chenScore,draw:drawInfo,texture:boardTexture});
+  G.bluffFlag=choice.bluff||null;
+  return doAction(i,choice.type,choice.to);
 }
 
 /* ---------- run it twice ---------- */
@@ -5065,7 +4936,7 @@ $('#stSet').addEventListener('click', () => { $('#startDlg').hidden = true; open
 $('#stOnline').addEventListener('click', () => { $('#startDlg').hidden = true; openNet(); });
 
 /* automated rule checks open the page with ?selftest */
-if (/[?&]selftest/.test(location.search)) window.__holdm = {G, NET, HISTORY, mayRaise, bounds, doAction, render, sfx, animateDeal, setRaiseDefaults, freeze(){runId++;clearTimeout(G.idleT);}, get H(){ return H; }};
+if (/[?&]selftest/.test(location.search)) window.__holdm = {G, NET, HISTORY, mayRaise, bounds, doAction, render, sfx, animateDeal, setRaiseDefaults, freeze(){runId++;clearTimeout(G.idleT);}, botAct, botContext, startHand, newGame, get H(){ return H; }};
 
 /* ---------- boot ---------- */
 function snapshot(){

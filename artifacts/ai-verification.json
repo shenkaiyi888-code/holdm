@@ -1,0 +1,151 @@
+{
+  "cases": [
+    {
+      "name": "position changes opening ranges for regular bots",
+      "passed": true,
+      "ms": 2,
+      "early": "fold",
+      "button": "raise",
+      "positions": [
+        "SB",
+        "BB",
+        "EP",
+        "MP",
+        "CO",
+        "BTN"
+      ]
+    },
+    {
+      "name": "position handles empty seats, heads-up and a straddle",
+      "passed": true,
+      "ms": 0,
+      "emptySeats": true,
+      "headsUp": true,
+      "straddle": true
+    },
+    {
+      "name": "premium hands raise for value without an automatic deep shove",
+      "passed": true,
+      "ms": 19,
+      "raiseTo": 1125,
+      "stack": 2000
+    },
+    {
+      "name": "three-bets are larger out of position",
+      "passed": true,
+      "ms": 9,
+      "inPosition": 180,
+      "outOfPosition": 228
+    },
+    {
+      "name": "small samples cannot label an opponent with certainty",
+      "passed": true,
+      "ms": 0,
+      "profile": {
+        "vpip": 0.30434782608695654,
+        "pfr": 0.21739130434782608,
+        "aggression": 0.42857142857142855,
+        "fold": 0.45454545454545453,
+        "shownBias": 0
+      }
+    },
+    {
+      "name": "the same cards are read differently against tight and loose public histories",
+      "passed": true,
+      "ms": 81,
+      "tightEquity": 0.29892691499336443,
+      "looseEquity": 0.5858350085509691,
+      "tightAction": "fold",
+      "looseAction": "call"
+    },
+    {
+      "name": "wet boards charge more for draws than dry boards",
+      "passed": true,
+      "ms": 8,
+      "dry": 80,
+      "wet": 135
+    },
+    {
+      "name": "a shared royal flush is never folded or pointlessly raised",
+      "passed": true,
+      "ms": 6,
+      "action": "call"
+    },
+    {
+      "name": "all-in draws use their actual price, without fictional implied odds",
+      "passed": true,
+      "ms": 3,
+      "action": "fold"
+    },
+    {
+      "name": "wheel draws have four straight outs, while open ends have eight",
+      "passed": true,
+      "ms": 0,
+      "wheel": "gutshot",
+      "openEnded": "eight outs"
+    },
+    {
+      "name": "short calls cap both their price and the eligible pot",
+      "passed": true,
+      "ms": 5,
+      "call": 50,
+      "eligiblePot": 90,
+      "odds": 0.35714285714285715
+    },
+    {
+      "name": "no air check-raises and no missed-draw spam into a calling station",
+      "passed": true,
+      "ms": 90,
+      "seeds": 24
+    },
+    {
+      "name": "closed raising stays closed, including with the nuts",
+      "passed": true,
+      "ms": 3,
+      "action": "call"
+    },
+    {
+      "name": "a short all-in competes for its main pot, not the larger side pot",
+      "passed": true,
+      "ms": 38,
+      "weightedEquity": 0.8458333333333281,
+      "winWholePot": 0.7545
+    },
+    {
+      "name": "decisions and range sampling do not read opponent hole cards",
+      "passed": true,
+      "ms": 4,
+      "privateCardAccess": false,
+      "deckAccess": false
+    },
+    {
+      "name": "six- and eight-way decisions remain legal and bounded in time",
+      "passed": true,
+      "ms": 28,
+      "timings": [
+        {
+          "seats": 6,
+          "ms": 12,
+          "action": "call"
+        },
+        {
+          "seats": 8,
+          "ms": 16,
+          "action": "call"
+        }
+      ]
+    },
+    {
+      "name": "varied stack depths and board streets produce legal actions",
+      "passed": true,
+      "ms": 1072,
+      "spots": 120,
+      "actions": {
+        "check": 29,
+        "fold": 58,
+        "call": 29,
+        "raise": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "tables": [
+    {
+      "seats": 6,
+      "viewport": [
+        390,
+        740
+      ],
+      "privacy": {
+        "stable": true,
+        "noPrivateFields": true,
+        "publicHistory": true
+      },
+      "completedHands": 12,
+      "streets": [
+        0,
+        1,
+        2
+      ],
+      "restarts": 0,
+      "heroDecisions": 14,
+      "aiDecisions": 75,
+      "p95ms": 8.899999998509884,
+      "maxMs": 14.699999999254942,
+      "publicActions": 5,
+      "chipConservation": true
+    },
+    {
+      "seats": 8,
+      "viewport": [
+        844,
+        390
+      ],
+      "privacy": {
+        "stable": true,
+        "noPrivateFields": true,
+        "publicHistory": true
+      },
+      "completedHands": 12,
+      "streets": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "restarts": 0,
+      "heroDecisions": 12,
+      "aiDecisions": 105,
+      "p95ms": 6,
+      "maxMs": 11.600000001490116,
+      "publicActions": 8,
+      "chipConservation": true
+    }
+  ],
+  "errors": [],
+  "failedRequests": []
+}

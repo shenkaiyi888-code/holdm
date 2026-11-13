@@ -14,7 +14,7 @@ for p in asset_root.rglob('*'):
 game = (root/'index.html').read_text()
 for name in ('ui-v2.css', 'court-dealers.css'):
     game = game.replace(f'<link rel="stylesheet" href="/{name}">','<style>'+(root/name).read_text()+'</style>')
-for name in ('ui-v2.js', 'court-dealers.js'):
+for name in ('ui-v2.js', 'court-dealers.js', 'poker-ai.js'):
     game = game.replace(f'<script src="/{name}"></script>','<script>'+(root/name).read_text()+'</script>')
 game = game.replace("const asset = name => '/assets/table-v2/' + name;", "const asset = name => parent.__HOLDM_ASSETS['/assets/table-v2/' + name];")
 shell = (root/'play.html').read_text()
