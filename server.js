@@ -63,6 +63,8 @@ function prepareChat(room, id, input){
   client.chatAttempts.push(now);
   const result = chatPolicy.validate(input);
   if (!result.ok) return {status:400,error:result.error,code:result.code};
+  // Free typing is closed to players who still hold cards in the running hand.
+  if (result.q == null && room.chatLocked?.has(id)) return {status:403,error:chatPolicy.LOCKED_ERROR,code:'locked'};
   if (now - (client.chatSentAt || 0) < 1200) return {status:429,error:'发得有点快，稍等一下。'};
   const msg = {t:'chat',room:room.code,id:crypto.randomUUID(),from:id,
     name:chatPolicy.validate({text:client.name}).ok ? client.name : '玩家',text:result.text,at:now};
@@ -198,6 +200,12 @@ const server = http.createServer(async (req, res) => {
       room.touched = Date.now();
       for (const m of batch){
         if (m.msg?.t === 'chat'){ publishChat(room,chat); continue; }
+        if (m.to === 'server'){
+          // The host's browser runs the hand, so only the host says who is still in it.
+          if (id === room.host && m.msg?.t === 'chat-lock' && Array.isArray(m.msg.ids))
+            room.chatLocked = new Set(m.msg.ids.slice(0, MAX_PLAYERS).map(cleanId).filter(Boolean));
+          continue;
+        }
         const body = Object.assign({}, m.msg, {from:id}); delete body.sys;   /* only the server marks messages as sys */
         const payload = JSON.stringify(body);
         if (m.to === '*') room.clients.forEach(c => push(c, payload));
