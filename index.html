@@ -1000,7 +1000,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
       <h1 aria-label="bluff?">bluff<em>?</em></h1>
       <span class="byline">by Yiiiii</span>
-      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a href="blackjack.html" id="goBJ">21点</a><a href="baccarat.html" id="goBac">百家乐</a><a href="race.html" id="goRace">跑马</a></nav>
+      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a target="_top" href="blackjack.html" id="goBJ">21点</a><a target="_top" href="baccarat.html" id="goBac">百家乐</a><a target="_top" href="race.html" id="goRace">跑马</a></nav>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
     <div class="hud" id="hud" aria-live="polite"><span class="hud-pot">底池 <b id="hudPot">0</b></span><span class="hud-turn" id="hudTurn"></span></div>
@@ -1153,12 +1153,12 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
 
   <dialog class="room-chat" id="chatPop" aria-labelledby="chatTitle" aria-describedby="chatRule">
     <div class="room-chat-heading"><div><h2 id="chatTitle">房间聊天</h2><small id="chatRoom"></small></div><button class="room-chat-close" id="chatClose" type="button" autofocus>返回</button></div>
-    <p class="room-chat-rule" id="chatRule">聊聊日常，勿讨论手牌、牌力、下注或行动建议。</p>
+    <p class="room-chat-rule" id="chatRule">手里还有牌时只能发短句和表情，弃牌或这手结束后可以随便打字。</p>
     <button class="room-chat-turn" id="chatTurn" type="button" hidden>轮到你了 · 返回牌桌</button>
     <ol class="room-chat-messages" id="chatMessages" role="log" aria-label="房间消息" aria-live="polite" aria-relevant="additions" tabindex="0"><li class="room-chat-empty" id="chatEmpty">打个招呼吧</li></ol>
     <div class="room-chat-quick" id="chatPresets" role="group" aria-label="日常短句和表情"></div>
     <form class="room-chat-compose" id="chatForm">
-      <input type="text" id="chatInput" maxlength="160" placeholder="说点日常的…" aria-label="聊天内容" aria-describedby="chatRule chatError chatCount" autocomplete="off" enterkeyhint="send">
+      <input type="text" id="chatInput" maxlength="160" placeholder="说点什么…" aria-label="聊天内容" aria-describedby="chatRule chatError chatCount" autocomplete="off" enterkeyhint="send">
       <button class="room-chat-send" id="chatSend" type="submit">发送</button>
     </form>
     <div class="room-chat-footer"><span id="chatError" role="status" aria-live="polite"></span><span id="chatCount">0/80</span></div>
@@ -1251,7 +1251,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <h2 id="stTitle" aria-label="bluff?">bluff<em>?</em></h2>
         <span>by Yiiiii</span>
       </div>
-      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a><a href="race.html" title="押哪匹马跑第一">跑马</a></nav>
+      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a target="_top" href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a target="_top" href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a><a target="_top" href="race.html" title="押哪匹马跑第一">跑马</a></nav>
       <div class="w-pick">
         <button type="button" class="play" id="stResume" hidden><i>↻</i><div><b>继续上次牌局</b><small id="stResumeTxt"></small></div></button>
         <button type="button" class="play" id="stPlay"><i>▶</i><div><b id="stPlayB">开始游戏</b><small id="stPlayTxt"></small></div></button>
@@ -3594,6 +3594,7 @@ function render(){
   renderControls();
   renderImage();
   window.HoldmUI?.sync(G, seats);
+  window.HoldmChat?.sync();
   $('#bLedger').hidden = !G.priv;
   if (NET.role === 'host') netQueueSync();
 }
@@ -4147,7 +4148,10 @@ function adminApply(edits){
 const sget = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
 const sset = (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} };
 /* keep the same player id only across a reload; a duplicated tab or a fresh tab is a new player */
-const navType = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type;
+let navType = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type;
+/* Inside the orientation shell the frame is always a fresh navigation; a refresh
+   of the tab shows up as the shell's own navigation type. */
+try { if (window.frameElement && parent.HoldmShell) navType = (parent.performance.getEntriesByType('navigation')[0] || {}).type || navType; } catch (e) {}
 if (navType !== 'reload'){ sset('holdem.netId', null); sset('holdem.netRoom', null); sset('holdem.netRole', null); }
 NET.id = sget('holdem.netId') || randHex(8); sset('holdem.netId', NET.id);
 NET.available = false; NET.lastSeq = 0; NET.roster = [];
@@ -4168,7 +4172,7 @@ function netSend(msg, to){ netSendBatch([{to:to || 'host', msg}]); }
 
 function netConnect(room, role){
   if (NET.es) NET.es.close();
-  NET.room = room; NET.role = role; NET.lastSeq = 0; NET.hostGone = false; NET.conn = false;
+  NET.room = room; NET.role = role; NET.lastSeq = 0; NET.hostGone = false; NET.conn = false; NET.chatLock = null;
   sset('holdem.netRoom', room); sset('holdem.netRole', role);
   document.body.classList.toggle('net-guest', role === 'guest');
   chatReset(); $('#chat').hidden = false; $('#bChat').hidden = false;
@@ -4486,6 +4490,9 @@ function netFlush(){
   NET.out.hist = null;
   const feedback = actionFeedback.splice(0);
   const batch = [];
+  /* tell the server who still holds cards, so only they are kept to presets in chat */
+  const locked = G.players.map((p, i) => chatInHand(p) ? (i === 0 ? NET.id : p.remote) : null).filter(Boolean).sort().join(',');
+  if (locked !== NET.chatLock){ NET.chatLock = locked; batch.push({to:'server', msg:{t:'chat-lock', ids:locked ? locked.split(',') : []}}); }
   NET.peers.forEach(x => {
     if (!x.online) return;
     const msg = {t:'sync', seq:++NET.seq, s:snapFor(x), logs, says};
@@ -4598,7 +4605,7 @@ function netBecomeGuest(room){
 const chatPolicy = window.HoldmChatPolicy;
 const chatSeen = new Set();
 let chatUnread = 0, chatSending = false, chatError = '', chatRequest = 0;
-const chatDialog = $('#chatPop'), chatInput = $('#chatInput'), chatMessages = $('#chatMessages');
+const chatDialog = $('#chatPop'), chatInput = $('#chatInput'), chatMessages = $('#chatMessages'), chatForm = $('#chatForm');
 $('#chatPresets').innerHTML = Object.entries(chatPolicy.QUICK).map(([q,text]) => `<button type="button" data-q="${q}">${text}</button>`).join('');
 $('#chatPresets').querySelectorAll('button').forEach(button => button.addEventListener('click', () => netChat(+button.dataset.q)));
 $('#chatQuick').innerHTML = '<button type="button" id="chatFromLog">打开房间聊天</button>';
@@ -4610,12 +4617,18 @@ function chatReset(){
   $('#chatEmpty').hidden = false;
   chatSync();
 }
+/* still holding cards in a hand that is being played */
+function chatInHand(p){ return !!(p && !G.handOver && p.hand && p.hand.length && !p.folded && !p.out && !p.vacant); }
 function chatSync(){
   const ready = !!(NET.role && NET.conn), count = [...chatInput.value].length;
+  const locked = chatInHand(G.players[0]);
+  if (!locked && chatError === chatPolicy.LOCKED_ERROR) chatError = '';
+  chatInput.placeholder = locked ? '这手打完或弃牌后可以打字，现在可发短句' : '说点什么…';
+  chatForm.classList.toggle('locked', locked);
   $('#chatRoom').textContent = NET.room ? `房间 ${NET.room} · 仅房间内可见` : '';
-  chatInput.disabled = !ready;
+  chatInput.disabled = !ready || locked;
   chatInput.setAttribute('aria-invalid',String(count > chatPolicy.MAX_LENGTH));
-  $('#chatSend').disabled = !ready || chatSending || !chatInput.value.trim() || count > chatPolicy.MAX_LENGTH;
+  $('#chatSend').disabled = !ready || locked || chatSending || !chatInput.value.trim() || count > chatPolicy.MAX_LENGTH;
   $('#chatSend').textContent = chatSending ? '发送中' : '发送';
   $('#chatPresets').querySelectorAll('button').forEach(button => { button.disabled = !ready || chatSending; });
   $('#chatError').textContent = !ready && NET.role ? '连接中，稍后就能继续聊天。' : chatError;
@@ -4691,6 +4704,7 @@ async function netChat(value){
   const input = typeof value === 'number' ? {q:value} : {text:value};
   const result = chatPolicy.validate(input);
   if (!result.ok){ chatError = result.error; chatSync(); return; }
+  if (result.q == null && chatInHand(G.players[0])){ chatError = chatPolicy.LOCKED_ERROR; chatSync(); return; }
   const room = NET.room, request = ++chatRequest, draft = chatInput.value;
   chatSending = true; chatError = ''; chatSync();
   try {
@@ -4927,6 +4941,7 @@ function netSetUrl(room){
     const u = new URL(location.href);
     if (room) u.searchParams.set('room', room); else u.searchParams.delete('room');
     history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+    if (window.frameElement && parent.HoldmShell) parent.HoldmShell.syncUrl(u.search, u.hash);
   } catch (e) {}
 }
 /* short answers to what new players ask in a room */

@@ -10,17 +10,17 @@ The dialog uses the current navy/ivory palette and native system font. Text entr
 
 Messages have an 80-code-point limit, a 1.2-second accepted-send interval and at most eight attempts per ten seconds per connected player. Content uses text nodes, with no HTML or link interpretation. Server errors remain inline and rejected text stays in the composer for editing. Sender labels come from the room connection rather than submitted display fields; card-related sender labels are replaced with 玩家 within chat. This retains the game's existing room-ID transport and membership model.
 
-## Daily-chat policy
+## Who may type (2026-11-15)
 
-`chat-policy.js` is shared between browser feedback and server enforcement. It rejects common Chinese/traditional Chinese and English references to cards, hands, strength, suits, equity, betting and action advice. It also recognizes common hand notation such as AA/AKs, suit/playing-card symbols, full-width ranks, selected look-alike ranks, accents, zero-width characters, and letter-by-letter spacing or punctuation. The display text keeps normal Chinese punctuation. The complete rejected message is withheld from both broadcast and history.
+The keyword blacklist was removed: it blocked everyday sentences (我跟你说个事, 你下班了吗, 我加你微信) while letting card hints through (五张一个颜色, 我起手是两张一样的).
 
-`/api/send` applies the same policy to legacy chat messages and rejects submitted chat-history packets. Original emoji IDs 0–9 remain compatible. Old poker-discussion IDs 10–25 remain disabled; daily phrases use fresh IDs 26–35, so old clients cannot reinterpret a new greeting as an old poker line. New text is also checked before display as defense in depth.
+The rule is now about timing. A player who still holds cards in the hand being played can only send the preset lines and emoji. After folding, between hands, or when not dealt in, anyone can type freely. The host's browser runs the hand, so it tells the server who is still in it (`{to:'server', msg:{t:'chat-lock', ids}}` over `/api/send`, accepted from the host only); `/api/chat` rejects free text from those ids with 403 `locked`. The browser disables the input with the same rule, so normal players never see the error.
 
-This is deterministic text filtering, not a guarantee of semantic moderation. It can reject ambiguous ordinary words, and it cannot reliably detect private codes, metaphors, or discussion outside this chat. A strict guarantee would require an approved-phrase-only channel; this implementation honors the request for free typing while blocking known discussion forms. It uses no external moderation service or credentials.
+`chat-policy.js` still checks length, control characters and preset ids. Old poker preset ids 10–25 stay retired; new daily presets use 26–45.
 
 ## Verification
 
-- `node scripts/verify-chat-policy.cjs`: 17 ordinary messages, 51 prohibited forms, 20 allowed presets, all 16 retired IDs, boundary lengths and malformed types.
+- `node scripts/verify-chat-policy.cjs`: everyday sentences pass, all presets, retired IDs, boundary lengths and malformed types.
 - `node scripts/verify-room-chat.cjs`: two actual browser players exchange messages; forbidden text never posts or reaches the other player; typing F/C/R and confirming IME do not operate the hand. API cases cover direct/legacy routes, sender-field overrides, room isolation, inactive membership, throttling, forged history, reconnect replay and safe legacy emoji. Browser cases also cover literal markup, unread counts, rejoining, leaving and clearing drafts.
 - `artifacts/room-chat-verification.json`: nine actual viewport layouts, including 320×568, 844×390 and a shortened 390×420 view. Two additional VisualViewport simulations reduce the visible area to 360px during portrait and manually rotated landscape, while preserving the table and poker iframe.
 - Existing `scripts/verify-ui.cjs`: all 16 six/eight-seat layouts, state retention, helpers, check/bet/raise effects and mute pass. The regenerated portable preview still loads without HTTP requests and retains the game document across orientation switches.
