@@ -1000,7 +1000,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
       <span class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#e3b352"/><circle cx="32" cy="32" r="30" fill="none" stroke="#1d1406" stroke-width="7" stroke-dasharray="9.4 6.3" opacity=".55"/><circle cx="32" cy="32" r="21" fill="#0e1320"/><circle cx="32" cy="32" r="21" fill="none" stroke="#e3b352" stroke-width="1.5" opacity=".7"/><path d="M32 17c4 6 12 10.5 12 17a6.5 6.5 0 0 1-10.6 5.1c.4 3 1.6 5.5 3.6 7.4H27c2-1.9 3.2-4.4 3.6-7.4A6.5 6.5 0 0 1 20 34c0-6.5 8-11 12-17Z" fill="#fbf8f1"/></svg></span>
       <h1 aria-label="bluff?">bluff<em>?</em></h1>
       <span class="byline">by Yiiiii</span>
-      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a href="blackjack.html" id="goBJ">21点</a><a href="baccarat.html" id="goBac">百家乐</a><a href="race.html" id="goRace">跑马</a></nav>
+      <nav class="gswitch" aria-label="切换游戏"><b aria-current="page">德州</b><a target="_top" href="blackjack.html" id="goBJ">21点</a><a target="_top" href="baccarat.html" id="goBac">百家乐</a><a target="_top" href="race.html" id="goRace">跑马</a></nav>
     </div>
     <span class="mini-info m-only" id="miniInfo"></span>
     <div class="hud" id="hud" aria-live="polite"><span class="hud-pot">底池 <b id="hudPot">0</b></span><span class="hud-turn" id="hudTurn"></span></div>
@@ -1251,7 +1251,7 @@ body.no-dealer .dealer, body.no-dealer #bDealerM, body.no-dealer .welcome .w-dea
         <h2 id="stTitle" aria-label="bluff?">bluff<em>?</em></h2>
         <span>by Yiiiii</span>
       </div>
-      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a><a href="race.html" title="押哪匹马跑第一">跑马</a></nav>
+      <nav class="gswitch w-games" aria-label="切换游戏"><b aria-current="page">德州扑克</b><a target="_top" href="blackjack.html" title="和荷官比谁更接近 21 点">21点</a><a target="_top" href="baccarat.html" title="猜闲赢还是庄赢">百家乐</a><a target="_top" href="race.html" title="押哪匹马跑第一">跑马</a></nav>
       <div class="w-pick">
         <button type="button" class="play" id="stResume" hidden><i>↻</i><div><b>继续上次牌局</b><small id="stResumeTxt"></small></div></button>
         <button type="button" class="play" id="stPlay"><i>▶</i><div><b id="stPlayB">开始游戏</b><small id="stPlayTxt"></small></div></button>
@@ -4147,7 +4147,10 @@ function adminApply(edits){
 const sget = k => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
 const sset = (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} };
 /* keep the same player id only across a reload; a duplicated tab or a fresh tab is a new player */
-const navType = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type;
+let navType = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0] || {}).type;
+/* Inside the orientation shell the frame is always a fresh navigation; a refresh
+   of the tab shows up as the shell's own navigation type. */
+try { if (window.frameElement && parent.HoldmShell) navType = (parent.performance.getEntriesByType('navigation')[0] || {}).type || navType; } catch (e) {}
 if (navType !== 'reload'){ sset('holdem.netId', null); sset('holdem.netRoom', null); sset('holdem.netRole', null); }
 NET.id = sget('holdem.netId') || randHex(8); sset('holdem.netId', NET.id);
 NET.available = false; NET.lastSeq = 0; NET.roster = [];
@@ -4927,6 +4930,7 @@ function netSetUrl(room){
     const u = new URL(location.href);
     if (room) u.searchParams.set('room', room); else u.searchParams.delete('room');
     history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+    if (window.frameElement && parent.HoldmShell) parent.HoldmShell.syncUrl(u.search, u.hash);
   } catch (e) {}
 }
 /* short answers to what new players ask in a room */

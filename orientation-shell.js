@@ -1,6 +1,9 @@
 /* The same game document stays alive while its viewport changes. No game state is copied. */
 (() => {
   'use strict';
+  // A link back to "/" from inside the game frame would load a second shell
+  // inside the first one. Promote it to the whole tab instead.
+  if (window.top !== window) { try { window.top.location.replace(location.href); } catch (_) {} return; }
   const frame = document.getElementById('game');
   let selected = null;
   let layout = '', resizeFrame = 0;
@@ -26,13 +29,25 @@
   window.HoldmShell = {
     toggleLayout(){ selected = (selected || physical()) === 'portrait' ? 'landscape' : 'portrait'; fit(); return selected; },
     get mode(){ return selected || physical(); },
-    syncHash(hash){ if(location.hash !== hash) history.replaceState(null,'',location.pathname+location.search+hash); }
+    syncHash(hash){ if(location.hash !== hash) history.replaceState(null,'',location.pathname+location.search+hash); },
+    // Mirror the game's ?room=… into the address bar so a refresh, a copied
+    // address or a shared tab reopens the same room.
+    syncUrl(search, hash){ const next = location.pathname + (search || '') + (hash || ''); if (location.pathname + location.search + location.hash !== next) history.replaceState(null,'',next); }
   };
   function scheduleFit(){
     if (!resizeFrame) resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; fit(); });
   }
   frame.src = '/game.html' + location.search + location.hash;
-  frame.addEventListener('load',() => { layout = ''; fit(); });
+  frame.addEventListener('load',() => {
+    // Only the poker table lives in this frame. Any other page (21点, 百家乐,
+    // 跑马, or "/" itself) takes over the whole tab so the address bar is right.
+    try {
+      const inner = frame.contentWindow.location;
+      if (inner.pathname !== '/game.html'){ location.replace(inner.href); return; }
+      HoldmShell.syncUrl(inner.search, inner.hash);
+    } catch (_) {}
+    layout = ''; fit();
+  });
   addEventListener('resize',scheduleFit);
   window.visualViewport?.addEventListener('resize',scheduleFit);
   addEventListener('hashchange',()=>{ try { if(frame.contentWindow.location.hash !== location.hash) frame.contentWindow.location.hash=location.hash; } catch(_){} });
