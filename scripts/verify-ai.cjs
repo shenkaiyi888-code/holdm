@@ -13,11 +13,22 @@ const results=[];
 function check(name,fn){const start=performance.now();const detail=fn();results.push({name,passed:true,ms:Math.round(performance.now()-start),...detail});}
 
 check('position changes opening ranges for regular bots',()=>{
- const s=table(6);s.hand=cards('Kh Ts');s.players[0].bet=10;s.players[0].total=10;s.players[1].bet=20;s.players[1].total=20;
+ const s=table(6);s.hand=cards('Kh 7s');s.players[0].bet=10;s.players[0].total=10;s.players[1].bet=20;s.players[1].total=20;
  s.seat=2;assert.equal(AI.position(s).name,'EP');const early=decide(s);s.seat=5;const button=decide(s);
  assert.equal(early.type,'fold');assert.equal(button.type,'raise');assert.ok(button.to>=40&&button.to<=80);
  const positions=Array.from({length:6},(_,i)=>AI.position(s,i).name);
  assert.deepEqual(positions,['SB','BB','EP','MP','CO','BTN']);return{early:early.type,button:button.type,positions};
+});
+check('a full table plays enough hands preflop, with styles still apart',()=>{
+ // Before this check, 8-handed tables folded to the big blind about a third of the time.
+ const run=(seats,depth)=>JSON.parse(require('node:child_process').execFileSync(process.execPath,[path.join(__dirname,'sim-preflop.cjs'),'1600',String(seats),String(depth)],{env:{...process.env,JSON:'1',SEED:'9'}}));
+ const eight=run(8,50),short=run(8,10);
+ assert.ok(eight.walkRate<.1,'walks '+eight.walkRate);assert.ok(eight.table.vpip>.18&&eight.table.vpip<.32,'vpip '+eight.table.vpip);
+ assert.ok(eight.byPosition.BTN.vpip>eight.byPosition.EP.vpip,'button plays more hands than early position');
+ assert.ok(eight.byStyle['疯子'].vpip>eight.byStyle['岩石'].vpip*2,'a maniac plays far more hands than a rock');
+ assert.ok(eight.byStyle['跟注站'].vpip>eight.byStyle['跟注站'].pfr*3,'a calling station mostly calls');
+ assert.ok(short.walkRate<.1&&short.limpedPots<.02,'short stacks push or fold');
+ return{walkRate:eight.walkRate,vpip:eight.table.vpip,pfr:eight.table.pfr,shortWalkRate:short.walkRate};
 });
 check('position handles empty seats, heads-up and a straddle',()=>{
  const s=table(8);s.players[3].out=true;s.players[6].out=true;assert.equal(AI.position(s,5).name,'CO');assert.equal(AI.position(s,7).name,'BTN');

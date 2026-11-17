@@ -15,13 +15,15 @@
       "streets": [
         0,
         1,
-        2
+        2,
+        3,
+        4
       ],
       "restarts": 0,
-      "heroDecisions": 14,
-      "aiDecisions": 75,
-      "p95ms": 8.899999998509884,
-      "maxMs": 14.699999999254942,
+      "heroDecisions": 27,
+      "aiDecisions": 113,
+      "p95ms": 10.599999999860302,
+      "maxMs": 13.299999999813735,
       "publicActions": 5,
       "chipConservation": true
     },
@@ -45,11 +47,11 @@
         4
       ],
       "restarts": 0,
-      "heroDecisions": 12,
-      "aiDecisions": 105,
-      "p95ms": 6,
-      "maxMs": 11.600000001490116,
-      "publicActions": 8,
+      "heroDecisions": 22,
+      "aiDecisions": 138,
+      "p95ms": 7.600000000093132,
+      "maxMs": 11.099999999860302,
+      "publicActions": 15,
       "chipConservation": true
     }
   ],
