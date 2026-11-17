@@ -12,6 +12,25 @@
   const sigmoid=x=>1/(1+Math.exp(-clamp(x,-20,20)));
   const category=score=>Math.floor(score/0x100000);
 
+  // 169 starting-hand classes ordered by strength (scripts/gen-preflop-rank.cjs):
+  // heads-up and 4-way equity, with credit for small pairs and suited connectors.
+  // Each char is the share of all 1326 combos at least as strong, in 1/93 steps.
+  const RANK169="!%&%(&)(,*0+2-61:1;1<4B7C\"(+).+/-74=6A:G;H?KBPGV\",0.52>8D?L@OEQFWMXM^#397@>JDRKYL]O_SbXf#3F8NFUN\\TeZg[j_o$8S@VPaZh_n`pdt$E[Jc[ldohulx$JcRkdrjwq{%Ti_sgyr|'`qmvm{3lzt}>v~I";
+  const PCT=(()=>{const t=new Array(169);let k=0;
+    for(let a=12;a>=0;a--)for(let b=a;b>=0;b--){
+      const d=()=>(RANK169.charCodeAt(k++)-33)/93;
+      if(a===b)t[a*13+b]=d();else{t[a*13+b]=d();t[b*13+a]=d();}
+    }return t;})();
+  // Suited classes live at [hi][lo], offsuit at [lo][hi].
+  const handPct=hand=>{const a=rank(hand[0])-2,b=rank(hand[1])-2,hi=Math.max(a,b),lo=Math.min(a,b);
+    return suit(hand[0])===suit(hand[1])?PCT[hi*13+lo]:PCT[lo*13+hi];};
+  // Unopened raise-first-in width by how many players still act behind (blinds
+  // included): UTG at a full 8-max table leaves 7, the button 2, the small blind 1.
+  const RFI=[1,.42,.45,.29,.23,.19,.17,.15,.14,.13];
+  const rfi=behind=>RFI[clamp(behind,1,RFI.length-1)];
+  // Typical width of an open from a named seat, for reading a raiser.
+  const OPEN_WIDTH={EP:.16,MP:.23,CO:.29,BTN:.45,SB:.42,BB:.12};
+
   function position(s,seat=s.seat){
     const occupied=s.players.filter(p=>!p.out).map(p=>p.seat);
     const order=i=>(i-s.dealer-1+s.players.length)%s.players.length;
@@ -22,8 +41,7 @@
     const preOrder=i=>(i-anchor-1+s.players.length)%s.players.length;
     const name=seat===s.dealer?'BTN':seat===s.sb?'SB':seat===s.bb?'BB':seat===cutoff?'CO':clockwise.indexOf(seat)>=clockwise.length-3?'MP':'EP';
     return{name,inPosition:active.every(p=>order(p.seat)<order(seat)),
-      behind:active.filter(p=>!p.allIn&&(s.street===0?preOrder(p.seat)>preOrder(seat):order(p.seat)>order(seat))).length,
-      openNeed:({EP:9,MP:8,CO:6.5,BTN:5,SB:6,BB:7})[name]};
+      behind:active.filter(p=>!p.allIn&&(s.street===0?preOrder(p.seat)>preOrder(seat):order(p.seat)>order(seat))).length};
   }
 
   // Small samples move gradually away from a neutral prior, for every opponent.
@@ -41,7 +59,7 @@
     const hi=Math.max(...hand.map(rank)),lo=Math.min(...hand.map(rank));
     const pair=hi===lo,suited=suit(hand[0])===suit(hand[1]);
     return{hi,lo,pair,suited,wheel:hi===14&&lo<=5&&suited,
-      power:pair?5+hi*.75:helpers.chen(hand)};
+      power:pair?5+hi*.75:helpers.chen(hand),pct:handPct(hand)};
   }
 
   // A likelihood of taking an action, rather than equity versus a random hand.
@@ -94,11 +112,12 @@
       const hand=[available[a],available[b]],f=features(hand,helpers);let weight=1,valueLine=1,bluffLine=1,hasBet=false;
       for(const action of line){
         if(action.street===0){
-          const depth=action.raises||0;
-          let need=action.type==='raise'?(depth===0?pos.openNeed:depth===1?10.5:12.5):(depth===0?5.7:depth===1?8:10.5);
-          need+=(.2-p.pfr)*7;
-          if(action.type==='call'&&pos.name==='BB')need-=1.3;
-          const value=sigmoid((f.power-need)*1.15);
+          // Same hand order the bots open with, widened or narrowed by what this
+          // player has actually been doing (pfr/vpip shrink toward a prior).
+          const depth=action.raises||0,looseRead=clamp(p.pfr/.17,.5,2);
+          const width=action.type==='raise'?(depth===0?(OPEN_WIDTH[pos.name]||.2)*looseRead:depth===1?.07*looseRead:.035*looseRead):
+            depth===0?clamp(p.vpip*1.2,.12,.7):depth===1?(pos.name==='BB'?.42:.24)*clamp(p.vpip/.25,.6,2):.09;
+          const value=sigmoid((width-f.pct)/(.02+width*.18));
           const light=action.type==='raise'&&f.wheel?.04+p.aggression*.06:0;
           weight*=action.type==='check'?1:.025+value+light;
         }else{
@@ -210,27 +229,83 @@
 
     if(s.street===0){
       const blind=s.straddle>=0?bb*2:bb;
+      const hist=(s.history||[]).filter(a=>a.street===0);
       const unopened=s.raises===0&&s.currentBet<=blind;
-      const limpers=new Set((s.history||[]).filter(a=>a.street===0&&a.type==='call').map(a=>a.seat)).size;
-      const openNeed=pos.openNeed+tight*9+(limpers&&pos.name!=='BB'?.5:0);
-      const premium=f.pair&&f.hi>=12||f.hi===14&&f.lo===13;
+      const limpers=new Set(hist.filter(a=>a.type==='call').map(a=>a.seat)).size;
+      const headsUp=s.players.filter(p=>!p.out).length===2;
+      // Preflop looseness: a wider clamp than postflop so a maniac and a rock
+      // really play different hands (tilt has already loosened style.tight).
+      const loose=Math.exp((.04-clamp(finite(style.tight,0),-.2,.22))*4.2);
+      const pro=!!(s.strategy&&(s.strategy.balance||s.strategy.exploit||s.strategy.pressure||s.strategy.value));
+      const pct=f.pct,premium=f.pair&&f.hi>=12||f.hi===14&&f.lo===13;
       if(unopened){
-        const playable=f.power>=openNeed||(pos.name==='BTN'&&f.suited&&f.hi===14);
-        if(depth<=12&&canRaise){
-          const need=openNeed+1.2-Math.max(0,10-depth)*.32+(limpers?.8:0);
-          if(f.power>=need||f.pair&&depth<=7)return raise(maxTo,'short-stack-value');
-        }else if(playable&&canRaise){
-          const size=blind*(2.3+limpers+(pos.name==='SB'?.7:0)+random()*.25);
+        if(!price.call){
+          // Limped around to the big blind (or a straddle): raise the top, check the rest.
+          if(canRaise&&limpers&&depth<=12&&pct<=.12*loose)return raise(maxTo,'short-stack-value');
+          if(canRaise&&limpers&&pct<=.1*loose*(.5+aggression))return raise(blind*(3.5+limpers+random()*.5),'raise-limpers-from-bb');
+          return action('check',undefined,'free-blind');
+        }
+        const width=Math.min(.92,(headsUp?.8:rfi(pos.behind))*loose);
+        if(depth<=12){
+          // Short stacks push or fold; raising to fold later wastes chips.
+          const push=Math.min(.9,width*(1+(12-depth)*.12)*(limpers?.6:1));
+          if(pct<=push||f.pair&&depth<=7)return canRaise?raise(maxTo,'short-stack-value'):action('call',undefined,'short-stack-call');
+          if(pos.name==='SB'&&!limpers&&depth>=6&&pct<=width*1.4&&random()>aggression)return action('call',undefined,'short-sb-complete');
+          return passive('short-stack-fold');
+        }
+        if(limpers){
+          const iso=width*.75*(.2+aggression);
+          if(canRaise&&pct<=iso)return raise(blind*(3+limpers+(pos.name==='SB'?.5:0)+random()*.3),'isolate-limpers');
+          const over=width*(1.25+limpers*.1)+(pos.name==='SB'?.12:0);
+          if(pct<=over&&(f.pair||f.suited||pct<=width||pos.name==='SB'))return action('call',undefined,'over-limp');
+          return passive('outside-limp-range');
+        }
+        // Passive players limp part of their range instead of raising, and limp
+        // a little wider. Professionals and very strong hands always raise.
+        const limpy=pro?0:clamp(.75-aggression*1.1,0,.7);
+        if(canRaise&&pct<=width&&(pct<=.04||random()>=limpy)){
+          const size=blind*(2.2+(pos.name==='SB'?.8:0)+(pos.behind>=5?.3:0)+random()*.3);
           return raise(size,'position-open');
         }
-        if(!price.call)return action('check',undefined,'free-blind');
-        if(!playable&&price.odds>.13)return passive('outside-opening-range');
+        if(pct<=width*(1+limpy*1.2))return action('call',undefined,'open-limp');
+        if(pos.name==='SB'&&pct<=Math.min(.8,(.25+limpy*.7)*loose))return action('call',undefined,'sb-complete');
+        return passive('outside-opening-range');
       }
-      const opening=(s.history||[]).find(a=>a.street===0&&a.type==='raise');
-      const opener=opening?s.players[opening.seat]:opponents.find(p=>p.seat===s.streetAgg);
+      const opening=hist.find(a=>a.type==='raise');
+      const lastRaise=hist.map(a=>a.type).lastIndexOf('raise');
+      const callers=new Set(hist.slice(lastRaise+1).filter(a=>a.type==='call').map(a=>a.seat)).size;
+      // The raise we face: the last one by someone else (a short all-in may
+      // leave us as the street aggressor without reopening the action).
+      const facing=hist.filter(a=>a.type==='raise'&&a.seat!==s.seat).pop();
+      const opener=facing?s.players[facing.seat]:opponents[0];
       const read=opener?profile(opener):{pfr:.18,fold:.4};
+      const openerPos=opener?position(s,opener.seat).name:'MP';
       const lateOpen=opening&&['BTN','CO','SB'].includes(position(s,opening.seat).name);
-      const estimateNeeded=f.power>=5||price.odds<.15||premium;
+      const bigPrice=price.call>=(me.chips+me.bet)*.35||!!(opener&&opener.allIn);
+      if(s.raises===1&&!bigPrice){
+        // One normal-sized open: defend by how wide that seat opens, the price,
+        // our seat (the big blind defends most) and our own looseness.
+        const wOpen=clamp((OPEN_WIDTH[openerPos]||.2)*clamp(read.pfr/.17,.6,1.8),.04,.8);
+        const sizeBB=s.currentBet/blind;
+        const priceAdj=clamp(2.6/Math.max(2,sizeBB),.45,1.15);
+        const base=pos.name==='BB'?wOpen*1.05+.07:pos.name==='SB'?wOpen*.45:pos.inPosition?wOpen*.6:wOpen*.45;
+        const callW=Math.min(.75,(base+callers*.02)*priceAdj*loose);
+        const threeW=Math.max(.02,wOpen*(.08+.16*aggression)*Math.sqrt(loose))*(callers?.7:1);
+        if(canRaise&&(pct<=threeW||premium)&&random()<.72+aggression*.27){
+          const target=s.currentBet*(pos.inPosition?3:3.8)+callers*s.currentBet;
+          return raise(depth<=25||target-me.bet>effective*.5?maxTo:target,'value-three-bet');
+        }
+        if(canRaise&&!s.honest&&depth>=40&&(f.wheel||f.suited&&f.hi-f.lo===1&&f.lo>=4)&&lateOpen&&read.fold>.42&&random()<bluff*1.6)
+          return raise(s.currentBet*(pos.inPosition?3:3.8),'light-three-bet','three');
+        if(pct<=callW)return action('call',undefined,'defend-range');
+        if(depth>=40&&effective>=price.call*(pos.inPosition?16:22)&&f.pair&&f.lo<10)
+          return action('call',undefined,'set-implied-odds');
+        if(pos.inPosition&&f.suited&&f.hi-f.lo<=2&&f.lo>=5&&effective>=price.call*30&&pct<=callW*1.6)
+          return action('call',undefined,'suited-implied-odds');
+        return passive('outside-defend-range');
+      }
+      // Re-raises and big all-in prices: weigh equity against the public range.
+      const estimateNeeded=pct<=.45*loose||price.odds<.15||premium;
       if(!estimateNeeded)return passive('weak-versus-raise');
       const eq=estimate(s,helpers,random,420);
       if(canRaise){
@@ -240,17 +315,11 @@
           const target=s.currentBet*(s.raises<=1?(pos.inPosition?3:3.8):2.25);
           return raise(depth<=18||target-me.bet>effective*.65?maxTo:target,'value-reraise');
         }
-        if(!s.honest&&s.raises===1&&depth>=40&&f.wheel&&lateOpen&&read.fold>.42&&random()<bluff*1.15)
-          return raise(s.currentBet*(pos.inPosition?3:3.8),'blocker-three-bet','three');
       }
       const realization=pos.inPosition?.95:pos.name==='BB'?.86:.8;
       const needed=price.odds+Math.max(0,pos.behind-1)*.012;
-      if((eq.equity*(price.call>=me.chips?1:realization)>=needed&&f.power>=5.5)||f.pair&&f.hi>=13)
+      if((eq.equity*(price.call>=me.chips?1:realization)>=needed&&pct<=.3*loose)||f.pair&&f.hi>=13)
         return action('call',undefined,'range-and-price',{equity:eq.equity});
-      if(s.raises<=1&&depth>=45&&effective>=price.call*(pos.inPosition?16:22)&&f.pair&&f.lo<10)
-        return action('call',undefined,'set-implied-odds');
-      if(s.raises<=1&&pos.inPosition&&f.suited&&f.hi-f.lo<=2&&f.lo>=5&&effective>=price.call*30)
-        return action('call',undefined,'suited-implied-odds');
       return passive('range-too-strong');
     }
 
@@ -304,5 +373,5 @@
       return action('call',undefined,'draw-implied-odds');
     return passive('range-and-price-fold');
   }
-  return{decide,estimate,position,profile};
+  return{decide,estimate,position,profile,handPct};
 });

@@ -3,7 +3,7 @@
     {
       "name": "position changes opening ranges for regular bots",
       "passed": true,
-      "ms": 2,
+      "ms": 3,
       "early": "fold",
       "button": "raise",
       "positions": [
@@ -16,6 +16,15 @@
       ]
     },
     {
+      "name": "a full table plays enough hands preflop, with styles still apart",
+      "passed": true,
+      "ms": 17976,
+      "walkRate": 0.04875,
+      "vpip": 0.227734375,
+      "pfr": 0.1303125,
+      "shortWalkRate": 0.014375
+    },
+    {
       "name": "position handles empty seats, heads-up and a straddle",
       "passed": true,
       "ms": 0,
@@ -26,14 +35,14 @@
     {
       "name": "premium hands raise for value without an automatic deep shove",
       "passed": true,
-      "ms": 19,
+      "ms": 9,
       "raiseTo": 1125,
       "stack": 2000
     },
     {
       "name": "three-bets are larger out of position",
       "passed": true,
-      "ms": 9,
+      "ms": 0,
       "inPosition": 180,
       "outOfPosition": 228
     },
@@ -52,29 +61,29 @@
     {
       "name": "the same cards are read differently against tight and loose public histories",
       "passed": true,
-      "ms": 81,
-      "tightEquity": 0.29892691499336443,
-      "looseEquity": 0.5858350085509691,
+      "ms": 66,
+      "tightEquity": 0.32033426257198827,
+      "looseEquity": 0.5921499426391266,
       "tightAction": "fold",
       "looseAction": "call"
     },
     {
       "name": "wet boards charge more for draws than dry boards",
       "passed": true,
-      "ms": 8,
+      "ms": 7,
       "dry": 80,
       "wet": 135
     },
     {
       "name": "a shared royal flush is never folded or pointlessly raised",
       "passed": true,
-      "ms": 6,
+      "ms": 5,
       "action": "call"
     },
     {
       "name": "all-in draws use their actual price, without fictional implied odds",
       "passed": true,
-      "ms": 3,
+      "ms": 4,
       "action": "fold"
     },
     {
@@ -87,7 +96,7 @@
     {
       "name": "short calls cap both their price and the eligible pot",
       "passed": true,
-      "ms": 5,
+      "ms": 7,
       "call": 50,
       "eligiblePot": 90,
       "odds": 0.35714285714285715
@@ -95,33 +104,33 @@
     {
       "name": "no air check-raises and no missed-draw spam into a calling station",
       "passed": true,
-      "ms": 90,
+      "ms": 75,
       "seeds": 24
     },
     {
       "name": "closed raising stays closed, including with the nuts",
       "passed": true,
-      "ms": 3,
+      "ms": 2,
       "action": "call"
     },
     {
       "name": "a short all-in competes for its main pot, not the larger side pot",
       "passed": true,
-      "ms": 38,
-      "weightedEquity": 0.8458333333333281,
-      "winWholePot": 0.7545
+      "ms": 17,
+      "weightedEquity": 0.8542499999999965,
+      "winWholePot": 0.78475
     },
     {
       "name": "decisions and range sampling do not read opponent hole cards",
       "passed": true,
-      "ms": 4,
+      "ms": 3,
       "privateCardAccess": false,
       "deckAccess": false
     },
     {
       "name": "six- and eight-way decisions remain legal and bounded in time",
       "passed": true,
-      "ms": 28,
+      "ms": 27,
       "timings": [
         {
           "seats": 6,
@@ -130,7 +139,7 @@
         },
         {
           "seats": 8,
-          "ms": 16,
+          "ms": 14,
           "action": "call"
         }
       ]
@@ -138,13 +147,13 @@
     {
       "name": "varied stack depths and board streets produce legal actions",
       "passed": true,
-      "ms": 1072,
+      "ms": 802,
       "spots": 120,
       "actions": {
-        "check": 29,
-        "fold": 58,
-        "call": 29,
-        "raise": 4
+        "check": 31,
+        "fold": 54,
+        "call": 33,
+        "raise": 2
       }
     }
   ]
